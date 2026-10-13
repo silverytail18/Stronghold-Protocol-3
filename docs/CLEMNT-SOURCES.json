@@ -1,0 +1,2748 @@
+{
+  "repository": "Kengxxiao/ArknightsGameData",
+  "verifiedCommit": "17759cc8cdf37388414145d16262a3a06f3ab25e",
+  "generatorCommit": "e8588a82074bf695aa3849959037dd2de7e6e5cf",
+  "files": [
+    {
+      "name": "character",
+      "url": "https://cdn.jsdelivr.net/gh/Kengxxiao/ArknightsGameData@17759cc8cdf37388414145d16262a3a06f3ab25e/zh_CN/gamedata/excel/character_table.json",
+      "sha256": "e523c7c83c36e2d76697121079e17d0282da1a94d59a55e1cc55616edf0b41c4",
+      "record": {
+        "name": "克莱门莎",
+        "description": "能够阻挡两个敌人，可以造成<@ba.kw>元素伤害</>",
+        "sortIndex": 563,
+        "spTargetType": "NONE",
+        "spTargetId": null,
+        "canUseGeneralPotentialItem": true,
+        "canUseActivityPotentialItem": false,
+        "potentialItemId": "p_char_4231_clemnt",
+        "activityPotentialItemId": null,
+        "classicPotentialItemId": null,
+        "nationId": "egir",
+        "groupId": null,
+        "teamId": null,
+        "mainPower": {
+          "nationId": "egir",
+          "groupId": null,
+          "teamId": null
+        },
+        "subPower": [
+          {
+            "nationId": "iberia",
+            "groupId": null,
+            "teamId": null
+          }
+        ],
+        "displayNumber": "AE01",
+        "appellation": "Clementia",
+        "position": "MELEE",
+        "tagList": [
+          "输出",
+          "爆发"
+        ],
+        "itemUsage": "阿戈尔人克莱门莎，很高兴见到你。",
+        "itemDesc": "取决于语境，“很高兴”的意思可以是海陆合作的一系列重要意义，也可以真的只是“很高兴”。",
+        "itemObtainApproach": "招募寻访",
+        "isNotObtainable": false,
+        "isSpChar": false,
+        "maxPotentialLevel": 5,
+        "rarity": "TIER_6",
+        "profession": "WARRIOR",
+        "subProfessionId": "primguard",
+        "trait": null,
+        "phases": [
+          {
+            "characterPrefabKey": "char_4231_clemnt",
+            "rangeId": "1-1",
+            "maxLevel": 50,
+            "attributesKeyFrames": [
+              {
+                "level": 1,
+                "data": {
+                  "maxHp": 1116,
+                  "atk": 410,
+                  "def": 178,
+                  "magicResistance": 10,
+                  "cost": 19,
+                  "blockCnt": 2,
+                  "moveSpeed": 1,
+                  "attackSpeed": 100,
+                  "baseAttackTime": 1.2,
+                  "respawnTime": 70,
+                  "hpRecoveryPerSec": 0,
+                  "spRecoveryPerSec": 1,
+                  "maxDeployCount": 1,
+                  "maxDeckStackCnt": 0,
+                  "tauntLevel": 0,
+                  "massLevel": 0,
+                  "baseForceLevel": 0,
+                  "stunImmune": false,
+                  "silenceImmune": false,
+                  "sleepImmune": false,
+                  "frozenImmune": false,
+                  "levitateImmune": false,
+                  "disarmedCombatImmune": false,
+                  "fearedImmune": false,
+                  "palsyImmune": false,
+                  "attractImmune": false,
+                  "teleportImmune": false,
+                  "groundBoundImmune": false
+                }
+              },
+              {
+                "level": 50,
+                "data": {
+                  "maxHp": 1550,
+                  "atk": 587,
+                  "def": 245,
+                  "magicResistance": 10,
+                  "cost": 19,
+                  "blockCnt": 2,
+                  "moveSpeed": 1,
+                  "attackSpeed": 100,
+                  "baseAttackTime": 1.2,
+                  "respawnTime": 70,
+                  "hpRecoveryPerSec": 0,
+                  "spRecoveryPerSec": 1,
+                  "maxDeployCount": 1,
+                  "maxDeckStackCnt": 0,
+                  "tauntLevel": 0,
+                  "massLevel": 0,
+                  "baseForceLevel": 0,
+                  "stunImmune": false,
+                  "silenceImmune": false,
+                  "sleepImmune": false,
+                  "frozenImmune": false,
+                  "levitateImmune": false,
+                  "disarmedCombatImmune": false,
+                  "fearedImmune": false,
+                  "palsyImmune": false,
+                  "attractImmune": false,
+                  "teleportImmune": false,
+                  "groundBoundImmune": false
+                }
+              }
+            ],
+            "evolveCost": null
+          },
+          {
+            "characterPrefabKey": "char_4231_clemnt",
+            "rangeId": "1-1",
+            "maxLevel": 80,
+            "attributesKeyFrames": [
+              {
+                "level": 1,
+                "data": {
+                  "maxHp": 1550,
+                  "atk": 587,
+                  "def": 245,
+                  "magicResistance": 10,
+                  "cost": 21,
+                  "blockCnt": 2,
+                  "moveSpeed": 1,
+                  "attackSpeed": 100,
+                  "baseAttackTime": 1.2,
+                  "respawnTime": 70,
+                  "hpRecoveryPerSec": 0,
+                  "spRecoveryPerSec": 1,
+                  "maxDeployCount": 1,
+                  "maxDeckStackCnt": 0,
+                  "tauntLevel": 0,
+                  "massLevel": 0,
+                  "baseForceLevel": 0,
+                  "stunImmune": false,
+                  "silenceImmune": false,
+                  "sleepImmune": false,
+                  "frozenImmune": false,
+                  "levitateImmune": false,
+                  "disarmedCombatImmune": false,
+                  "fearedImmune": false,
+                  "palsyImmune": false,
+                  "attractImmune": false,
+                  "teleportImmune": false,
+                  "groundBoundImmune": false
+                }
+              },
+              {
+                "level": 80,
+                "data": {
+                  "maxHp": 2040,
+                  "atk": 763,
+                  "def": 315,
+                  "magicResistance": 10,
+                  "cost": 21,
+                  "blockCnt": 2,
+                  "moveSpeed": 1,
+                  "attackSpeed": 100,
+                  "baseAttackTime": 1.2,
+                  "respawnTime": 70,
+                  "hpRecoveryPerSec": 0,
+                  "spRecoveryPerSec": 1,
+                  "maxDeployCount": 1,
+                  "maxDeckStackCnt": 0,
+                  "tauntLevel": 0,
+                  "massLevel": 0,
+                  "baseForceLevel": 0,
+                  "stunImmune": false,
+                  "silenceImmune": false,
+                  "sleepImmune": false,
+                  "frozenImmune": false,
+                  "levitateImmune": false,
+                  "disarmedCombatImmune": false,
+                  "fearedImmune": false,
+                  "palsyImmune": false,
+                  "attractImmune": false,
+                  "teleportImmune": false,
+                  "groundBoundImmune": false
+                }
+              }
+            ],
+            "evolveCost": [
+              {
+                "id": "3221",
+                "count": 5,
+                "type": "MATERIAL"
+              },
+              {
+                "id": "30042",
+                "count": 8,
+                "type": "MATERIAL"
+              },
+              {
+                "id": "30052",
+                "count": 3,
+                "type": "MATERIAL"
+              }
+            ]
+          },
+          {
+            "characterPrefabKey": "char_4231_clemnt",
+            "rangeId": "1-1",
+            "maxLevel": 90,
+            "attributesKeyFrames": [
+              {
+                "level": 1,
+                "data": {
+                  "maxHp": 2040,
+                  "atk": 763,
+                  "def": 315,
+                  "magicResistance": 10,
+                  "cost": 23,
+                  "blockCnt": 2,
+                  "moveSpeed": 1,
+                  "attackSpeed": 100,
+                  "baseAttackTime": 1.2,
+                  "respawnTime": 70,
+                  "hpRecoveryPerSec": 0,
+                  "spRecoveryPerSec": 1,
+                  "maxDeployCount": 1,
+                  "maxDeckStackCnt": 0,
+                  "tauntLevel": 0,
+                  "massLevel": 0,
+                  "baseForceLevel": 0,
+                  "stunImmune": false,
+                  "silenceImmune": false,
+                  "sleepImmune": false,
+                  "frozenImmune": false,
+                  "levitateImmune": false,
+                  "disarmedCombatImmune": false,
+                  "fearedImmune": false,
+                  "palsyImmune": false,
+                  "attractImmune": false,
+                  "teleportImmune": false,
+                  "groundBoundImmune": false
+                }
+              },
+              {
+                "level": 90,
+                "data": {
+                  "maxHp": 2720,
+                  "atk": 920,
+                  "def": 371,
+                  "magicResistance": 10,
+                  "cost": 23,
+                  "blockCnt": 2,
+                  "moveSpeed": 1,
+                  "attackSpeed": 100,
+                  "baseAttackTime": 1.2,
+                  "respawnTime": 70,
+                  "hpRecoveryPerSec": 0,
+                  "spRecoveryPerSec": 1,
+                  "maxDeployCount": 1,
+                  "maxDeckStackCnt": 0,
+                  "tauntLevel": 0,
+                  "massLevel": 0,
+                  "baseForceLevel": 0,
+                  "stunImmune": false,
+                  "silenceImmune": false,
+                  "sleepImmune": false,
+                  "frozenImmune": false,
+                  "levitateImmune": false,
+                  "disarmedCombatImmune": false,
+                  "fearedImmune": false,
+                  "palsyImmune": false,
+                  "attractImmune": false,
+                  "teleportImmune": false,
+                  "groundBoundImmune": false
+                }
+              }
+            ],
+            "evolveCost": [
+              {
+                "id": "3223",
+                "count": 4,
+                "type": "MATERIAL"
+              },
+              {
+                "id": "30115",
+                "count": 4,
+                "type": "MATERIAL"
+              },
+              {
+                "id": "30014",
+                "count": 9,
+                "type": "MATERIAL"
+              }
+            ]
+          }
+        ],
+        "skills": [
+          {
+            "skillId": "skchr_clemnt_1",
+            "overridePrefabKey": null,
+            "overrideTokenKey": null,
+            "levelUpCostCond": [
+              {
+                "unlockCond": {
+                  "phase": "PHASE_2",
+                  "level": 1
+                },
+                "lvlUpTime": 28800,
+                "levelUpCost": [
+                  {
+                    "id": "3303",
+                    "count": 8,
+                    "type": "MATERIAL"
+                  },
+                  {
+                    "id": "30044",
+                    "count": 4,
+                    "type": "MATERIAL"
+                  },
+                  {
+                    "id": "31093",
+                    "count": 3,
+                    "type": "MATERIAL"
+                  }
+                ]
+              },
+              {
+                "unlockCond": {
+                  "phase": "PHASE_2",
+                  "level": 1
+                },
+                "lvlUpTime": 57600,
+                "levelUpCost": [
+                  {
+                    "id": "3303",
+                    "count": 12,
+                    "type": "MATERIAL"
+                  },
+                  {
+                    "id": "31044",
+                    "count": 4,
+                    "type": "MATERIAL"
+                  },
+                  {
+                    "id": "31094",
+                    "count": 9,
+                    "type": "MATERIAL"
+                  }
+                ]
+              },
+              {
+                "unlockCond": {
+                  "phase": "PHASE_2",
+                  "level": 1
+                },
+                "lvlUpTime": 86400,
+                "levelUpCost": [
+                  {
+                    "id": "3303",
+                    "count": 15,
+                    "type": "MATERIAL"
+                  },
+                  {
+                    "id": "30155",
+                    "count": 6,
+                    "type": "MATERIAL"
+                  },
+                  {
+                    "id": "31084",
+                    "count": 2,
+                    "type": "MATERIAL"
+                  }
+                ]
+              }
+            ],
+            "unlockCond": {
+              "phase": "PHASE_0",
+              "level": 1
+            }
+          },
+          {
+            "skillId": "skchr_clemnt_2",
+            "overridePrefabKey": null,
+            "overrideTokenKey": null,
+            "levelUpCostCond": [
+              {
+                "unlockCond": {
+                  "phase": "PHASE_2",
+                  "level": 1
+                },
+                "lvlUpTime": 28800,
+                "levelUpCost": [
+                  {
+                    "id": "3303",
+                    "count": 8,
+                    "type": "MATERIAL"
+                  },
+                  {
+                    "id": "31104",
+                    "count": 4,
+                    "type": "MATERIAL"
+                  },
+                  {
+                    "id": "31113",
+                    "count": 6,
+                    "type": "MATERIAL"
+                  }
+                ]
+              },
+              {
+                "unlockCond": {
+                  "phase": "PHASE_2",
+                  "level": 1
+                },
+                "lvlUpTime": 57600,
+                "levelUpCost": [
+                  {
+                    "id": "3303",
+                    "count": 12,
+                    "type": "MATERIAL"
+                  },
+                  {
+                    "id": "31054",
+                    "count": 4,
+                    "type": "MATERIAL"
+                  },
+                  {
+                    "id": "30014",
+                    "count": 10,
+                    "type": "MATERIAL"
+                  }
+                ]
+              },
+              {
+                "unlockCond": {
+                  "phase": "PHASE_2",
+                  "level": 1
+                },
+                "lvlUpTime": 86400,
+                "levelUpCost": [
+                  {
+                    "id": "3303",
+                    "count": 15,
+                    "type": "MATERIAL"
+                  },
+                  {
+                    "id": "30145",
+                    "count": 6,
+                    "type": "MATERIAL"
+                  },
+                  {
+                    "id": "31044",
+                    "count": 1,
+                    "type": "MATERIAL"
+                  }
+                ]
+              }
+            ],
+            "unlockCond": {
+              "phase": "PHASE_1",
+              "level": 1
+            }
+          },
+          {
+            "skillId": "skchr_clemnt_3",
+            "overridePrefabKey": null,
+            "overrideTokenKey": null,
+            "levelUpCostCond": [
+              {
+                "unlockCond": {
+                  "phase": "PHASE_2",
+                  "level": 1
+                },
+                "lvlUpTime": 28800,
+                "levelUpCost": [
+                  {
+                    "id": "3303",
+                    "count": 8,
+                    "type": "MATERIAL"
+                  },
+                  {
+                    "id": "31074",
+                    "count": 4,
+                    "type": "MATERIAL"
+                  },
+                  {
+                    "id": "31053",
+                    "count": 5,
+                    "type": "MATERIAL"
+                  }
+                ]
+              },
+              {
+                "unlockCond": {
+                  "phase": "PHASE_2",
+                  "level": 1
+                },
+                "lvlUpTime": 57600,
+                "levelUpCost": [
+                  {
+                    "id": "3303",
+                    "count": 12,
+                    "type": "MATERIAL"
+                  },
+                  {
+                    "id": "31014",
+                    "count": 4,
+                    "type": "MATERIAL"
+                  },
+                  {
+                    "id": "31034",
+                    "count": 7,
+                    "type": "MATERIAL"
+                  }
+                ]
+              },
+              {
+                "unlockCond": {
+                  "phase": "PHASE_2",
+                  "level": 1
+                },
+                "lvlUpTime": 86400,
+                "levelUpCost": [
+                  {
+                    "id": "3303",
+                    "count": 15,
+                    "type": "MATERIAL"
+                  },
+                  {
+                    "id": "30165",
+                    "count": 6,
+                    "type": "MATERIAL"
+                  },
+                  {
+                    "id": "31054",
+                    "count": 1,
+                    "type": "MATERIAL"
+                  }
+                ]
+              }
+            ],
+            "unlockCond": {
+              "phase": "PHASE_2",
+              "level": 1
+            }
+          }
+        ],
+        "displayTokenDict": null,
+        "talents": [
+          {
+            "candidates": [
+              {
+                "unlockCondition": {
+                  "phase": "PHASE_1",
+                  "level": 1
+                },
+                "requiredPotentialRank": 0,
+                "prefabKey": "1",
+                "name": "生死定夺",
+                "description": "造成物理伤害时有25%概率攻击力提升至120%，目标防御力低于初始值时概率提升至50%",
+                "rangeId": null,
+                "blackboard": [
+                  {
+                    "key": "t1_atk_scale",
+                    "value": 1.2,
+                    "valueStr": null
+                  },
+                  {
+                    "key": "prob_normal",
+                    "value": 0.25,
+                    "valueStr": null
+                  },
+                  {
+                    "key": "prob_special",
+                    "value": 0.5,
+                    "valueStr": null
+                  }
+                ],
+                "tokenKey": null,
+                "isHideTalent": false
+              },
+              {
+                "unlockCondition": {
+                  "phase": "PHASE_1",
+                  "level": 1
+                },
+                "requiredPotentialRank": 2,
+                "prefabKey": "1",
+                "name": "生死定夺",
+                "description": "造成物理伤害时有25%概率攻击力提升至135%<@ba.talpu>（+15%）</>，目标防御力低于初始值时概率提升至50%",
+                "rangeId": null,
+                "blackboard": [
+                  {
+                    "key": "t1_atk_scale",
+                    "value": 1.35,
+                    "valueStr": null
+                  },
+                  {
+                    "key": "prob_normal",
+                    "value": 0.25,
+                    "valueStr": null
+                  },
+                  {
+                    "key": "prob_special",
+                    "value": 0.5,
+                    "valueStr": null
+                  }
+                ],
+                "tokenKey": null,
+                "isHideTalent": false
+              },
+              {
+                "unlockCondition": {
+                  "phase": "PHASE_2",
+                  "level": 1
+                },
+                "requiredPotentialRank": 0,
+                "prefabKey": "1",
+                "name": "生死定夺",
+                "description": "造成物理伤害时有25%概率攻击力提升至135%，目标防御力低于初始值时概率提升至50%",
+                "rangeId": null,
+                "blackboard": [
+                  {
+                    "key": "t1_atk_scale",
+                    "value": 1.35,
+                    "valueStr": null
+                  },
+                  {
+                    "key": "prob_normal",
+                    "value": 0.25,
+                    "valueStr": null
+                  },
+                  {
+                    "key": "prob_special",
+                    "value": 0.5,
+                    "valueStr": null
+                  }
+                ],
+                "tokenKey": null,
+                "isHideTalent": false
+              },
+              {
+                "unlockCondition": {
+                  "phase": "PHASE_2",
+                  "level": 1
+                },
+                "requiredPotentialRank": 2,
+                "prefabKey": "1",
+                "name": "生死定夺",
+                "description": "造成物理伤害时有25%概率攻击力提升至150%<@ba.talpu>（+15%）</>，目标防御力低于初始值时概率提升至50%",
+                "rangeId": null,
+                "blackboard": [
+                  {
+                    "key": "t1_atk_scale",
+                    "value": 1.5,
+                    "valueStr": null
+                  },
+                  {
+                    "key": "prob_normal",
+                    "value": 0.25,
+                    "valueStr": null
+                  },
+                  {
+                    "key": "prob_special",
+                    "value": 0.5,
+                    "valueStr": null
+                  }
+                ],
+                "tokenKey": null,
+                "isHideTalent": false
+              }
+            ]
+          },
+          {
+            "candidates": [
+              {
+                "unlockCondition": {
+                  "phase": "PHASE_2",
+                  "level": 1
+                },
+                "requiredPotentialRank": 0,
+                "prefabKey": "2",
+                "name": "习得性防御",
+                "description": "受到来自自身前方单位造成的物理和法术伤害降低30%，若伤害来源为【海怪】，则降低50%",
+                "rangeId": null,
+                "blackboard": [
+                  {
+                    "key": "damage_resistance_normal",
+                    "value": 0.3,
+                    "valueStr": null
+                  },
+                  {
+                    "key": "damage_resistance_seamonster",
+                    "value": 0.5,
+                    "valueStr": null
+                  },
+                  {
+                    "key": "tag",
+                    "value": 0,
+                    "valueStr": "seamonster"
+                  }
+                ],
+                "tokenKey": null,
+                "isHideTalent": false
+              },
+              {
+                "unlockCondition": {
+                  "phase": "PHASE_2",
+                  "level": 1
+                },
+                "requiredPotentialRank": 4,
+                "prefabKey": "2",
+                "name": "习得性防御",
+                "description": "受到来自自身前方单位造成的物理和法术伤害降低35%<@ba.talpu>（+5%）</>，若伤害来源为【海怪】，则降低55%<@ba.talpu>（+5%）</>",
+                "rangeId": null,
+                "blackboard": [
+                  {
+                    "key": "damage_resistance_normal",
+                    "value": 0.35,
+                    "valueStr": null
+                  },
+                  {
+                    "key": "damage_resistance_seamonster",
+                    "value": 0.55,
+                    "valueStr": null
+                  },
+                  {
+                    "key": "tag",
+                    "value": 0,
+                    "valueStr": "seamonster"
+                  }
+                ],
+                "tokenKey": null,
+                "isHideTalent": false
+              }
+            ]
+          }
+        ],
+        "potentialRanks": [
+          {
+            "type": "BUFF",
+            "description": "部署费用-1",
+            "buff": {
+              "attributes": {
+                "abnormalFlags": null,
+                "abnormalImmunes": null,
+                "abnormalAntis": null,
+                "abnormalCombos": null,
+                "abnormalComboImmunes": null,
+                "attributeModifiers": [
+                  {
+                    "attributeType": "COST",
+                    "formulaItem": "ADDITION",
+                    "value": -1,
+                    "loadFromBlackboard": false,
+                    "fetchBaseValueFromSourceEntity": false
+                  }
+                ]
+              }
+            },
+            "equivalentCost": null
+          },
+          {
+            "type": "CUSTOM",
+            "description": "第一天赋效果增强",
+            "buff": null,
+            "equivalentCost": null
+          },
+          {
+            "type": "BUFF",
+            "description": "攻击力+35",
+            "buff": {
+              "attributes": {
+                "abnormalFlags": null,
+                "abnormalImmunes": null,
+                "abnormalAntis": null,
+                "abnormalCombos": null,
+                "abnormalComboImmunes": null,
+                "attributeModifiers": [
+                  {
+                    "attributeType": "ATK",
+                    "formulaItem": "ADDITION",
+                    "value": 35,
+                    "loadFromBlackboard": false,
+                    "fetchBaseValueFromSourceEntity": false
+                  }
+                ]
+              }
+            },
+            "equivalentCost": null
+          },
+          {
+            "type": "CUSTOM",
+            "description": "第二天赋效果增强",
+            "buff": null,
+            "equivalentCost": null
+          },
+          {
+            "type": "BUFF",
+            "description": "部署费用-1",
+            "buff": {
+              "attributes": {
+                "abnormalFlags": null,
+                "abnormalImmunes": null,
+                "abnormalAntis": null,
+                "abnormalCombos": null,
+                "abnormalComboImmunes": null,
+                "attributeModifiers": [
+                  {
+                    "attributeType": "COST",
+                    "formulaItem": "ADDITION",
+                    "value": -1,
+                    "loadFromBlackboard": false,
+                    "fetchBaseValueFromSourceEntity": false
+                  }
+                ]
+              }
+            },
+            "equivalentCost": null
+          }
+        ],
+        "favorKeyFrames": [
+          {
+            "level": 0,
+            "data": {
+              "maxHp": 0,
+              "atk": 0,
+              "def": 0,
+              "magicResistance": 0,
+              "cost": 0,
+              "blockCnt": 0,
+              "moveSpeed": 0,
+              "attackSpeed": 0,
+              "baseAttackTime": 0,
+              "respawnTime": 0,
+              "hpRecoveryPerSec": 0,
+              "spRecoveryPerSec": 0,
+              "maxDeployCount": 0,
+              "maxDeckStackCnt": 0,
+              "tauntLevel": 0,
+              "massLevel": 0,
+              "baseForceLevel": 0,
+              "stunImmune": false,
+              "silenceImmune": false,
+              "sleepImmune": false,
+              "frozenImmune": false,
+              "levitateImmune": false,
+              "disarmedCombatImmune": false,
+              "fearedImmune": false,
+              "palsyImmune": false,
+              "attractImmune": false,
+              "teleportImmune": false,
+              "groundBoundImmune": false
+            }
+          },
+          {
+            "level": 50,
+            "data": {
+              "maxHp": 0,
+              "atk": 110,
+              "def": 0,
+              "magicResistance": 0,
+              "cost": 0,
+              "blockCnt": 0,
+              "moveSpeed": 0,
+              "attackSpeed": 0,
+              "baseAttackTime": 0,
+              "respawnTime": 0,
+              "hpRecoveryPerSec": 0,
+              "spRecoveryPerSec": 0,
+              "maxDeployCount": 0,
+              "maxDeckStackCnt": 0,
+              "tauntLevel": 0,
+              "massLevel": 0,
+              "baseForceLevel": 0,
+              "stunImmune": false,
+              "silenceImmune": false,
+              "sleepImmune": false,
+              "frozenImmune": false,
+              "levitateImmune": false,
+              "disarmedCombatImmune": false,
+              "fearedImmune": false,
+              "palsyImmune": false,
+              "attractImmune": false,
+              "teleportImmune": false,
+              "groundBoundImmune": false
+            }
+          }
+        ],
+        "allSkillLvlup": [
+          {
+            "unlockCond": {
+              "phase": "PHASE_0",
+              "level": 1
+            },
+            "lvlUpCost": [
+              {
+                "id": "3301",
+                "count": 5,
+                "type": "MATERIAL"
+              }
+            ]
+          },
+          {
+            "unlockCond": {
+              "phase": "PHASE_0",
+              "level": 1
+            },
+            "lvlUpCost": [
+              {
+                "id": "3301",
+                "count": 5,
+                "type": "MATERIAL"
+              },
+              {
+                "id": "30061",
+                "count": 4,
+                "type": "MATERIAL"
+              },
+              {
+                "id": "30031",
+                "count": 4,
+                "type": "MATERIAL"
+              }
+            ]
+          },
+          {
+            "unlockCond": {
+              "phase": "PHASE_0",
+              "level": 1
+            },
+            "lvlUpCost": [
+              {
+                "id": "3302",
+                "count": 8,
+                "type": "MATERIAL"
+              },
+              {
+                "id": "30012",
+                "count": 7,
+                "type": "MATERIAL"
+              }
+            ]
+          },
+          {
+            "unlockCond": {
+              "phase": "PHASE_1",
+              "level": 1
+            },
+            "lvlUpCost": [
+              {
+                "id": "3302",
+                "count": 8,
+                "type": "MATERIAL"
+              },
+              {
+                "id": "30022",
+                "count": 4,
+                "type": "MATERIAL"
+              },
+              {
+                "id": "30052",
+                "count": 4,
+                "type": "MATERIAL"
+              }
+            ]
+          },
+          {
+            "unlockCond": {
+              "phase": "PHASE_1",
+              "level": 1
+            },
+            "lvlUpCost": [
+              {
+                "id": "3302",
+                "count": 8,
+                "type": "MATERIAL"
+              },
+              {
+                "id": "31033",
+                "count": 6,
+                "type": "MATERIAL"
+              }
+            ]
+          },
+          {
+            "unlockCond": {
+              "phase": "PHASE_1",
+              "level": 1
+            },
+            "lvlUpCost": [
+              {
+                "id": "3303",
+                "count": 8,
+                "type": "MATERIAL"
+              },
+              {
+                "id": "30053",
+                "count": 5,
+                "type": "MATERIAL"
+              },
+              {
+                "id": "30093",
+                "count": 3,
+                "type": "MATERIAL"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "skill",
+      "url": "https://cdn.jsdelivr.net/gh/Kengxxiao/ArknightsGameData@17759cc8cdf37388414145d16262a3a06f3ab25e/zh_CN/gamedata/excel/skill_table.json",
+      "sha256": "b6559b845efea6042e23f1d976185f12e13de3d749464543f5c2c17a7d2fa280",
+      "record": {
+        "skchr_clemnt_1": {
+          "skillId": "skchr_clemnt_1",
+          "iconId": null,
+          "hidden": false,
+          "levels": [
+            {
+              "name": "冲蚀",
+              "rangeId": null,
+              "description": "下次攻击的攻击力提高至<@ba.vup>{atk_scale:0%}</>并造成相当于物理伤害<@ba.vup>{ep_damage_ratio:0%}</>的<$ba.dt.erosion2>侵蚀损伤</>",
+              "skillType": "AUTO",
+              "durationType": "NONE",
+              "spData": {
+                "spType": "INCREASE_WHEN_ATTACK",
+                "levelUpCost": null,
+                "maxChargeTime": 1,
+                "spCost": 3,
+                "initSp": 0,
+                "increment": 1
+              },
+              "prefabId": "skchr_clemnt_1",
+              "duration": 0,
+              "blackboard": [
+                {
+                  "key": "atk_scale",
+                  "value": 1.9,
+                  "valueStr": null
+                },
+                {
+                  "key": "ep_damage_ratio",
+                  "value": 0.2,
+                  "valueStr": null
+                }
+              ]
+            },
+            {
+              "name": "冲蚀",
+              "rangeId": null,
+              "description": "下次攻击的攻击力提高至<@ba.vup>{atk_scale:0%}</>并造成相当于物理伤害<@ba.vup>{ep_damage_ratio:0%}</>的<$ba.dt.erosion2>侵蚀损伤</>",
+              "skillType": "AUTO",
+              "durationType": "NONE",
+              "spData": {
+                "spType": "INCREASE_WHEN_ATTACK",
+                "levelUpCost": null,
+                "maxChargeTime": 1,
+                "spCost": 3,
+                "initSp": 0,
+                "increment": 1
+              },
+              "prefabId": "skchr_clemnt_1",
+              "duration": 0,
+              "blackboard": [
+                {
+                  "key": "atk_scale",
+                  "value": 1.95,
+                  "valueStr": null
+                },
+                {
+                  "key": "ep_damage_ratio",
+                  "value": 0.2,
+                  "valueStr": null
+                }
+              ]
+            },
+            {
+              "name": "冲蚀",
+              "rangeId": null,
+              "description": "下次攻击的攻击力提高至<@ba.vup>{atk_scale:0%}</>并造成相当于物理伤害<@ba.vup>{ep_damage_ratio:0%}</>的<$ba.dt.erosion2>侵蚀损伤</>",
+              "skillType": "AUTO",
+              "durationType": "NONE",
+              "spData": {
+                "spType": "INCREASE_WHEN_ATTACK",
+                "levelUpCost": null,
+                "maxChargeTime": 1,
+                "spCost": 3,
+                "initSp": 0,
+                "increment": 1
+              },
+              "prefabId": "skchr_clemnt_1",
+              "duration": 0,
+              "blackboard": [
+                {
+                  "key": "atk_scale",
+                  "value": 2,
+                  "valueStr": null
+                },
+                {
+                  "key": "ep_damage_ratio",
+                  "value": 0.2,
+                  "valueStr": null
+                }
+              ]
+            },
+            {
+              "name": "冲蚀",
+              "rangeId": null,
+              "description": "下次攻击的攻击力提高至<@ba.vup>{atk_scale:0%}</>并造成相当于物理伤害<@ba.vup>{ep_damage_ratio:0%}</>的<$ba.dt.erosion2>侵蚀损伤</>",
+              "skillType": "AUTO",
+              "durationType": "NONE",
+              "spData": {
+                "spType": "INCREASE_WHEN_ATTACK",
+                "levelUpCost": null,
+                "maxChargeTime": 1,
+                "spCost": 3,
+                "initSp": 0,
+                "increment": 1
+              },
+              "prefabId": "skchr_clemnt_1",
+              "duration": 0,
+              "blackboard": [
+                {
+                  "key": "atk_scale",
+                  "value": 2.05,
+                  "valueStr": null
+                },
+                {
+                  "key": "ep_damage_ratio",
+                  "value": 0.25,
+                  "valueStr": null
+                }
+              ]
+            },
+            {
+              "name": "冲蚀",
+              "rangeId": null,
+              "description": "下次攻击的攻击力提高至<@ba.vup>{atk_scale:0%}</>并造成相当于物理伤害<@ba.vup>{ep_damage_ratio:0%}</>的<$ba.dt.erosion2>侵蚀损伤</>",
+              "skillType": "AUTO",
+              "durationType": "NONE",
+              "spData": {
+                "spType": "INCREASE_WHEN_ATTACK",
+                "levelUpCost": null,
+                "maxChargeTime": 1,
+                "spCost": 3,
+                "initSp": 0,
+                "increment": 1
+              },
+              "prefabId": "skchr_clemnt_1",
+              "duration": 0,
+              "blackboard": [
+                {
+                  "key": "atk_scale",
+                  "value": 2.1,
+                  "valueStr": null
+                },
+                {
+                  "key": "ep_damage_ratio",
+                  "value": 0.25,
+                  "valueStr": null
+                }
+              ]
+            },
+            {
+              "name": "冲蚀",
+              "rangeId": null,
+              "description": "下次攻击的攻击力提高至<@ba.vup>{atk_scale:0%}</>并造成相当于物理伤害<@ba.vup>{ep_damage_ratio:0%}</>的<$ba.dt.erosion2>侵蚀损伤</>",
+              "skillType": "AUTO",
+              "durationType": "NONE",
+              "spData": {
+                "spType": "INCREASE_WHEN_ATTACK",
+                "levelUpCost": null,
+                "maxChargeTime": 1,
+                "spCost": 3,
+                "initSp": 0,
+                "increment": 1
+              },
+              "prefabId": "skchr_clemnt_1",
+              "duration": 0,
+              "blackboard": [
+                {
+                  "key": "atk_scale",
+                  "value": 2.15,
+                  "valueStr": null
+                },
+                {
+                  "key": "ep_damage_ratio",
+                  "value": 0.25,
+                  "valueStr": null
+                }
+              ]
+            },
+            {
+              "name": "冲蚀",
+              "rangeId": null,
+              "description": "下次攻击的攻击力提高至<@ba.vup>{atk_scale:0%}</>并造成相当于物理伤害<@ba.vup>{ep_damage_ratio:0%}</>的<$ba.dt.erosion2>侵蚀损伤</>",
+              "skillType": "AUTO",
+              "durationType": "NONE",
+              "spData": {
+                "spType": "INCREASE_WHEN_ATTACK",
+                "levelUpCost": null,
+                "maxChargeTime": 1,
+                "spCost": 3,
+                "initSp": 0,
+                "increment": 1
+              },
+              "prefabId": "skchr_clemnt_1",
+              "duration": 0,
+              "blackboard": [
+                {
+                  "key": "atk_scale",
+                  "value": 2.25,
+                  "valueStr": null
+                },
+                {
+                  "key": "ep_damage_ratio",
+                  "value": 0.3,
+                  "valueStr": null
+                }
+              ]
+            },
+            {
+              "name": "冲蚀",
+              "rangeId": null,
+              "description": "下次攻击的攻击力提高至<@ba.vup>{atk_scale:0%}</>并造成相当于物理伤害<@ba.vup>{ep_damage_ratio:0%}</>的<$ba.dt.erosion2>侵蚀损伤</>",
+              "skillType": "AUTO",
+              "durationType": "NONE",
+              "spData": {
+                "spType": "INCREASE_WHEN_ATTACK",
+                "levelUpCost": null,
+                "maxChargeTime": 1,
+                "spCost": 2,
+                "initSp": 0,
+                "increment": 1
+              },
+              "prefabId": "skchr_clemnt_1",
+              "duration": 0,
+              "blackboard": [
+                {
+                  "key": "atk_scale",
+                  "value": 2.5,
+                  "valueStr": null
+                },
+                {
+                  "key": "ep_damage_ratio",
+                  "value": 0.3,
+                  "valueStr": null
+                }
+              ]
+            },
+            {
+              "name": "冲蚀",
+              "rangeId": null,
+              "description": "下次攻击的攻击力提高至<@ba.vup>{atk_scale:0%}</>并造成相当于物理伤害<@ba.vup>{ep_damage_ratio:0%}</>的<$ba.dt.erosion2>侵蚀损伤</>",
+              "skillType": "AUTO",
+              "durationType": "NONE",
+              "spData": {
+                "spType": "INCREASE_WHEN_ATTACK",
+                "levelUpCost": null,
+                "maxChargeTime": 1,
+                "spCost": 2,
+                "initSp": 0,
+                "increment": 1
+              },
+              "prefabId": "skchr_clemnt_1",
+              "duration": 0,
+              "blackboard": [
+                {
+                  "key": "atk_scale",
+                  "value": 2.65,
+                  "valueStr": null
+                },
+                {
+                  "key": "ep_damage_ratio",
+                  "value": 0.35,
+                  "valueStr": null
+                }
+              ]
+            },
+            {
+              "name": "冲蚀",
+              "rangeId": null,
+              "description": "下次攻击的攻击力提高至<@ba.vup>{atk_scale:0%}</>并造成相当于物理伤害<@ba.vup>{ep_damage_ratio:0%}</>的<$ba.dt.erosion2>侵蚀损伤</>",
+              "skillType": "AUTO",
+              "durationType": "NONE",
+              "spData": {
+                "spType": "INCREASE_WHEN_ATTACK",
+                "levelUpCost": null,
+                "maxChargeTime": 1,
+                "spCost": 2,
+                "initSp": 0,
+                "increment": 1
+              },
+              "prefabId": "skchr_clemnt_1",
+              "duration": 0,
+              "blackboard": [
+                {
+                  "key": "atk_scale",
+                  "value": 2.9,
+                  "valueStr": null
+                },
+                {
+                  "key": "ep_damage_ratio",
+                  "value": 0.35,
+                  "valueStr": null
+                }
+              ]
+            }
+          ]
+        },
+        "skchr_clemnt_2": {
+          "skillId": "skchr_clemnt_2",
+          "iconId": null,
+          "hidden": false,
+          "levels": [
+            {
+              "name": "风暴潮",
+              "rangeId": "4-1",
+              "description": "攻击范围<@ba.vup>扩大</>，攻击速度<@ba.vup>+{attack_speed}</>，每次攻击对目标及其周围最多<@ba.vup>5</>名地面敌人造成相当于攻击力<@ba.vup>{attack@aoe_atk_scale:0%}</>的物理伤害；向前方召唤浮游放逐舱，放逐舱使周围累计不超过<@ba.vup>{attack@max_passenger_mass}</>重量的最多<@ba.vup>15</>名地面敌人不断向前移动；放逐舱在移动3格后消失并留下漩涡，处于漩涡的所有敌人移动速度<@ba.vup>{attack@move_speed:0%}</>且每秒受到<@ba.vup>200</>点<$ba.dt.erosion2>侵蚀损伤</>和相当于攻击力<@ba.vup>{attack@physical_atk_scale:0%}</>的物理伤害",
+              "skillType": "MANUAL",
+              "durationType": "NONE",
+              "spData": {
+                "spType": "INCREASE_WITH_TIME",
+                "levelUpCost": null,
+                "maxChargeTime": 1,
+                "spCost": 25,
+                "initSp": 8,
+                "increment": 1
+              },
+              "prefabId": "skchr_clemnt_2",
+              "duration": 16,
+              "blackboard": [
+                {
+                  "key": "attack_speed",
+                  "value": 100,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@aoe_atk_scale",
+                  "value": 2,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@max_passenger_mass",
+                  "value": 8,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@max_passenger_cnt",
+                  "value": 15,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@move_speed",
+                  "value": -0.7,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@water_element",
+                  "value": 200,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@physical_atk_scale",
+                  "value": 2.5,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@max_target",
+                  "value": 5,
+                  "valueStr": null
+                }
+              ]
+            },
+            {
+              "name": "风暴潮",
+              "rangeId": "4-1",
+              "description": "攻击范围<@ba.vup>扩大</>，攻击速度<@ba.vup>+{attack_speed}</>，每次攻击对目标及其周围最多<@ba.vup>5</>名地面敌人造成相当于攻击力<@ba.vup>{attack@aoe_atk_scale:0%}</>的物理伤害；向前方召唤浮游放逐舱，放逐舱使周围累计不超过<@ba.vup>{attack@max_passenger_mass}</>重量的最多<@ba.vup>15</>名地面敌人不断向前移动；放逐舱在移动3格后消失并留下漩涡，处于漩涡的所有敌人移动速度<@ba.vup>{attack@move_speed:0%}</>且每秒受到<@ba.vup>200</>点<$ba.dt.erosion2>侵蚀损伤</>和相当于攻击力<@ba.vup>{attack@physical_atk_scale:0%}</>的物理伤害",
+              "skillType": "MANUAL",
+              "durationType": "NONE",
+              "spData": {
+                "spType": "INCREASE_WITH_TIME",
+                "levelUpCost": null,
+                "maxChargeTime": 1,
+                "spCost": 25,
+                "initSp": 8,
+                "increment": 1
+              },
+              "prefabId": "skchr_clemnt_2",
+              "duration": 16,
+              "blackboard": [
+                {
+                  "key": "attack_speed",
+                  "value": 100,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@aoe_atk_scale",
+                  "value": 2,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@max_passenger_mass",
+                  "value": 8,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@max_passenger_cnt",
+                  "value": 15,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@move_speed",
+                  "value": -0.7,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@water_element",
+                  "value": 200,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@physical_atk_scale",
+                  "value": 2.55,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@max_target",
+                  "value": 5,
+                  "valueStr": null
+                }
+              ]
+            },
+            {
+              "name": "风暴潮",
+              "rangeId": "4-1",
+              "description": "攻击范围<@ba.vup>扩大</>，攻击速度<@ba.vup>+{attack_speed}</>，每次攻击对目标及其周围最多<@ba.vup>5</>名地面敌人造成相当于攻击力<@ba.vup>{attack@aoe_atk_scale:0%}</>的物理伤害；向前方召唤浮游放逐舱，放逐舱使周围累计不超过<@ba.vup>{attack@max_passenger_mass}</>重量的最多<@ba.vup>15</>名地面敌人不断向前移动；放逐舱在移动3格后消失并留下漩涡，处于漩涡的所有敌人移动速度<@ba.vup>{attack@move_speed:0%}</>且每秒受到<@ba.vup>200</>点<$ba.dt.erosion2>侵蚀损伤</>和相当于攻击力<@ba.vup>{attack@physical_atk_scale:0%}</>的物理伤害",
+              "skillType": "MANUAL",
+              "durationType": "NONE",
+              "spData": {
+                "spType": "INCREASE_WITH_TIME",
+                "levelUpCost": null,
+                "maxChargeTime": 1,
+                "spCost": 25,
+                "initSp": 8,
+                "increment": 1
+              },
+              "prefabId": "skchr_clemnt_2",
+              "duration": 16,
+              "blackboard": [
+                {
+                  "key": "attack_speed",
+                  "value": 100,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@aoe_atk_scale",
+                  "value": 2,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@max_passenger_mass",
+                  "value": 8,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@max_passenger_cnt",
+                  "value": 15,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@move_speed",
+                  "value": -0.7,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@water_element",
+                  "value": 200,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@physical_atk_scale",
+                  "value": 2.6,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@max_target",
+                  "value": 5,
+                  "valueStr": null
+                }
+              ]
+            },
+            {
+              "name": "风暴潮",
+              "rangeId": "4-1",
+              "description": "攻击范围<@ba.vup>扩大</>，攻击速度<@ba.vup>+{attack_speed}</>，每次攻击对目标及其周围最多<@ba.vup>5</>名地面敌人造成相当于攻击力<@ba.vup>{attack@aoe_atk_scale:0%}</>的物理伤害；向前方召唤浮游放逐舱，放逐舱使周围累计不超过<@ba.vup>{attack@max_passenger_mass}</>重量的最多<@ba.vup>15</>名地面敌人不断向前移动；放逐舱在移动3格后消失并留下漩涡，处于漩涡的所有敌人移动速度<@ba.vup>{attack@move_speed:0%}</>且每秒受到<@ba.vup>200</>点<$ba.dt.erosion2>侵蚀损伤</>和相当于攻击力<@ba.vup>{attack@physical_atk_scale:0%}</>的物理伤害",
+              "skillType": "MANUAL",
+              "durationType": "NONE",
+              "spData": {
+                "spType": "INCREASE_WITH_TIME",
+                "levelUpCost": null,
+                "maxChargeTime": 1,
+                "spCost": 22,
+                "initSp": 9,
+                "increment": 1
+              },
+              "prefabId": "skchr_clemnt_2",
+              "duration": 16,
+              "blackboard": [
+                {
+                  "key": "attack_speed",
+                  "value": 100,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@aoe_atk_scale",
+                  "value": 2.2,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@max_passenger_mass",
+                  "value": 8,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@max_passenger_cnt",
+                  "value": 15,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@move_speed",
+                  "value": -0.7,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@water_element",
+                  "value": 200,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@physical_atk_scale",
+                  "value": 2.65,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@max_target",
+                  "value": 5,
+                  "valueStr": null
+                }
+              ]
+            },
+            {
+              "name": "风暴潮",
+              "rangeId": "4-1",
+              "description": "攻击范围<@ba.vup>扩大</>，攻击速度<@ba.vup>+{attack_speed}</>，每次攻击对目标及其周围最多<@ba.vup>5</>名地面敌人造成相当于攻击力<@ba.vup>{attack@aoe_atk_scale:0%}</>的物理伤害；向前方召唤浮游放逐舱，放逐舱使周围累计不超过<@ba.vup>{attack@max_passenger_mass}</>重量的最多<@ba.vup>15</>名地面敌人不断向前移动；放逐舱在移动3格后消失并留下漩涡，处于漩涡的所有敌人移动速度<@ba.vup>{attack@move_speed:0%}</>且每秒受到<@ba.vup>200</>点<$ba.dt.erosion2>侵蚀损伤</>和相当于攻击力<@ba.vup>{attack@physical_atk_scale:0%}</>的物理伤害",
+              "skillType": "MANUAL",
+              "durationType": "NONE",
+              "spData": {
+                "spType": "INCREASE_WITH_TIME",
+                "levelUpCost": null,
+                "maxChargeTime": 1,
+                "spCost": 22,
+                "initSp": 9,
+                "increment": 1
+              },
+              "prefabId": "skchr_clemnt_2",
+              "duration": 16,
+              "blackboard": [
+                {
+                  "key": "attack_speed",
+                  "value": 100,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@aoe_atk_scale",
+                  "value": 2.2,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@max_passenger_mass",
+                  "value": 8,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@max_passenger_cnt",
+                  "value": 15,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@move_speed",
+                  "value": -0.7,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@water_element",
+                  "value": 200,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@physical_atk_scale",
+                  "value": 2.7,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@max_target",
+                  "value": 5,
+                  "valueStr": null
+                }
+              ]
+            },
+            {
+              "name": "风暴潮",
+              "rangeId": "4-1",
+              "description": "攻击范围<@ba.vup>扩大</>，攻击速度<@ba.vup>+{attack_speed}</>，每次攻击对目标及其周围最多<@ba.vup>5</>名地面敌人造成相当于攻击力<@ba.vup>{attack@aoe_atk_scale:0%}</>的物理伤害；向前方召唤浮游放逐舱，放逐舱使周围累计不超过<@ba.vup>{attack@max_passenger_mass}</>重量的最多<@ba.vup>15</>名地面敌人不断向前移动；放逐舱在移动3格后消失并留下漩涡，处于漩涡的所有敌人移动速度<@ba.vup>{attack@move_speed:0%}</>且每秒受到<@ba.vup>200</>点<$ba.dt.erosion2>侵蚀损伤</>和相当于攻击力<@ba.vup>{attack@physical_atk_scale:0%}</>的物理伤害",
+              "skillType": "MANUAL",
+              "durationType": "NONE",
+              "spData": {
+                "spType": "INCREASE_WITH_TIME",
+                "levelUpCost": null,
+                "maxChargeTime": 1,
+                "spCost": 22,
+                "initSp": 9,
+                "increment": 1
+              },
+              "prefabId": "skchr_clemnt_2",
+              "duration": 16,
+              "blackboard": [
+                {
+                  "key": "attack_speed",
+                  "value": 100,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@aoe_atk_scale",
+                  "value": 2.2,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@max_passenger_mass",
+                  "value": 8,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@max_passenger_cnt",
+                  "value": 15,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@move_speed",
+                  "value": -0.7,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@water_element",
+                  "value": 200,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@physical_atk_scale",
+                  "value": 2.8,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@max_target",
+                  "value": 5,
+                  "valueStr": null
+                }
+              ]
+            },
+            {
+              "name": "风暴潮",
+              "rangeId": "4-1",
+              "description": "攻击范围<@ba.vup>扩大</>，攻击速度<@ba.vup>+{attack_speed}</>，每次攻击对目标及其周围最多<@ba.vup>5</>名地面敌人造成相当于攻击力<@ba.vup>{attack@aoe_atk_scale:0%}</>的物理伤害；向前方召唤浮游放逐舱，放逐舱使周围累计不超过<@ba.vup>{attack@max_passenger_mass}</>重量的最多<@ba.vup>15</>名地面敌人不断向前移动；放逐舱在移动3格后消失并留下漩涡，处于漩涡的所有敌人移动速度<@ba.vup>{attack@move_speed:0%}</>且每秒受到<@ba.vup>200</>点<$ba.dt.erosion2>侵蚀损伤</>和相当于攻击力<@ba.vup>{attack@physical_atk_scale:0%}</>的物理伤害",
+              "skillType": "MANUAL",
+              "durationType": "NONE",
+              "spData": {
+                "spType": "INCREASE_WITH_TIME",
+                "levelUpCost": null,
+                "maxChargeTime": 1,
+                "spCost": 20,
+                "initSp": 12,
+                "increment": 1
+              },
+              "prefabId": "skchr_clemnt_2",
+              "duration": 16,
+              "blackboard": [
+                {
+                  "key": "attack_speed",
+                  "value": 100,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@aoe_atk_scale",
+                  "value": 2.3,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@max_passenger_mass",
+                  "value": 8,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@max_passenger_cnt",
+                  "value": 15,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@move_speed",
+                  "value": -0.7,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@water_element",
+                  "value": 200,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@physical_atk_scale",
+                  "value": 2.85,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@max_target",
+                  "value": 5,
+                  "valueStr": null
+                }
+              ]
+            },
+            {
+              "name": "风暴潮",
+              "rangeId": "4-1",
+              "description": "攻击范围<@ba.vup>扩大</>，攻击速度<@ba.vup>+{attack_speed}</>，每次攻击对目标及其周围最多<@ba.vup>5</>名地面敌人造成相当于攻击力<@ba.vup>{attack@aoe_atk_scale:0%}</>的物理伤害；向前方召唤浮游放逐舱，放逐舱使周围累计不超过<@ba.vup>{attack@max_passenger_mass}</>重量的最多<@ba.vup>15</>名地面敌人不断向前移动；放逐舱在移动3格后消失并留下漩涡，处于漩涡的所有敌人移动速度<@ba.vup>{attack@move_speed:0%}</>且每秒受到<@ba.vup>200</>点<$ba.dt.erosion2>侵蚀损伤</>和相当于攻击力<@ba.vup>{attack@physical_atk_scale:0%}</>的物理伤害",
+              "skillType": "MANUAL",
+              "durationType": "NONE",
+              "spData": {
+                "spType": "INCREASE_WITH_TIME",
+                "levelUpCost": null,
+                "maxChargeTime": 1,
+                "spCost": 20,
+                "initSp": 13,
+                "increment": 1
+              },
+              "prefabId": "skchr_clemnt_2",
+              "duration": 16,
+              "blackboard": [
+                {
+                  "key": "attack_speed",
+                  "value": 100,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@aoe_atk_scale",
+                  "value": 2.3,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@max_passenger_mass",
+                  "value": 8,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@max_passenger_cnt",
+                  "value": 15,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@move_speed",
+                  "value": -0.7,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@water_element",
+                  "value": 200,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@physical_atk_scale",
+                  "value": 2.9,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@max_target",
+                  "value": 5,
+                  "valueStr": null
+                }
+              ]
+            },
+            {
+              "name": "风暴潮",
+              "rangeId": "4-1",
+              "description": "攻击范围<@ba.vup>扩大</>，攻击速度<@ba.vup>+{attack_speed}</>，每次攻击对目标及其周围最多<@ba.vup>5</>名地面敌人造成相当于攻击力<@ba.vup>{attack@aoe_atk_scale:0%}</>的物理伤害；向前方召唤浮游放逐舱，放逐舱使周围累计不超过<@ba.vup>{attack@max_passenger_mass}</>重量的最多<@ba.vup>15</>名地面敌人不断向前移动；放逐舱在移动3格后消失并留下漩涡，处于漩涡的所有敌人移动速度<@ba.vup>{attack@move_speed:0%}</>且每秒受到<@ba.vup>200</>点<$ba.dt.erosion2>侵蚀损伤</>和相当于攻击力<@ba.vup>{attack@physical_atk_scale:0%}</>的物理伤害",
+              "skillType": "MANUAL",
+              "durationType": "NONE",
+              "spData": {
+                "spType": "INCREASE_WITH_TIME",
+                "levelUpCost": null,
+                "maxChargeTime": 1,
+                "spCost": 20,
+                "initSp": 13,
+                "increment": 1
+              },
+              "prefabId": "skchr_clemnt_2",
+              "duration": 16,
+              "blackboard": [
+                {
+                  "key": "attack_speed",
+                  "value": 100,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@aoe_atk_scale",
+                  "value": 2.35,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@max_passenger_mass",
+                  "value": 8,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@max_passenger_cnt",
+                  "value": 15,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@move_speed",
+                  "value": -0.7,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@water_element",
+                  "value": 200,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@physical_atk_scale",
+                  "value": 2.95,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@max_target",
+                  "value": 5,
+                  "valueStr": null
+                }
+              ]
+            },
+            {
+              "name": "风暴潮",
+              "rangeId": "4-1",
+              "description": "攻击范围<@ba.vup>扩大</>，攻击速度<@ba.vup>+{attack_speed}</>，每次攻击对目标及其周围最多<@ba.vup>5</>名地面敌人造成相当于攻击力<@ba.vup>{attack@aoe_atk_scale:0%}</>的物理伤害；向前方召唤浮游放逐舱，放逐舱使周围累计不超过<@ba.vup>{attack@max_passenger_mass}</>重量的最多<@ba.vup>15</>名地面敌人不断向前移动；放逐舱在移动3格后消失并留下漩涡，处于漩涡的所有敌人移动速度<@ba.vup>{attack@move_speed:0%}</>且每秒受到<@ba.vup>200</>点<$ba.dt.erosion2>侵蚀损伤</>和相当于攻击力<@ba.vup>{attack@physical_atk_scale:0%}</>的物理伤害",
+              "skillType": "MANUAL",
+              "durationType": "NONE",
+              "spData": {
+                "spType": "INCREASE_WITH_TIME",
+                "levelUpCost": null,
+                "maxChargeTime": 1,
+                "spCost": 20,
+                "initSp": 15,
+                "increment": 1
+              },
+              "prefabId": "skchr_clemnt_2",
+              "duration": 16,
+              "blackboard": [
+                {
+                  "key": "attack_speed",
+                  "value": 100,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@aoe_atk_scale",
+                  "value": 2.5,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@max_passenger_mass",
+                  "value": 8,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@max_passenger_cnt",
+                  "value": 15,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@move_speed",
+                  "value": -0.7,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@water_element",
+                  "value": 200,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@physical_atk_scale",
+                  "value": 3,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@max_target",
+                  "value": 5,
+                  "valueStr": null
+                }
+              ]
+            }
+          ]
+        },
+        "skchr_clemnt_3": {
+          "skillId": "skchr_clemnt_3",
+          "iconId": null,
+          "hidden": false,
+          "levels": [
+            {
+              "name": "与海为敌",
+              "rangeId": "3-2",
+              "description": "攻击范围<@ba.vup>扩大</>，攻击目标数<@ba.vup>+2</>，每次攻击对目标造成相当于攻击力<@ba.vup>{attack@atk_scale:0%}</>的物理伤害并额外造成相当于物理伤害<@ba.vup>{attack@ep_damage_ratio:0%}</>的<$ba.dt.erosion2>侵蚀损伤</>；当全场有敌人<$ba.dt.erosion2>侵蚀损伤</>爆发时，消耗1发弹药对目标所在位置及其周围四格内所有地面敌人造成<@ba.vup>3</>次相当于攻击力<@ba.vup>{s3_atk_scale:0%}</>的物理伤害与相当于攻击力<@ba.vup>{ep_damage_scale:0%}</>的元素伤害\\n<@ba.rem>技能装有{trigger_time}发弹药，打完后结束（可随时停止技能）</>",
+              "skillType": "MANUAL",
+              "durationType": "AMMO",
+              "spData": {
+                "spType": "INCREASE_WITH_TIME",
+                "levelUpCost": null,
+                "maxChargeTime": 1,
+                "spCost": 60,
+                "initSp": 25,
+                "increment": 1
+              },
+              "prefabId": "skchr_clemnt_3",
+              "duration": 0,
+              "blackboard": [
+                {
+                  "key": "attack@max_target",
+                  "value": 3,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@atk_scale",
+                  "value": 1.5,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@ep_damage_ratio",
+                  "value": 0.2,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@ep_break_duration",
+                  "value": 1,
+                  "valueStr": null
+                },
+                {
+                  "key": "projectile_life_time",
+                  "value": 5,
+                  "valueStr": null
+                },
+                {
+                  "key": "s3_atk_scale",
+                  "value": 2,
+                  "valueStr": null
+                },
+                {
+                  "key": "ep_damage_scale",
+                  "value": 1.5,
+                  "valueStr": null
+                },
+                {
+                  "key": "trigger_time",
+                  "value": 10,
+                  "valueStr": null
+                },
+                {
+                  "key": "audio_trigger_cnt",
+                  "value": 3,
+                  "valueStr": null
+                },
+                {
+                  "key": "ep_break_duration",
+                  "value": 1,
+                  "valueStr": null
+                }
+              ]
+            },
+            {
+              "name": "与海为敌",
+              "rangeId": "3-2",
+              "description": "攻击范围<@ba.vup>扩大</>，攻击目标数<@ba.vup>+2</>，每次攻击对目标造成相当于攻击力<@ba.vup>{attack@atk_scale:0%}</>的物理伤害并额外造成相当于物理伤害<@ba.vup>{attack@ep_damage_ratio:0%}</>的<$ba.dt.erosion2>侵蚀损伤</>；当全场有敌人<$ba.dt.erosion2>侵蚀损伤</>爆发时，消耗1发弹药对目标所在位置及其周围四格内所有地面敌人造成<@ba.vup>3</>次相当于攻击力<@ba.vup>{s3_atk_scale:0%}</>的物理伤害与相当于攻击力<@ba.vup>{ep_damage_scale:0%}</>的元素伤害\\n<@ba.rem>技能装有{trigger_time}发弹药，打完后结束（可随时停止技能）</>",
+              "skillType": "MANUAL",
+              "durationType": "AMMO",
+              "spData": {
+                "spType": "INCREASE_WITH_TIME",
+                "levelUpCost": null,
+                "maxChargeTime": 1,
+                "spCost": 60,
+                "initSp": 25,
+                "increment": 1
+              },
+              "prefabId": "skchr_clemnt_3",
+              "duration": 0,
+              "blackboard": [
+                {
+                  "key": "attack@max_target",
+                  "value": 3,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@atk_scale",
+                  "value": 1.6,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@ep_damage_ratio",
+                  "value": 0.2,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@ep_break_duration",
+                  "value": 1,
+                  "valueStr": null
+                },
+                {
+                  "key": "projectile_life_time",
+                  "value": 5,
+                  "valueStr": null
+                },
+                {
+                  "key": "s3_atk_scale",
+                  "value": 2,
+                  "valueStr": null
+                },
+                {
+                  "key": "ep_damage_scale",
+                  "value": 1.5,
+                  "valueStr": null
+                },
+                {
+                  "key": "trigger_time",
+                  "value": 10,
+                  "valueStr": null
+                },
+                {
+                  "key": "audio_trigger_cnt",
+                  "value": 3,
+                  "valueStr": null
+                },
+                {
+                  "key": "ep_break_duration",
+                  "value": 1,
+                  "valueStr": null
+                }
+              ]
+            },
+            {
+              "name": "与海为敌",
+              "rangeId": "3-2",
+              "description": "攻击范围<@ba.vup>扩大</>，攻击目标数<@ba.vup>+2</>，每次攻击对目标造成相当于攻击力<@ba.vup>{attack@atk_scale:0%}</>的物理伤害并额外造成相当于物理伤害<@ba.vup>{attack@ep_damage_ratio:0%}</>的<$ba.dt.erosion2>侵蚀损伤</>；当全场有敌人<$ba.dt.erosion2>侵蚀损伤</>爆发时，消耗1发弹药对目标所在位置及其周围四格内所有地面敌人造成<@ba.vup>3</>次相当于攻击力<@ba.vup>{s3_atk_scale:0%}</>的物理伤害与相当于攻击力<@ba.vup>{ep_damage_scale:0%}</>的元素伤害\\n<@ba.rem>技能装有{trigger_time}发弹药，打完后结束（可随时停止技能）</>",
+              "skillType": "MANUAL",
+              "durationType": "AMMO",
+              "spData": {
+                "spType": "INCREASE_WITH_TIME",
+                "levelUpCost": null,
+                "maxChargeTime": 1,
+                "spCost": 60,
+                "initSp": 25,
+                "increment": 1
+              },
+              "prefabId": "skchr_clemnt_3",
+              "duration": 0,
+              "blackboard": [
+                {
+                  "key": "attack@max_target",
+                  "value": 3,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@atk_scale",
+                  "value": 1.7,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@ep_damage_ratio",
+                  "value": 0.2,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@ep_break_duration",
+                  "value": 1,
+                  "valueStr": null
+                },
+                {
+                  "key": "projectile_life_time",
+                  "value": 5,
+                  "valueStr": null
+                },
+                {
+                  "key": "s3_atk_scale",
+                  "value": 2.3,
+                  "valueStr": null
+                },
+                {
+                  "key": "ep_damage_scale",
+                  "value": 1.5,
+                  "valueStr": null
+                },
+                {
+                  "key": "trigger_time",
+                  "value": 10,
+                  "valueStr": null
+                },
+                {
+                  "key": "audio_trigger_cnt",
+                  "value": 3,
+                  "valueStr": null
+                },
+                {
+                  "key": "ep_break_duration",
+                  "value": 1,
+                  "valueStr": null
+                }
+              ]
+            },
+            {
+              "name": "与海为敌",
+              "rangeId": "3-2",
+              "description": "攻击范围<@ba.vup>扩大</>，攻击目标数<@ba.vup>+2</>，每次攻击对目标造成相当于攻击力<@ba.vup>{attack@atk_scale:0%}</>的物理伤害并额外造成相当于物理伤害<@ba.vup>{attack@ep_damage_ratio:0%}</>的<$ba.dt.erosion2>侵蚀损伤</>；当全场有敌人<$ba.dt.erosion2>侵蚀损伤</>爆发时，消耗1发弹药对目标所在位置及其周围四格内所有地面敌人造成<@ba.vup>3</>次相当于攻击力<@ba.vup>{s3_atk_scale:0%}</>的物理伤害与相当于攻击力<@ba.vup>{ep_damage_scale:0%}</>的元素伤害\\n<@ba.rem>技能装有{trigger_time}发弹药，打完后结束（可随时停止技能）</>",
+              "skillType": "MANUAL",
+              "durationType": "AMMO",
+              "spData": {
+                "spType": "INCREASE_WITH_TIME",
+                "levelUpCost": null,
+                "maxChargeTime": 1,
+                "spCost": 58,
+                "initSp": 27,
+                "increment": 1
+              },
+              "prefabId": "skchr_clemnt_3",
+              "duration": 0,
+              "blackboard": [
+                {
+                  "key": "attack@max_target",
+                  "value": 3,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@atk_scale",
+                  "value": 1.8,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@ep_damage_ratio",
+                  "value": 0.2,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@ep_break_duration",
+                  "value": 1,
+                  "valueStr": null
+                },
+                {
+                  "key": "projectile_life_time",
+                  "value": 5,
+                  "valueStr": null
+                },
+                {
+                  "key": "s3_atk_scale",
+                  "value": 2.5,
+                  "valueStr": null
+                },
+                {
+                  "key": "ep_damage_scale",
+                  "value": 1.8,
+                  "valueStr": null
+                },
+                {
+                  "key": "trigger_time",
+                  "value": 10,
+                  "valueStr": null
+                },
+                {
+                  "key": "audio_trigger_cnt",
+                  "value": 3,
+                  "valueStr": null
+                },
+                {
+                  "key": "ep_break_duration",
+                  "value": 1,
+                  "valueStr": null
+                }
+              ]
+            },
+            {
+              "name": "与海为敌",
+              "rangeId": "3-2",
+              "description": "攻击范围<@ba.vup>扩大</>，攻击目标数<@ba.vup>+2</>，每次攻击对目标造成相当于攻击力<@ba.vup>{attack@atk_scale:0%}</>的物理伤害并额外造成相当于物理伤害<@ba.vup>{attack@ep_damage_ratio:0%}</>的<$ba.dt.erosion2>侵蚀损伤</>；当全场有敌人<$ba.dt.erosion2>侵蚀损伤</>爆发时，消耗1发弹药对目标所在位置及其周围四格内所有地面敌人造成<@ba.vup>3</>次相当于攻击力<@ba.vup>{s3_atk_scale:0%}</>的物理伤害与相当于攻击力<@ba.vup>{ep_damage_scale:0%}</>的元素伤害\\n<@ba.rem>技能装有{trigger_time}发弹药，打完后结束（可随时停止技能）</>",
+              "skillType": "MANUAL",
+              "durationType": "AMMO",
+              "spData": {
+                "spType": "INCREASE_WITH_TIME",
+                "levelUpCost": null,
+                "maxChargeTime": 1,
+                "spCost": 55,
+                "initSp": 27,
+                "increment": 1
+              },
+              "prefabId": "skchr_clemnt_3",
+              "duration": 0,
+              "blackboard": [
+                {
+                  "key": "attack@max_target",
+                  "value": 3,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@atk_scale",
+                  "value": 1.85,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@ep_damage_ratio",
+                  "value": 0.2,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@ep_break_duration",
+                  "value": 1,
+                  "valueStr": null
+                },
+                {
+                  "key": "projectile_life_time",
+                  "value": 5,
+                  "valueStr": null
+                },
+                {
+                  "key": "s3_atk_scale",
+                  "value": 2.5,
+                  "valueStr": null
+                },
+                {
+                  "key": "ep_damage_scale",
+                  "value": 1.8,
+                  "valueStr": null
+                },
+                {
+                  "key": "trigger_time",
+                  "value": 10,
+                  "valueStr": null
+                },
+                {
+                  "key": "audio_trigger_cnt",
+                  "value": 3,
+                  "valueStr": null
+                },
+                {
+                  "key": "ep_break_duration",
+                  "value": 1,
+                  "valueStr": null
+                }
+              ]
+            },
+            {
+              "name": "与海为敌",
+              "rangeId": "3-2",
+              "description": "攻击范围<@ba.vup>扩大</>，攻击目标数<@ba.vup>+2</>，每次攻击对目标造成相当于攻击力<@ba.vup>{attack@atk_scale:0%}</>的物理伤害并额外造成相当于物理伤害<@ba.vup>{attack@ep_damage_ratio:0%}</>的<$ba.dt.erosion2>侵蚀损伤</>；当全场有敌人<$ba.dt.erosion2>侵蚀损伤</>爆发时，消耗1发弹药对目标所在位置及其周围四格内所有地面敌人造成<@ba.vup>3</>次相当于攻击力<@ba.vup>{s3_atk_scale:0%}</>的物理伤害与相当于攻击力<@ba.vup>{ep_damage_scale:0%}</>的元素伤害\\n<@ba.rem>技能装有{trigger_time}发弹药，打完后结束（可随时停止技能）</>",
+              "skillType": "MANUAL",
+              "durationType": "AMMO",
+              "spData": {
+                "spType": "INCREASE_WITH_TIME",
+                "levelUpCost": null,
+                "maxChargeTime": 1,
+                "spCost": 50,
+                "initSp": 27,
+                "increment": 1
+              },
+              "prefabId": "skchr_clemnt_3",
+              "duration": 0,
+              "blackboard": [
+                {
+                  "key": "attack@max_target",
+                  "value": 3,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@atk_scale",
+                  "value": 1.9,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@ep_damage_ratio",
+                  "value": 0.2,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@ep_break_duration",
+                  "value": 1,
+                  "valueStr": null
+                },
+                {
+                  "key": "projectile_life_time",
+                  "value": 5,
+                  "valueStr": null
+                },
+                {
+                  "key": "s3_atk_scale",
+                  "value": 2.5,
+                  "valueStr": null
+                },
+                {
+                  "key": "ep_damage_scale",
+                  "value": 1.8,
+                  "valueStr": null
+                },
+                {
+                  "key": "trigger_time",
+                  "value": 10,
+                  "valueStr": null
+                },
+                {
+                  "key": "audio_trigger_cnt",
+                  "value": 3,
+                  "valueStr": null
+                },
+                {
+                  "key": "ep_break_duration",
+                  "value": 1,
+                  "valueStr": null
+                }
+              ]
+            },
+            {
+              "name": "与海为敌",
+              "rangeId": "3-2",
+              "description": "攻击范围<@ba.vup>扩大</>，攻击目标数<@ba.vup>+2</>，每次攻击对目标造成相当于攻击力<@ba.vup>{attack@atk_scale:0%}</>的物理伤害并额外造成相当于物理伤害<@ba.vup>{attack@ep_damage_ratio:0%}</>的<$ba.dt.erosion2>侵蚀损伤</>；当全场有敌人<$ba.dt.erosion2>侵蚀损伤</>爆发时，消耗1发弹药对目标所在位置及其周围四格内所有地面敌人造成<@ba.vup>3</>次相当于攻击力<@ba.vup>{s3_atk_scale:0%}</>的物理伤害与相当于攻击力<@ba.vup>{ep_damage_scale:0%}</>的元素伤害\\n<@ba.rem>技能装有{trigger_time}发弹药，打完后结束（可随时停止技能）</>",
+              "skillType": "MANUAL",
+              "durationType": "AMMO",
+              "spData": {
+                "spType": "INCREASE_WITH_TIME",
+                "levelUpCost": null,
+                "maxChargeTime": 1,
+                "spCost": 45,
+                "initSp": 28,
+                "increment": 1
+              },
+              "prefabId": "skchr_clemnt_3",
+              "duration": 0,
+              "blackboard": [
+                {
+                  "key": "attack@max_target",
+                  "value": 3,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@atk_scale",
+                  "value": 2,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@ep_damage_ratio",
+                  "value": 0.2,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@ep_break_duration",
+                  "value": 1,
+                  "valueStr": null
+                },
+                {
+                  "key": "projectile_life_time",
+                  "value": 5,
+                  "valueStr": null
+                },
+                {
+                  "key": "s3_atk_scale",
+                  "value": 2.7,
+                  "valueStr": null
+                },
+                {
+                  "key": "ep_damage_scale",
+                  "value": 2,
+                  "valueStr": null
+                },
+                {
+                  "key": "trigger_time",
+                  "value": 10,
+                  "valueStr": null
+                },
+                {
+                  "key": "audio_trigger_cnt",
+                  "value": 3,
+                  "valueStr": null
+                },
+                {
+                  "key": "ep_break_duration",
+                  "value": 1,
+                  "valueStr": null
+                }
+              ]
+            },
+            {
+              "name": "与海为敌",
+              "rangeId": "3-2",
+              "description": "攻击范围<@ba.vup>扩大</>，攻击目标数<@ba.vup>+2</>，每次攻击对目标造成相当于攻击力<@ba.vup>{attack@atk_scale:0%}</>的物理伤害并额外造成相当于物理伤害<@ba.vup>{attack@ep_damage_ratio:0%}</>的<$ba.dt.erosion2>侵蚀损伤</>；当全场有敌人<$ba.dt.erosion2>侵蚀损伤</>爆发时，消耗1发弹药对目标所在位置及其周围四格内所有地面敌人造成<@ba.vup>3</>次相当于攻击力<@ba.vup>{s3_atk_scale:0%}</>的物理伤害与相当于攻击力<@ba.vup>{ep_damage_scale:0%}</>的元素伤害\\n<@ba.rem>技能装有{trigger_time}发弹药，打完后结束（可随时停止技能）</>",
+              "skillType": "MANUAL",
+              "durationType": "AMMO",
+              "spData": {
+                "spType": "INCREASE_WITH_TIME",
+                "levelUpCost": null,
+                "maxChargeTime": 1,
+                "spCost": 45,
+                "initSp": 29,
+                "increment": 1
+              },
+              "prefabId": "skchr_clemnt_3",
+              "duration": 0,
+              "blackboard": [
+                {
+                  "key": "attack@max_target",
+                  "value": 3,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@atk_scale",
+                  "value": 2.2,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@ep_damage_ratio",
+                  "value": 0.2,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@ep_break_duration",
+                  "value": 1,
+                  "valueStr": null
+                },
+                {
+                  "key": "projectile_life_time",
+                  "value": 5,
+                  "valueStr": null
+                },
+                {
+                  "key": "s3_atk_scale",
+                  "value": 2.8,
+                  "valueStr": null
+                },
+                {
+                  "key": "ep_damage_scale",
+                  "value": 2.1,
+                  "valueStr": null
+                },
+                {
+                  "key": "trigger_time",
+                  "value": 10,
+                  "valueStr": null
+                },
+                {
+                  "key": "audio_trigger_cnt",
+                  "value": 3,
+                  "valueStr": null
+                },
+                {
+                  "key": "ep_break_duration",
+                  "value": 1,
+                  "valueStr": null
+                }
+              ]
+            },
+            {
+              "name": "与海为敌",
+              "rangeId": "3-2",
+              "description": "攻击范围<@ba.vup>扩大</>，攻击目标数<@ba.vup>+2</>，每次攻击对目标造成相当于攻击力<@ba.vup>{attack@atk_scale:0%}</>的物理伤害并额外造成相当于物理伤害<@ba.vup>{attack@ep_damage_ratio:0%}</>的<$ba.dt.erosion2>侵蚀损伤</>；当全场有敌人<$ba.dt.erosion2>侵蚀损伤</>爆发时，消耗1发弹药对目标所在位置及其周围四格内所有地面敌人造成<@ba.vup>3</>次相当于攻击力<@ba.vup>{s3_atk_scale:0%}</>的物理伤害与相当于攻击力<@ba.vup>{ep_damage_scale:0%}</>的元素伤害\\n<@ba.rem>技能装有{trigger_time}发弹药，打完后结束（可随时停止技能）</>",
+              "skillType": "MANUAL",
+              "durationType": "AMMO",
+              "spData": {
+                "spType": "INCREASE_WITH_TIME",
+                "levelUpCost": null,
+                "maxChargeTime": 1,
+                "spCost": 45,
+                "initSp": 30,
+                "increment": 1
+              },
+              "prefabId": "skchr_clemnt_3",
+              "duration": 0,
+              "blackboard": [
+                {
+                  "key": "attack@max_target",
+                  "value": 3,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@atk_scale",
+                  "value": 2.3,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@ep_damage_ratio",
+                  "value": 0.2,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@ep_break_duration",
+                  "value": 1,
+                  "valueStr": null
+                },
+                {
+                  "key": "projectile_life_time",
+                  "value": 5,
+                  "valueStr": null
+                },
+                {
+                  "key": "s3_atk_scale",
+                  "value": 2.9,
+                  "valueStr": null
+                },
+                {
+                  "key": "ep_damage_scale",
+                  "value": 2.3,
+                  "valueStr": null
+                },
+                {
+                  "key": "trigger_time",
+                  "value": 10,
+                  "valueStr": null
+                },
+                {
+                  "key": "audio_trigger_cnt",
+                  "value": 3,
+                  "valueStr": null
+                },
+                {
+                  "key": "ep_break_duration",
+                  "value": 1,
+                  "valueStr": null
+                }
+              ]
+            },
+            {
+              "name": "与海为敌",
+              "rangeId": "3-2",
+              "description": "攻击范围<@ba.vup>扩大</>，攻击目标数<@ba.vup>+2</>，每次攻击对目标造成相当于攻击力<@ba.vup>{attack@atk_scale:0%}</>的物理伤害并额外造成相当于物理伤害<@ba.vup>{attack@ep_damage_ratio:0%}</>的<$ba.dt.erosion2>侵蚀损伤</>；当全场有敌人<$ba.dt.erosion2>侵蚀损伤</>爆发时，消耗1发弹药对目标所在位置及其周围四格内所有地面敌人造成<@ba.vup>3</>次相当于攻击力<@ba.vup>{s3_atk_scale:0%}</>的物理伤害与相当于攻击力<@ba.vup>{ep_damage_scale:0%}</>的元素伤害\\n<@ba.rem>技能装有{trigger_time}发弹药，打完后结束（可随时停止技能）</>",
+              "skillType": "MANUAL",
+              "durationType": "AMMO",
+              "spData": {
+                "spType": "INCREASE_WITH_TIME",
+                "levelUpCost": null,
+                "maxChargeTime": 1,
+                "spCost": 42,
+                "initSp": 30,
+                "increment": 1
+              },
+              "prefabId": "skchr_clemnt_3",
+              "duration": 0,
+              "blackboard": [
+                {
+                  "key": "attack@max_target",
+                  "value": 3,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@atk_scale",
+                  "value": 2.35,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@ep_damage_ratio",
+                  "value": 0.2,
+                  "valueStr": null
+                },
+                {
+                  "key": "attack@ep_break_duration",
+                  "value": 1,
+                  "valueStr": null
+                },
+                {
+                  "key": "projectile_life_time",
+                  "value": 5,
+                  "valueStr": null
+                },
+                {
+                  "key": "s3_atk_scale",
+                  "value": 3,
+                  "valueStr": null
+                },
+                {
+                  "key": "ep_damage_scale",
+                  "value": 2.5,
+                  "valueStr": null
+                },
+                {
+                  "key": "trigger_time",
+                  "value": 10,
+                  "valueStr": null
+                },
+                {
+                  "key": "audio_trigger_cnt",
+                  "value": 3,
+                  "valueStr": null
+                },
+                {
+                  "key": "ep_break_duration",
+                  "value": 1,
+                  "valueStr": null
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "uniequip",
+      "url": "https://cdn.jsdelivr.net/gh/Kengxxiao/ArknightsGameData@17759cc8cdf37388414145d16262a3a06f3ab25e/zh_CN/gamedata/excel/uniequip_table.json",
+      "sha256": "c436d9ca672c8e8c3926d0ccbd496f7591004baf944f8cb47458572f4eaa8590",
+      "record": []
+    },
+    {
+      "name": "skin",
+      "url": "https://cdn.jsdelivr.net/gh/Kengxxiao/ArknightsGameData@17759cc8cdf37388414145d16262a3a06f3ab25e/zh_CN/gamedata/excel/skin_table.json",
+      "sha256": "422068f02ceec652ec61a4e0e3c0d4dec6371f95b9ea31cae3e1267f536b10d5",
+      "record": [
+        {
+          "skinId": "char_4231_clemnt#1",
+          "charId": "char_4231_clemnt",
+          "tokenSkinMap": null,
+          "illustId": "illust_char_4231_clemnt_1",
+          "spIllustId": null,
+          "dynIllustId": null,
+          "spDynIllustId": null,
+          "avatarId": "char_4231_clemnt",
+          "spAvatarId": null,
+          "portraitId": "char_4231_clemnt_1",
+          "spPortraitId": null,
+          "dynPortraitId": null,
+          "dynEntranceId": null,
+          "buildingId": null,
+          "battleSkin": {
+            "overwritePrefab": false,
+            "skinOrPrefabId": "DefaultSkin"
+          },
+          "isBuySkin": false,
+          "tmplId": null,
+          "voiceId": null,
+          "voiceType": "NONE",
+          "displaySkin": {
+            "skinName": null,
+            "colorList": [
+              "",
+              "",
+              "#82b3f0",
+              "",
+              ""
+            ],
+            "titleList": [
+              "",
+              ""
+            ],
+            "modelName": "Clementia",
+            "drawerList": [
+              "一千"
+            ],
+            "designerList": null,
+            "skinGroupId": "ILLUST_0",
+            "skinGroupName": "默认服装",
+            "skinGroupSortIndex": -50,
+            "content": "干员平时最常穿着的服装。\n虽然不一定比制服更实用，但是一定是干员最舒适的搭配之一。",
+            "dialog": null,
+            "usage": null,
+            "description": null,
+            "obtainApproach": null,
+            "sortId": -3,
+            "displayTagId": null,
+            "getTime": 0,
+            "onYear": 0,
+            "onPeriod": 0
+          }
+        },
+        {
+          "skinId": "char_4231_clemnt#2",
+          "charId": "char_4231_clemnt",
+          "tokenSkinMap": null,
+          "illustId": "illust_char_4231_clemnt_2",
+          "spIllustId": null,
+          "dynIllustId": null,
+          "spDynIllustId": null,
+          "avatarId": "char_4231_clemnt_2",
+          "spAvatarId": null,
+          "portraitId": "char_4231_clemnt_2",
+          "spPortraitId": null,
+          "dynPortraitId": null,
+          "dynEntranceId": null,
+          "buildingId": null,
+          "battleSkin": {
+            "overwritePrefab": false,
+            "skinOrPrefabId": "DefaultSkin"
+          },
+          "isBuySkin": false,
+          "tmplId": null,
+          "voiceId": null,
+          "voiceType": "NONE",
+          "displaySkin": {
+            "skinName": null,
+            "colorList": [
+              "",
+              "",
+              "#64acff",
+              "",
+              ""
+            ],
+            "titleList": [
+              "",
+              ""
+            ],
+            "modelName": "Clementia",
+            "drawerList": [
+              "一千"
+            ],
+            "designerList": null,
+            "skinGroupId": "ILLUST_2",
+            "skinGroupName": "默认服装",
+            "skinGroupSortIndex": -10,
+            "content": "晋升后，经过调整的服装。\n根据干员的经验，对服装细节进行改进，针对一些作战环境进行了特化处理。在满足战斗需求的同时，最大程度还原各位干员熟悉的舒适穿着体验。",
+            "dialog": null,
+            "usage": null,
+            "description": null,
+            "obtainApproach": null,
+            "sortId": -1,
+            "displayTagId": null,
+            "getTime": 0,
+            "onYear": 0,
+            "onPeriod": 0
+          }
+        }
+      ]
+    }
+  ]
+}

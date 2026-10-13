@@ -1,0 +1,3375 @@
+{
+  "method": "Actual R3 factions, native wave and mitigation pipeline; fixed L12/T2 and preformed ordinary units. No balance changes applied. Meteorite scenario costs one extra T3 unit and is not an economy-neutral comparison.",
+  "summary": [
+    {
+      "lineup": "三人纯卡兹戴尔",
+      "mode": "mode_multi_normal",
+      "scenarios": 12,
+      "zeroLeaks": 3,
+      "leaks": 57,
+      "withOffensiveFire": 3
+    },
+    {
+      "lineup": "三人纯卡兹戴尔",
+      "mode": "mode_multi_hard",
+      "scenarios": 12,
+      "zeroLeaks": 0,
+      "leaks": 63,
+      "withOffensiveFire": 6
+    },
+    {
+      "lineup": "三人纯卡兹戴尔",
+      "mode": "mode_multi_abyss",
+      "scenarios": 12,
+      "zeroLeaks": 0,
+      "leaks": 63,
+      "withOffensiveFire": 6
+    },
+    {
+      "lineup": "三人加隐现外援",
+      "mode": "mode_multi_normal",
+      "scenarios": 12,
+      "zeroLeaks": 12,
+      "leaks": 0,
+      "withOffensiveFire": 3
+    },
+    {
+      "lineup": "三人加隐现外援",
+      "mode": "mode_multi_hard",
+      "scenarios": 12,
+      "zeroLeaks": 9,
+      "leaks": 3,
+      "withOffensiveFire": 6
+    },
+    {
+      "lineup": "三人加隐现外援",
+      "mode": "mode_multi_abyss",
+      "scenarios": 12,
+      "zeroLeaks": 9,
+      "leaks": 3,
+      "withOffensiveFire": 6
+    },
+    {
+      "lineup": "四人加入陨星",
+      "mode": "mode_multi_normal",
+      "scenarios": 12,
+      "zeroLeaks": 12,
+      "leaks": 0,
+      "withOffensiveFire": 3
+    },
+    {
+      "lineup": "四人加入陨星",
+      "mode": "mode_multi_hard",
+      "scenarios": 12,
+      "zeroLeaks": 12,
+      "leaks": 0,
+      "withOffensiveFire": 6
+    },
+    {
+      "lineup": "四人加入陨星",
+      "mode": "mode_multi_abyss",
+      "scenarios": 12,
+      "zeroLeaks": 11,
+      "leaks": 1,
+      "withOffensiveFire": 6
+    }
+  ],
+  "results": [
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_1045_hammer",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 10,
+      "killed": 9,
+      "leaks": 1,
+      "duration": 110,
+      "damage": {
+        "native": 23077.879323166588,
+        "curse": 878.7749663619775,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 2388.54736814513,
+      "metrics": {
+        "guards": 0,
+        "curse": 878.7749663619775,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 1387.8198399999992,
+        "repaid": 1372.1487999999997
+      },
+      "enemyStats": {
+        "enemy_1046_agent": {
+          "hp": 2400,
+          "atk": 246.4,
+          "def": 85,
+          "res": 40,
+          "fly": false
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_1045_hammer",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 10,
+      "killed": 9,
+      "leaks": 1,
+      "duration": 110,
+      "damage": {
+        "native": 23091.002030944313,
+        "curse": 865.6522585842552,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 2385.68420014513,
+      "metrics": {
+        "guards": 0,
+        "curse": 865.6522585842552,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 1385.2079999999994,
+        "repaid": 1372.1487999999997
+      },
+      "enemyStats": {
+        "enemy_1046_agent": {
+          "hp": 2400,
+          "atk": 246.4,
+          "def": 85,
+          "res": 40,
+          "fly": false
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_1045_hammer",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 10,
+      "killed": 9,
+      "leaks": 1,
+      "duration": 110,
+      "damage": {
+        "native": 23077.879323166588,
+        "curse": 878.7749663619775,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 2388.54736814513,
+      "metrics": {
+        "guards": 0,
+        "curse": 878.7749663619775,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 1387.8198399999992,
+        "repaid": 1372.1487999999997
+      },
+      "enemyStats": {
+        "enemy_1046_agent": {
+          "hp": 2400,
+          "atk": 246.4,
+          "def": 85,
+          "res": 40,
+          "fly": false
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_1174_duholy",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 6,
+      "killed": 6,
+      "leaks": 0,
+      "duration": 88,
+      "damage": {
+        "native": 19473.317083060814,
+        "curse": 1209.6713737170037,
+        "fire": 437.0115432221643
+      },
+      "firstFire": 53.266666666666666,
+      "generated": 2925.5521104738837,
+      "metrics": {
+        "guards": 0,
+        "curse": 1209.6713737170037,
+        "release": 1456.7051440738815,
+        "rescue": 0,
+        "deferred": 1700.86752,
+        "repaid": 1647.5373199999997
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_1174_duholy",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 6,
+      "killed": 6,
+      "leaks": 0,
+      "duration": 88,
+      "damage": {
+        "native": 19472.456800715066,
+        "curse": 1209.6727056627576,
+        "fire": 437.8704936221644
+      },
+      "firstFire": 53.266666666666666,
+      "generated": 2928.4152784738835,
+      "metrics": {
+        "guards": 0,
+        "curse": 1209.6727056627576,
+        "release": 1459.5683120738813,
+        "rescue": 0,
+        "deferred": 1703.47936,
+        "repaid": 1647.5373199999997
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_1174_duholy",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 6,
+      "killed": 6,
+      "leaks": 0,
+      "duration": 88,
+      "damage": {
+        "native": 19473.317083060818,
+        "curse": 1209.6713737170037,
+        "fire": 437.0115432221643
+      },
+      "firstFire": 53.266666666666666,
+      "generated": 2925.5521104738837,
+      "metrics": {
+        "guards": 0,
+        "curse": 1209.6713737170037,
+        "release": 1456.7051440738815,
+        "rescue": 0,
+        "deferred": 1700.86752,
+        "repaid": 1647.5373199999997
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_1017_defdrn",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 0,
+      "leaks": 9,
+      "duration": 110,
+      "damage": {
+        "native": 0,
+        "curse": 3253.0449480255606,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 1687.0603904000018,
+      "metrics": {
+        "guards": 0,
+        "curse": 3253.0449480255606,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 970.8921600000006,
+        "repaid": 872.592
+      },
+      "enemyStats": {
+        "enemy_1005_yokai": {
+          "hp": 768,
+          "atk": 0,
+          "def": 50,
+          "res": 0,
+          "fly": true
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_1017_defdrn",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 0,
+      "leaks": 9,
+      "duration": 110,
+      "damage": {
+        "native": 0,
+        "curse": 3253.0449480255606,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 1687.0603904000018,
+      "metrics": {
+        "guards": 0,
+        "curse": 3253.0449480255606,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 970.8921600000006,
+        "repaid": 872.592
+      },
+      "enemyStats": {
+        "enemy_1005_yokai": {
+          "hp": 768,
+          "atk": 0,
+          "def": 50,
+          "res": 0,
+          "fly": true
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_1017_defdrn",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 0,
+      "leaks": 9,
+      "duration": 110,
+      "damage": {
+        "native": 0,
+        "curse": 3253.0449480255606,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 1687.0603904000018,
+      "metrics": {
+        "guards": 0,
+        "curse": 3253.0449480255606,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 970.8921600000006,
+        "repaid": 872.592
+      },
+      "enemyStats": {
+        "enemy_1005_yokai": {
+          "hp": 768,
+          "atk": 0,
+          "def": 50,
+          "res": 0,
+          "fly": true
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_10084_hlegle",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 0,
+      "leaks": 9,
+      "duration": 110,
+      "damage": {
+        "native": 0,
+        "curse": 3253.044948025562,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 1687.0603904000018,
+      "metrics": {
+        "guards": 0,
+        "curse": 3253.044948025562,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 970.8921600000006,
+        "repaid": 872.592
+      },
+      "enemyStats": {
+        "enemy_10083_hlbird": {
+          "hp": 1440,
+          "atk": 0,
+          "def": 0,
+          "res": 30,
+          "fly": true
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_10084_hlegle",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 0,
+      "leaks": 9,
+      "duration": 110,
+      "damage": {
+        "native": 0,
+        "curse": 3253.044948025562,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 1687.0603904000018,
+      "metrics": {
+        "guards": 0,
+        "curse": 3253.044948025562,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 970.8921600000006,
+        "repaid": 872.592
+      },
+      "enemyStats": {
+        "enemy_10083_hlbird": {
+          "hp": 1440,
+          "atk": 0,
+          "def": 0,
+          "res": 30,
+          "fly": true
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_10084_hlegle",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 0,
+      "leaks": 9,
+      "duration": 110,
+      "damage": {
+        "native": 0,
+        "curse": 3253.044948025562,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 1687.0603904000018,
+      "metrics": {
+        "guards": 0,
+        "curse": 3253.044948025562,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 970.8921600000006,
+        "repaid": 872.592
+      },
+      "enemyStats": {
+        "enemy_10083_hlbird": {
+          "hp": 1440,
+          "atk": 0,
+          "def": 0,
+          "res": 30,
+          "fly": true
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_1045_hammer",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 10,
+      "killed": 10,
+      "leaks": 0,
+      "duration": 61.133,
+      "damage": {
+        "native": 25491.264251043747,
+        "curse": 786.7283077878706,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 575.4110688020173,
+      "metrics": {
+        "guards": 0,
+        "curse": 786.7283077878706,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 333.7558399999999,
+        "repaid": 331.1439999999999
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_1045_hammer",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 10,
+      "killed": 10,
+      "leaks": 0,
+      "duration": 61.133,
+      "damage": {
+        "native": 25491.262081907662,
+        "curse": 786.7307025415854,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 578.2742368020173,
+      "metrics": {
+        "guards": 0,
+        "curse": 786.7307025415854,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 336.36767999999995,
+        "repaid": 331.1439999999999
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_1045_hammer",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 10,
+      "killed": 10,
+      "leaks": 0,
+      "duration": 61.133,
+      "damage": {
+        "native": 25491.262081907662,
+        "curse": 786.7307025415854,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 578.2742368020173,
+      "metrics": {
+        "guards": 0,
+        "curse": 786.7307025415854,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 336.36767999999995,
+        "repaid": 331.1439999999999
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_1174_duholy",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 6,
+      "killed": 6,
+      "leaks": 0,
+      "duration": 88,
+      "damage": {
+        "native": 19480.19642597656,
+        "curse": 1209.6636340012658,
+        "fire": 430.1399400221645
+      },
+      "firstFire": 53.266666666666666,
+      "generated": 2902.646766473885,
+      "metrics": {
+        "guards": 0,
+        "curse": 1209.6636340012658,
+        "release": 1433.7998000738824,
+        "rescue": 0,
+        "deferred": 1679.9727999999998,
+        "repaid": 1647.5373199999997
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_1174_duholy",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 6,
+      "killed": 6,
+      "leaks": 0,
+      "duration": 88,
+      "damage": {
+        "native": 19480.19642597656,
+        "curse": 1209.6636340012658,
+        "fire": 430.1399400221645
+      },
+      "firstFire": 53.266666666666666,
+      "generated": 2902.646766473885,
+      "metrics": {
+        "guards": 0,
+        "curse": 1209.6636340012658,
+        "release": 1433.7998000738824,
+        "rescue": 0,
+        "deferred": 1679.9727999999998,
+        "repaid": 1647.5373199999997
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_1174_duholy",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 6,
+      "killed": 6,
+      "leaks": 0,
+      "duration": 88,
+      "damage": {
+        "native": 19480.19642597656,
+        "curse": 1209.6636340012658,
+        "fire": 430.1399400221645
+      },
+      "firstFire": 53.266666666666666,
+      "generated": 2902.646766473885,
+      "metrics": {
+        "guards": 0,
+        "curse": 1209.6636340012658,
+        "release": 1433.7998000738824,
+        "rescue": 0,
+        "deferred": 1679.9727999999998,
+        "repaid": 1647.5373199999997
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_1017_defdrn",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 74.433,
+      "damage": {
+        "native": 7222.602210684878,
+        "curse": 2569.3977893151223,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 262.19777024000007,
+      "metrics": {
+        "guards": 0,
+        "curse": 2569.3977893151223,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 163.76575999999986,
+        "repaid": 130.9312
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_1017_defdrn",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 74.433,
+      "damage": {
+        "native": 7222.602210684878,
+        "curse": 2569.3977893151223,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 262.19777024000007,
+      "metrics": {
+        "guards": 0,
+        "curse": 2569.3977893151223,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 163.76575999999986,
+        "repaid": 130.9312
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_1017_defdrn",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 74.433,
+      "damage": {
+        "native": 7222.602210684878,
+        "curse": 2569.3977893151223,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 262.19777024000007,
+      "metrics": {
+        "guards": 0,
+        "curse": 2569.3977893151223,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 163.76575999999986,
+        "repaid": 130.9312
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_10084_hlegle",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 76.467,
+      "damage": {
+        "native": 10163.013662448628,
+        "curse": 2988.986337551373,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 262.19777024000007,
+      "metrics": {
+        "guards": 0,
+        "curse": 2988.986337551373,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 163.76575999999986,
+        "repaid": 130.9312
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_10084_hlegle",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 76.467,
+      "damage": {
+        "native": 10163.013662448628,
+        "curse": 2988.986337551373,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 262.19777024000007,
+      "metrics": {
+        "guards": 0,
+        "curse": 2988.986337551373,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 163.76575999999986,
+        "repaid": 130.9312
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_10084_hlegle",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 76.467,
+      "damage": {
+        "native": 10163.013662448628,
+        "curse": 2988.986337551373,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 262.19777024000007,
+      "metrics": {
+        "guards": 0,
+        "curse": 2988.986337551373,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 163.76575999999986,
+        "repaid": 130.9312
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "四人加入陨星",
+      "key": "enemy_1045_hammer",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 10,
+      "killed": 10,
+      "leaks": 0,
+      "duration": 61.133,
+      "damage": {
+        "native": 25307.663594108857,
+        "curse": 944.095338053321,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 557.4137360384447,
+      "metrics": {
+        "guards": 0,
+        "curse": 944.095338053321,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 325.1995199999999,
+        "repaid": 317.3639999999999
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "四人加入陨星",
+      "key": "enemy_1045_hammer",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 10,
+      "killed": 10,
+      "leaks": 0,
+      "duration": 61.133,
+      "damage": {
+        "native": 25294.54722730357,
+        "curse": 957.2119304762465,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 560.2769040384446,
+      "metrics": {
+        "guards": 0,
+        "curse": 957.2119304762465,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 327.8113599999999,
+        "repaid": 317.3639999999999
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "四人加入陨星",
+      "key": "enemy_1045_hammer",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 10,
+      "killed": 10,
+      "leaks": 0,
+      "duration": 61.133,
+      "damage": {
+        "native": 25201.660205122902,
+        "curse": 852.3364470572941,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 597.6128915220174,
+      "metrics": {
+        "guards": 0,
+        "curse": 852.3364470572941,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 347.5612799999999,
+        "repaid": 342.33759999999984
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "四人加入陨星",
+      "key": "enemy_1174_duholy",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 6,
+      "killed": 6,
+      "leaks": 0,
+      "duration": 77.5,
+      "damage": {
+        "native": 19486.951817280184,
+        "curse": 1301.639571337636,
+        "fire": 331.40861138216496
+      },
+      "firstFire": 53.266666666666666,
+      "generated": 2542.6068811218834,
+      "metrics": {
+        "guards": 0,
+        "curse": 1301.639571337636,
+        "release": 1104.6953712738823,
+        "rescue": 0,
+        "deferred": 1492.34432,
+        "repaid": 1386.7767999999999
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "四人加入陨星",
+      "key": "enemy_1174_duholy",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 6,
+      "killed": 6,
+      "leaks": 0,
+      "duration": 85,
+      "damage": {
+        "native": 19380.678307646038,
+        "curse": 1407.0541305717798,
+        "fire": 332.2675617821649
+      },
+      "firstFire": 53.266666666666666,
+      "generated": 2745.252472073884,
+      "metrics": {
+        "guards": 0,
+        "curse": 1407.0541305717798,
+        "release": 1107.5585392738822,
+        "rescue": 0,
+        "deferred": 1592.68816,
+        "repaid": 1582.2407999999998
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "四人加入陨星",
+      "key": "enemy_1174_duholy",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 6,
+      "killed": 6,
+      "leaks": 0,
+      "duration": 77.3,
+      "damage": {
+        "native": 19580.464174848763,
+        "curse": 1301.6395713376369,
+        "fire": 237.89625381358587
+      },
+      "firstFire": 53.266666666666666,
+      "generated": 2404.695371273883,
+      "metrics": {
+        "guards": 0,
+        "curse": 1301.6395713376369,
+        "release": 1104.6953712738823,
+        "rescue": 0,
+        "deferred": 1394.61232,
+        "repaid": 1386.7767999999999
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "四人加入陨星",
+      "key": "enemy_1017_defdrn",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 72.367,
+      "damage": {
+        "native": 8328.108338489983,
+        "curse": 1463.891661510016,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 246.4503462399999,
+      "metrics": {
+        "guards": 0,
+        "curse": 1463.891661510016,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 149.40063999999995,
+        "repaid": 130.9312
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "四人加入陨星",
+      "key": "enemy_1017_defdrn",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 72.367,
+      "damage": {
+        "native": 8299.782504803432,
+        "curse": 1492.2174951965699,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 248.69997823999992,
+      "metrics": {
+        "guards": 0,
+        "curse": 1492.2174951965699,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 151.45279999999994,
+        "repaid": 130.9312
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "四人加入陨星",
+      "key": "enemy_1017_defdrn",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 72.367,
+      "damage": {
+        "native": 8352.332338489983,
+        "curse": 1439.6676615100164,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 246.4503462399999,
+      "metrics": {
+        "guards": 0,
+        "curse": 1439.6676615100164,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 149.40063999999995,
+        "repaid": 130.9312
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "四人加入陨星",
+      "key": "enemy_10084_hlegle",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 75.133,
+      "damage": {
+        "native": 11369.378739208958,
+        "curse": 1782.6212607910402,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 241.95108223999986,
+      "metrics": {
+        "guards": 0,
+        "curse": 1782.6212607910402,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 145.29631999999995,
+        "repaid": 130.9312
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "四人加入陨星",
+      "key": "enemy_10084_hlegle",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 75.133,
+      "damage": {
+        "native": 11316.140762736344,
+        "curse": 1835.859237263655,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 248.69997823999992,
+      "metrics": {
+        "guards": 0,
+        "curse": 1835.859237263655,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 151.45279999999994,
+        "repaid": 130.9312
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_normal",
+      "lineup": "四人加入陨星",
+      "key": "enemy_10084_hlegle",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 72.367,
+      "damage": {
+        "native": 11421.04024272764,
+        "curse": 1730.9597572723592,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 248.69997823999992,
+      "metrics": {
+        "guards": 0,
+        "curse": 1730.9597572723592,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 151.45279999999994,
+        "repaid": 130.9312
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_1045_hammer",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 10,
+      "killed": 8,
+      "leaks": 2,
+      "duration": 110,
+      "damage": {
+        "native": 29799.74797790291,
+        "curse": 972.0023156749102,
+        "fire": 492.04669584215526
+      },
+      "firstFire": 46.1,
+      "generated": 4378.840191148323,
+      "metrics": {
+        "guards": 0,
+        "curse": 972.0023156749102,
+        "release": 702.9238512030793,
+        "rescue": 0,
+        "deferred": 2532.064399999998,
+        "repaid": 2199.5103757804445
+      },
+      "enemyStats": {
+        "enemy_1043_zomsbr": {
+          "hp": 3600,
+          "atk": 302.5,
+          "def": 100,
+          "res": 30,
+          "fly": false
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_1045_hammer",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 10,
+      "killed": 8,
+      "leaks": 2,
+      "duration": 110,
+      "damage": {
+        "native": 29799.74797790291,
+        "curse": 972.0023156749102,
+        "fire": 492.04669584215526
+      },
+      "firstFire": 46.1,
+      "generated": 4378.840191148323,
+      "metrics": {
+        "guards": 0,
+        "curse": 972.0023156749102,
+        "release": 702.9238512030793,
+        "rescue": 0,
+        "deferred": 2532.064399999998,
+        "repaid": 2199.5103757804445
+      },
+      "enemyStats": {
+        "enemy_1043_zomsbr": {
+          "hp": 3600,
+          "atk": 302.5,
+          "def": 100,
+          "res": 30,
+          "fly": false
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_1045_hammer",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 10,
+      "killed": 8,
+      "leaks": 2,
+      "duration": 110,
+      "damage": {
+        "native": 29799.74797790291,
+        "curse": 972.0023156749102,
+        "fire": 492.04669584215526
+      },
+      "firstFire": 46.1,
+      "generated": 4378.840191148323,
+      "metrics": {
+        "guards": 0,
+        "curse": 972.0023156749102,
+        "release": 702.9238512030793,
+        "rescue": 0,
+        "deferred": 2532.064399999998,
+        "repaid": 2199.5103757804445
+      },
+      "enemyStats": {
+        "enemy_1043_zomsbr": {
+          "hp": 3600,
+          "atk": 302.5,
+          "def": 100,
+          "res": 30,
+          "fly": false
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_1174_duholy",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 6,
+      "killed": 5,
+      "leaks": 1,
+      "duration": 110,
+      "damage": {
+        "native": 24565.395878395087,
+        "curse": 603.8500125680966,
+        "fire": 55.964906750400246
+      },
+      "firstFire": 61.199999999999996,
+      "generated": 5672.490806344315,
+      "metrics": {
+        "guards": 0,
+        "curse": 603.8500125680966,
+        "release": 1756.1025691680013,
+        "rescue": 824.5848800000003,
+        "deferred": 3251.8680000000018,
+        "repaid": 1660.7280799999996
+      },
+      "enemyStats": {
+        "enemy_1170_dushld": {
+          "hp": 10080,
+          "atk": 847,
+          "def": 750,
+          "res": 70,
+          "fly": false
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_1174_duholy",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 6,
+      "killed": 5,
+      "leaks": 1,
+      "duration": 110,
+      "damage": {
+        "native": 24330.89987839509,
+        "curse": 603.8500125680966,
+        "fire": 55.964906750400246
+      },
+      "firstFire": 61.199999999999996,
+      "generated": 5672.490806344315,
+      "metrics": {
+        "guards": 0,
+        "curse": 603.8500125680966,
+        "release": 1756.1025691680013,
+        "rescue": 824.5848800000003,
+        "deferred": 3251.8680000000018,
+        "repaid": 1660.7280799999996
+      },
+      "enemyStats": {
+        "enemy_1170_dushld": {
+          "hp": 10080,
+          "atk": 847,
+          "def": 750,
+          "res": 70,
+          "fly": false
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_1174_duholy",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 6,
+      "killed": 5,
+      "leaks": 1,
+      "duration": 110,
+      "damage": {
+        "native": 24799.891878395087,
+        "curse": 603.8500125680966,
+        "fire": 55.964906750400246
+      },
+      "firstFire": 61.199999999999996,
+      "generated": 5672.490806344315,
+      "metrics": {
+        "guards": 0,
+        "curse": 603.8500125680966,
+        "release": 1756.1025691680013,
+        "rescue": 824.5848800000003,
+        "deferred": 3251.8680000000018,
+        "repaid": 1660.7280799999996
+      },
+      "enemyStats": {
+        "enemy_1170_dushld": {
+          "hp": 10080,
+          "atk": 847,
+          "def": 750,
+          "res": 70,
+          "fly": false
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_1017_defdrn",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 0,
+      "leaks": 9,
+      "duration": 110,
+      "damage": {
+        "native": 0,
+        "curse": 3258.9775949456,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 3842.706390879999,
+      "metrics": {
+        "guards": 0,
+        "curse": 3258.9775949456,
+        "release": 626.0128799999994,
+        "rescue": 361.09767999999946,
+        "deferred": 2029.806719999999,
+        "repaid": 1200.639400000001
+      },
+      "enemyStats": {
+        "enemy_1005_yokai": {
+          "hp": 1152,
+          "atk": 0,
+          "def": 50,
+          "res": 0,
+          "fly": true
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_1017_defdrn",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 0,
+      "leaks": 9,
+      "duration": 110,
+      "damage": {
+        "native": 0,
+        "curse": 3258.9775949456,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 3842.706390879999,
+      "metrics": {
+        "guards": 0,
+        "curse": 3258.9775949456,
+        "release": 626.0128799999994,
+        "rescue": 361.09767999999946,
+        "deferred": 2029.806719999999,
+        "repaid": 1200.639400000001
+      },
+      "enemyStats": {
+        "enemy_1005_yokai": {
+          "hp": 1152,
+          "atk": 0,
+          "def": 50,
+          "res": 0,
+          "fly": true
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_1017_defdrn",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 0,
+      "leaks": 9,
+      "duration": 110,
+      "damage": {
+        "native": 0,
+        "curse": 3258.9775949456,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 3842.706390879999,
+      "metrics": {
+        "guards": 0,
+        "curse": 3258.9775949456,
+        "release": 626.0128799999994,
+        "rescue": 361.09767999999946,
+        "deferred": 2029.806719999999,
+        "repaid": 1200.639400000001
+      },
+      "enemyStats": {
+        "enemy_1005_yokai": {
+          "hp": 1152,
+          "atk": 0,
+          "def": 50,
+          "res": 0,
+          "fly": true
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_10084_hlegle",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 0,
+      "leaks": 9,
+      "duration": 110,
+      "damage": {
+        "native": 0,
+        "curse": 3258.977594945598,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 3842.706390879999,
+      "metrics": {
+        "guards": 0,
+        "curse": 3258.977594945598,
+        "release": 626.0128799999994,
+        "rescue": 361.09767999999946,
+        "deferred": 2029.806719999999,
+        "repaid": 1200.639400000001
+      },
+      "enemyStats": {
+        "enemy_10083_hlbird": {
+          "hp": 2160,
+          "atk": 0,
+          "def": 0,
+          "res": 30,
+          "fly": true
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_10084_hlegle",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 0,
+      "leaks": 9,
+      "duration": 110,
+      "damage": {
+        "native": 0,
+        "curse": 3258.977594945598,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 3842.706390879999,
+      "metrics": {
+        "guards": 0,
+        "curse": 3258.977594945598,
+        "release": 626.0128799999994,
+        "rescue": 361.09767999999946,
+        "deferred": 2029.806719999999,
+        "repaid": 1200.639400000001
+      },
+      "enemyStats": {
+        "enemy_10083_hlbird": {
+          "hp": 2160,
+          "atk": 0,
+          "def": 0,
+          "res": 30,
+          "fly": true
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_10084_hlegle",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 0,
+      "leaks": 9,
+      "duration": 110,
+      "damage": {
+        "native": 0,
+        "curse": 3258.977594945598,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 3842.706390879999,
+      "metrics": {
+        "guards": 0,
+        "curse": 3258.977594945598,
+        "release": 626.0128799999994,
+        "rescue": 361.09767999999946,
+        "deferred": 2029.806719999999,
+        "repaid": 1200.639400000001
+      },
+      "enemyStats": {
+        "enemy_10083_hlbird": {
+          "hp": 2160,
+          "atk": 0,
+          "def": 0,
+          "res": 30,
+          "fly": true
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_1045_hammer",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 10,
+      "killed": 10,
+      "leaks": 0,
+      "duration": 62.633,
+      "damage": {
+        "native": 37973.81314998317,
+        "curse": 840.4090700973736,
+        "fire": 72.50506142376372
+      },
+      "firstFire": 62.3,
+      "generated": 1403.5786591768053,
+      "metrics": {
+        "guards": 0,
+        "curse": 840.4090700973736,
+        "release": 103.57865917680533,
+        "rescue": 0,
+        "deferred": 865.6171999999998,
+        "repaid": 741.8091999999999
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_1045_hammer",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 10,
+      "killed": 10,
+      "leaks": 0,
+      "duration": 62.633,
+      "damage": {
+        "native": 37964.39766758417,
+        "curse": 840.421648496382,
+        "fire": 81.90796542376376
+      },
+      "firstFire": 62.3,
+      "generated": 1417.0113791768053,
+      "metrics": {
+        "guards": 0,
+        "curse": 840.421648496382,
+        "release": 117.01137917680535,
+        "rescue": 0,
+        "deferred": 877.8707999999998,
+        "repaid": 741.8091999999999
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_1045_hammer",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 10,
+      "killed": 10,
+      "leaks": 0,
+      "duration": 62.633,
+      "damage": {
+        "native": 37973.81314998317,
+        "curse": 840.4090700973736,
+        "fire": 72.50506142376372
+      },
+      "firstFire": 62.3,
+      "generated": 1403.5786591768053,
+      "metrics": {
+        "guards": 0,
+        "curse": 840.4090700973736,
+        "release": 103.57865917680533,
+        "rescue": 0,
+        "deferred": 865.6171999999998,
+        "repaid": 741.8091999999999
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_1174_duholy",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 6,
+      "killed": 5,
+      "leaks": 1,
+      "duration": 110,
+      "damage": {
+        "native": 27138.945878395116,
+        "curse": 603.8500125680966,
+        "fire": 55.964906750400246
+      },
+      "firstFire": 61.199999999999996,
+      "generated": 5672.490806344315,
+      "metrics": {
+        "guards": 0,
+        "curse": 603.8500125680966,
+        "release": 1756.1025691680013,
+        "rescue": 824.5848800000003,
+        "deferred": 3251.8680000000018,
+        "repaid": 1660.7280799999996
+      },
+      "enemyStats": {
+        "enemy_1170_dushld": {
+          "hp": 10080,
+          "atk": 847,
+          "def": 750,
+          "res": 70,
+          "fly": false
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_1174_duholy",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 6,
+      "killed": 5,
+      "leaks": 1,
+      "duration": 110,
+      "damage": {
+        "native": 26904.449878395117,
+        "curse": 603.8500125680966,
+        "fire": 55.964906750400246
+      },
+      "firstFire": 61.199999999999996,
+      "generated": 5672.490806344315,
+      "metrics": {
+        "guards": 0,
+        "curse": 603.8500125680966,
+        "release": 1756.1025691680013,
+        "rescue": 824.5848800000003,
+        "deferred": 3251.8680000000018,
+        "repaid": 1660.7280799999996
+      },
+      "enemyStats": {
+        "enemy_1170_dushld": {
+          "hp": 10080,
+          "atk": 847,
+          "def": 750,
+          "res": 70,
+          "fly": false
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_1174_duholy",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 6,
+      "killed": 5,
+      "leaks": 1,
+      "duration": 110,
+      "damage": {
+        "native": 27373.441878395115,
+        "curse": 603.8500125680966,
+        "fire": 55.964906750400246
+      },
+      "firstFire": 61.199999999999996,
+      "generated": 5672.490806344315,
+      "metrics": {
+        "guards": 0,
+        "curse": 603.8500125680966,
+        "release": 1756.1025691680013,
+        "rescue": 824.5848800000003,
+        "deferred": 3251.8680000000018,
+        "repaid": 1660.7280799999996
+      },
+      "enemyStats": {
+        "enemy_1170_dushld": {
+          "hp": 10080,
+          "atk": 847,
+          "def": 750,
+          "res": 70,
+          "fly": false
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_1017_defdrn",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 75.133,
+      "damage": {
+        "native": 11695.207463500448,
+        "curse": 2992.792536499555,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 701.1459660799995,
+      "metrics": {
+        "guards": 0,
+        "curse": 2992.792536499555,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 422.33792000000057,
+        "repaid": 377.19040000000007
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_1017_defdrn",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 75.133,
+      "damage": {
+        "native": 11695.207463500448,
+        "curse": 2992.792536499555,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 701.1459660799995,
+      "metrics": {
+        "guards": 0,
+        "curse": 2992.792536499555,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 422.33792000000057,
+        "repaid": 377.19040000000007
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_1017_defdrn",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 75.133,
+      "damage": {
+        "native": 11695.207463500448,
+        "curse": 2992.792536499555,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 701.1459660799995,
+      "metrics": {
+        "guards": 0,
+        "curse": 2992.792536499555,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 422.33792000000057,
+        "repaid": 377.19040000000007
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_10084_hlegle",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 75.867,
+      "damage": {
+        "native": 16419.913464183417,
+        "curse": 3308.0865358165856,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 741.8743449599996,
+      "metrics": {
+        "guards": 0,
+        "curse": 3308.0865358165856,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 445.9123200000006,
+        "repaid": 400.7648000000001
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_10084_hlegle",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 75.9,
+      "damage": {
+        "native": 16419.913464183417,
+        "curse": 3308.0865358165856,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 741.8743449599996,
+      "metrics": {
+        "guards": 0,
+        "curse": 3308.0865358165856,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 445.9123200000006,
+        "repaid": 400.7648000000001
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_10084_hlegle",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 75.867,
+      "damage": {
+        "native": 16419.913464183417,
+        "curse": 3308.0865358165856,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 741.8743449599996,
+      "metrics": {
+        "guards": 0,
+        "curse": 3308.0865358165856,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 445.9123200000006,
+        "repaid": 400.7648000000001
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "四人加入陨星",
+      "key": "enemy_1045_hammer",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 10,
+      "killed": 10,
+      "leaks": 0,
+      "duration": 62.633,
+      "damage": {
+        "native": 37607.183393068655,
+        "curse": 1326.7207879443822,
+        "fire": 200.8234942233206
+      },
+      "firstFire": 48.13333333333333,
+      "generated": 1748.961818033316,
+      "metrics": {
+        "guards": 0,
+        "curse": 1326.7207879443822,
+        "release": 286.8907060333154,
+        "rescue": 0,
+        "deferred": 1068.7555999999997,
+        "repaid": 935.8316
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "四人加入陨星",
+      "key": "enemy_1045_hammer",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 10,
+      "killed": 10,
+      "leaks": 0,
+      "duration": 62.633,
+      "damage": {
+        "native": 37940.73079091393,
+        "curse": 1234.4963860326252,
+        "fire": 79.50030142376363
+      },
+      "firstFire": 62.3,
+      "generated": 1413.5718591768052,
+      "metrics": {
+        "guards": 0,
+        "curse": 1234.4963860326252,
+        "release": 113.57185917680522,
+        "rescue": 0,
+        "deferred": 874.7331999999998,
+        "repaid": 741.8091999999999
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "四人加入陨星",
+      "key": "enemy_1045_hammer",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 10,
+      "killed": 10,
+      "leaks": 0,
+      "duration": 62.633,
+      "damage": {
+        "native": 37747.36230152099,
+        "curse": 1181.9597882916073,
+        "fire": 85.40558542376368
+      },
+      "firstFire": 62.3,
+      "generated": 1422.0079791768053,
+      "metrics": {
+        "guards": 0,
+        "curse": 1181.9597882916073,
+        "release": 122.00797917680529,
+        "rescue": 0,
+        "deferred": 882.4287999999998,
+        "repaid": 741.8091999999999
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "四人加入陨星",
+      "key": "enemy_1174_duholy",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 6,
+      "killed": 6,
+      "leaks": 0,
+      "duration": 106.467,
+      "damage": {
+        "native": 29207.080746713295,
+        "curse": 1642.7942143265968,
+        "fire": 830.1250389600962
+      },
+      "firstFire": 61.199999999999996,
+      "generated": 5277.799183928315,
+      "metrics": {
+        "guards": 1,
+        "curse": 1642.7942143265968,
+        "release": 3164.2234632003206,
+        "rescue": 277.1480000000002,
+        "deferred": 2939.3800000000015,
+        "repaid": 813.4973599999998
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "四人加入陨星",
+      "key": "enemy_1174_duholy",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 6,
+      "killed": 6,
+      "leaks": 0,
+      "duration": 109.267,
+      "damage": {
+        "native": 29167.536128557767,
+        "curse": 1682.3388324821292,
+        "fire": 830.1250389600962
+      },
+      "firstFire": 61.199999999999996,
+      "generated": 5528.617158160316,
+      "metrics": {
+        "guards": 1,
+        "curse": 1682.3388324821292,
+        "release": 3164.2234632003206,
+        "rescue": 277.1480000000002,
+        "deferred": 3095.6240000000016,
+        "repaid": 862.6123999999993
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "四人加入陨星",
+      "key": "enemy_1174_duholy",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 6,
+      "killed": 6,
+      "leaks": 0,
+      "duration": 85.233,
+      "damage": {
+        "native": 29643.104678395084,
+        "curse": 1366.8408900122126,
+        "fire": 670.0544315926954
+      },
+      "firstFire": 61.199999999999996,
+      "generated": 3618.2698689603176,
+      "metrics": {
+        "guards": 1,
+        "curse": 1366.8408900122126,
+        "release": 2968.2698689603203,
+        "rescue": 277.1480000000002,
+        "deferred": 2158.1600000000008,
+        "repaid": 743.8232
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "四人加入陨星",
+      "key": "enemy_1017_defdrn",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 72.367,
+      "damage": {
+        "native": 12062.984101340391,
+        "curse": 2625.015898659608,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 698.0527220799995,
+      "metrics": {
+        "guards": 0,
+        "curse": 2625.015898659608,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 419.51620000000054,
+        "repaid": 377.19040000000007
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "四人加入陨星",
+      "key": "enemy_1017_defdrn",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 75.033,
+      "damage": {
+        "native": 11779.383411584324,
+        "curse": 2908.616588415681,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 741.8743449599996,
+      "metrics": {
+        "guards": 0,
+        "curse": 2908.616588415681,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 445.9123200000006,
+        "repaid": 400.7648000000001
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "四人加入陨星",
+      "key": "enemy_1017_defdrn",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 72.367,
+      "damage": {
+        "native": 12420.261061324489,
+        "curse": 2267.738938675513,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 698.0527220799995,
+      "metrics": {
+        "guards": 0,
+        "curse": 2267.738938675513,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 419.51620000000054,
+        "repaid": 377.19040000000007
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "四人加入陨星",
+      "key": "enemy_10084_hlegle",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 77.833,
+      "damage": {
+        "native": 17054.376867472183,
+        "curse": 2673.6231325278172,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 688.7729900799994,
+      "metrics": {
+        "guards": 0,
+        "curse": 2673.6231325278172,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 411.05104000000046,
+        "repaid": 377.19040000000007
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "四人加入陨星",
+      "key": "enemy_10084_hlegle",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 77.833,
+      "damage": {
+        "native": 15102.571884987727,
+        "curse": 4625.428115012266,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 823.3311027199996,
+      "metrics": {
+        "guards": 0,
+        "curse": 4625.428115012266,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 493.06112000000064,
+        "repaid": 447.91360000000014
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "lineup": "四人加入陨星",
+      "key": "enemy_10084_hlegle",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 75.133,
+      "damage": {
+        "native": 17474.66206636503,
+        "curse": 2253.3379336349717,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 679.4932580799994,
+      "metrics": {
+        "guards": 0,
+        "curse": 2253.3379336349717,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 402.5858800000004,
+        "repaid": 377.19040000000007
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_1045_hammer",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 10,
+      "killed": 8,
+      "leaks": 2,
+      "duration": 110,
+      "damage": {
+        "native": 30331.270309691165,
+        "curse": 958.9496593869535,
+        "fire": 583.5499384799195
+      },
+      "firstFire": 43,
+      "generated": 4664.646101161349,
+      "metrics": {
+        "guards": 0,
+        "curse": 958.9496593869535,
+        "release": 833.6427692570278,
+        "rescue": 0,
+        "deferred": 2671.2847999999985,
+        "repaid": 2325.296639999999
+      },
+      "enemyStats": {
+        "enemy_1046_agent": {
+          "hp": 3600,
+          "atk": 338.8,
+          "def": 85,
+          "res": 40,
+          "fly": false
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_1045_hammer",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 10,
+      "killed": 8,
+      "leaks": 2,
+      "duration": 110,
+      "damage": {
+        "native": 30331.270309691165,
+        "curse": 958.9496593869535,
+        "fire": 583.5499384799195
+      },
+      "firstFire": 43,
+      "generated": 4664.646101161349,
+      "metrics": {
+        "guards": 0,
+        "curse": 958.9496593869535,
+        "release": 833.6427692570278,
+        "rescue": 0,
+        "deferred": 2671.2847999999985,
+        "repaid": 2325.296639999999
+      },
+      "enemyStats": {
+        "enemy_1046_agent": {
+          "hp": 3600,
+          "atk": 338.8,
+          "def": 85,
+          "res": 40,
+          "fly": false
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_1045_hammer",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 10,
+      "killed": 8,
+      "leaks": 2,
+      "duration": 110,
+      "damage": {
+        "native": 30331.270309691165,
+        "curse": 958.9496593869535,
+        "fire": 583.5499384799195
+      },
+      "firstFire": 43,
+      "generated": 4664.646101161349,
+      "metrics": {
+        "guards": 0,
+        "curse": 958.9496593869535,
+        "release": 833.6427692570278,
+        "rescue": 0,
+        "deferred": 2671.2847999999985,
+        "repaid": 2325.296639999999
+      },
+      "enemyStats": {
+        "enemy_1046_agent": {
+          "hp": 3600,
+          "atk": 338.8,
+          "def": 85,
+          "res": 40,
+          "fly": false
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_1174_duholy",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 6,
+      "killed": 5,
+      "leaks": 1,
+      "duration": 110,
+      "damage": {
+        "native": 24346.722516571608,
+        "curse": 591.0664659907387,
+        "fire": 33.98564919978344
+      },
+      "firstFire": 54.86666666666667,
+      "generated": 6115.379201220928,
+      "metrics": {
+        "guards": 0,
+        "curse": 591.0664659907387,
+        "release": 1682.8383773326113,
+        "rescue": 824.5848800000002,
+        "deferred": 3602.940000000002,
+        "repaid": 1837.1496000000002
+      },
+      "enemyStats": {
+        "enemy_1170_dushld": {
+          "hp": 10080,
+          "atk": 847,
+          "def": 750,
+          "res": 70,
+          "fly": false
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_1174_duholy",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 6,
+      "killed": 5,
+      "leaks": 1,
+      "duration": 110,
+      "damage": {
+        "native": 24112.22651657161,
+        "curse": 591.0664659907387,
+        "fire": 33.98564919978344
+      },
+      "firstFire": 54.86666666666667,
+      "generated": 6115.379201220928,
+      "metrics": {
+        "guards": 0,
+        "curse": 591.0664659907387,
+        "release": 1682.8383773326113,
+        "rescue": 824.5848800000002,
+        "deferred": 3602.940000000002,
+        "repaid": 1837.1496000000002
+      },
+      "enemyStats": {
+        "enemy_1170_dushld": {
+          "hp": 10080,
+          "atk": 847,
+          "def": 750,
+          "res": 70,
+          "fly": false
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_1174_duholy",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 6,
+      "killed": 5,
+      "leaks": 1,
+      "duration": 110,
+      "damage": {
+        "native": 24346.722516571608,
+        "curse": 591.0664659907387,
+        "fire": 33.98564919978344
+      },
+      "firstFire": 54.86666666666667,
+      "generated": 6115.379201220928,
+      "metrics": {
+        "guards": 0,
+        "curse": 591.0664659907387,
+        "release": 1682.8383773326113,
+        "rescue": 824.5848800000002,
+        "deferred": 3602.940000000002,
+        "repaid": 1837.1496000000002
+      },
+      "enemyStats": {
+        "enemy_1170_dushld": {
+          "hp": 10080,
+          "atk": 847,
+          "def": 750,
+          "res": 70,
+          "fly": false
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_1017_defdrn",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 0,
+      "leaks": 9,
+      "duration": 104.733,
+      "damage": {
+        "native": 0,
+        "curse": 2839.216065839344,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 3348.1733393919994,
+      "metrics": {
+        "guards": 0,
+        "curse": 2839.216065839344,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 1753.6046399999993,
+        "repaid": 988.3889600000006
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_1017_defdrn",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 0,
+      "leaks": 9,
+      "duration": 104.733,
+      "damage": {
+        "native": 0,
+        "curse": 2839.216065839344,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 3348.1733393919994,
+      "metrics": {
+        "guards": 0,
+        "curse": 2839.216065839344,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 1753.6046399999993,
+        "repaid": 988.3889600000006
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_1017_defdrn",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 0,
+      "leaks": 9,
+      "duration": 104.733,
+      "damage": {
+        "native": 0,
+        "curse": 2839.216065839344,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 3348.1733393919994,
+      "metrics": {
+        "guards": 0,
+        "curse": 2839.216065839344,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 1753.6046399999993,
+        "repaid": 988.3889600000006
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_10084_hlegle",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 0,
+      "leaks": 9,
+      "duration": 104.733,
+      "damage": {
+        "native": 0,
+        "curse": 2839.216065839343,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 3348.1733393919994,
+      "metrics": {
+        "guards": 0,
+        "curse": 2839.216065839343,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 1753.6046399999993,
+        "repaid": 988.3889600000006
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_10084_hlegle",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 0,
+      "leaks": 9,
+      "duration": 104.733,
+      "damage": {
+        "native": 0,
+        "curse": 2839.216065839343,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 3348.1733393919994,
+      "metrics": {
+        "guards": 0,
+        "curse": 2839.216065839343,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 1753.6046399999993,
+        "repaid": 988.3889600000006
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "三人纯卡兹戴尔",
+      "key": "enemy_10084_hlegle",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 0,
+      "leaks": 9,
+      "duration": 104.733,
+      "damage": {
+        "native": 0,
+        "curse": 2839.216065839343,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 3348.1733393919994,
+      "metrics": {
+        "guards": 0,
+        "curse": 2839.216065839343,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 1753.6046399999993,
+        "repaid": 988.3889600000006
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_1045_hammer",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 10,
+      "killed": 10,
+      "leaks": 0,
+      "duration": 62.467,
+      "damage": {
+        "native": 37941.623749612205,
+        "curse": 866.7139057721822,
+        "fire": 107.51839611298857
+      },
+      "firstFire": 62.233333333333334,
+      "generated": 1453.5977087328408,
+      "metrics": {
+        "guards": 0,
+        "curse": 866.7139057721822,
+        "release": 153.59770873284083,
+        "rescue": 0,
+        "deferred": 862.4795999999998,
+        "repaid": 804.3491999999999
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_1045_hammer",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 10,
+      "killed": 10,
+      "leaks": 0,
+      "duration": 62.467,
+      "damage": {
+        "native": 37941.623749612205,
+        "curse": 866.7139057721822,
+        "fire": 107.51839611298857
+      },
+      "firstFire": 62.233333333333334,
+      "generated": 1453.5977087328408,
+      "metrics": {
+        "guards": 0,
+        "curse": 866.7139057721822,
+        "release": 153.59770873284083,
+        "rescue": 0,
+        "deferred": 862.4795999999998,
+        "repaid": 804.3491999999999
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_1045_hammer",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 10,
+      "killed": 10,
+      "leaks": 0,
+      "duration": 62.467,
+      "damage": {
+        "native": 37941.623749612205,
+        "curse": 866.7139057721822,
+        "fire": 107.51839611298857
+      },
+      "firstFire": 62.233333333333334,
+      "generated": 1453.5977087328408,
+      "metrics": {
+        "guards": 0,
+        "curse": 866.7139057721822,
+        "release": 153.59770873284083,
+        "rescue": 0,
+        "deferred": 862.4795999999998,
+        "repaid": 804.3491999999999
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_1174_duholy",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 6,
+      "killed": 5,
+      "leaks": 1,
+      "duration": 110,
+      "damage": {
+        "native": 26940.222516571637,
+        "curse": 591.0664659907387,
+        "fire": 33.98564919978344
+      },
+      "firstFire": 54.86666666666667,
+      "generated": 6115.379201220928,
+      "metrics": {
+        "guards": 0,
+        "curse": 591.0664659907387,
+        "release": 1682.8383773326113,
+        "rescue": 824.5848800000002,
+        "deferred": 3602.940000000002,
+        "repaid": 1837.1496000000002
+      },
+      "enemyStats": {
+        "enemy_1170_dushld": {
+          "hp": 10080,
+          "atk": 847,
+          "def": 750,
+          "res": 70,
+          "fly": false
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_1174_duholy",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 6,
+      "killed": 5,
+      "leaks": 1,
+      "duration": 110,
+      "damage": {
+        "native": 26705.726516571634,
+        "curse": 591.0664659907387,
+        "fire": 33.98564919978344
+      },
+      "firstFire": 54.86666666666667,
+      "generated": 6115.379201220928,
+      "metrics": {
+        "guards": 0,
+        "curse": 591.0664659907387,
+        "release": 1682.8383773326113,
+        "rescue": 824.5848800000002,
+        "deferred": 3602.940000000002,
+        "repaid": 1837.1496000000002
+      },
+      "enemyStats": {
+        "enemy_1170_dushld": {
+          "hp": 10080,
+          "atk": 847,
+          "def": 750,
+          "res": 70,
+          "fly": false
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_1174_duholy",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 6,
+      "killed": 5,
+      "leaks": 1,
+      "duration": 110,
+      "damage": {
+        "native": 26940.222516571637,
+        "curse": 591.0664659907387,
+        "fire": 33.98564919978344
+      },
+      "firstFire": 54.86666666666667,
+      "generated": 6115.379201220928,
+      "metrics": {
+        "guards": 0,
+        "curse": 591.0664659907387,
+        "release": 1682.8383773326113,
+        "rescue": 824.5848800000002,
+        "deferred": 3602.940000000002,
+        "repaid": 1837.1496000000002
+      },
+      "enemyStats": {
+        "enemy_1170_dushld": {
+          "hp": 10080,
+          "atk": 847,
+          "def": 750,
+          "res": 70,
+          "fly": false
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_1017_defdrn",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 72.833,
+      "damage": {
+        "native": 11957.788493037555,
+        "curse": 2730.2115069624438,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 688.7729900799994,
+      "metrics": {
+        "guards": 0,
+        "curse": 2730.2115069624438,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 411.05104000000046,
+        "repaid": 377.19040000000007
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_1017_defdrn",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 72.833,
+      "damage": {
+        "native": 11957.788493037555,
+        "curse": 2730.2115069624438,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 688.7729900799994,
+      "metrics": {
+        "guards": 0,
+        "curse": 2730.2115069624438,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 411.05104000000046,
+        "repaid": 377.19040000000007
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_1017_defdrn",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 72.833,
+      "damage": {
+        "native": 11957.788493037555,
+        "curse": 2730.2115069624438,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 688.7729900799994,
+      "metrics": {
+        "guards": 0,
+        "curse": 2730.2115069624438,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 411.05104000000046,
+        "repaid": 377.19040000000007
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_10084_hlegle",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 73.567,
+      "damage": {
+        "native": 16787.59553688118,
+        "curse": 2940.40446311882,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 729.5013689599995,
+      "metrics": {
+        "guards": 0,
+        "curse": 2940.40446311882,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 434.6254400000005,
+        "repaid": 400.7648000000001
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_10084_hlegle",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 73.567,
+      "damage": {
+        "native": 16787.59553688118,
+        "curse": 2940.40446311882,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 729.5013689599995,
+      "metrics": {
+        "guards": 0,
+        "curse": 2940.40446311882,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 434.6254400000005,
+        "repaid": 400.7648000000001
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "三人加隐现外援",
+      "key": "enemy_10084_hlegle",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 73.567,
+      "damage": {
+        "native": 16787.59553688118,
+        "curse": 2940.40446311882,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 729.5013689599995,
+      "metrics": {
+        "guards": 0,
+        "curse": 2940.40446311882,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 434.6254400000005,
+        "repaid": 400.7648000000001
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "四人加入陨星",
+      "key": "enemy_1045_hammer",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 10,
+      "killed": 10,
+      "leaks": 0,
+      "duration": 60.967,
+      "damage": {
+        "native": 37229.66924808098,
+        "curse": 1405.6337439051213,
+        "fire": 323.2185321624959
+      },
+      "firstFire": 45.93333333333333,
+      "generated": 1896.800020232137,
+      "metrics": {
+        "guards": 0,
+        "curse": 1405.6337439051213,
+        "release": 461.7407602321366,
+        "rescue": 0,
+        "deferred": 1114.5475999999996,
+        "repaid": 970.3027999999999
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "四人加入陨星",
+      "key": "enemy_1045_hammer",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 10,
+      "killed": 10,
+      "leaks": 0,
+      "duration": 60.967,
+      "damage": {
+        "native": 37229.66924808099,
+        "curse": 1405.6337439051222,
+        "fire": 323.2185321624959
+      },
+      "firstFire": 45.93333333333333,
+      "generated": 1896.800020232137,
+      "metrics": {
+        "guards": 0,
+        "curse": 1405.6337439051222,
+        "release": 461.7407602321366,
+        "rescue": 0,
+        "deferred": 1114.5475999999996,
+        "repaid": 970.3027999999999
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "四人加入陨星",
+      "key": "enemy_1045_hammer",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 10,
+      "killed": 10,
+      "leaks": 0,
+      "duration": 60.967,
+      "damage": {
+        "native": 37189.93811912551,
+        "curse": 1366.1954324618519,
+        "fire": 319.7209121624958
+      },
+      "firstFire": 45.93333333333333,
+      "generated": 1891.8034202321371,
+      "metrics": {
+        "guards": 0,
+        "curse": 1366.1954324618519,
+        "release": 456.74416023213666,
+        "rescue": 0,
+        "deferred": 1109.9895999999997,
+        "repaid": 970.3027999999999
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "四人加入陨星",
+      "key": "enemy_1174_duholy",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 6,
+      "killed": 6,
+      "leaks": 0,
+      "duration": 105.167,
+      "damage": {
+        "native": 29067.10899799933,
+        "curse": 1630.168289962382,
+        "fire": 982.7227120382792
+      },
+      "firstFire": 54.86666666666667,
+      "generated": 5873.700347692927,
+      "metrics": {
+        "guards": 1,
+        "curse": 1630.168289962382,
+        "release": 3672.8823734609314,
+        "rescue": 277.1480000000002,
+        "deferred": 3290.4520000000016,
+        "repaid": 948.800639999999
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "四人加入陨星",
+      "key": "enemy_1174_duholy",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 6,
+      "killed": 5,
+      "leaks": 1,
+      "duration": 110,
+      "damage": {
+        "native": 29009.80256577138,
+        "curse": 1682.9016629190075,
+        "fire": 982.7227120382792
+      },
+      "firstFire": 54.86666666666667,
+      "generated": 6160.829427524926,
+      "metrics": {
+        "guards": 1,
+        "curse": 1682.9016629190075,
+        "release": 3672.8823734609314,
+        "rescue": 277.1480000000002,
+        "deferred": 3446.6960000000017,
+        "repaid": 948.800639999999
+      },
+      "enemyStats": {
+        "enemy_1170_dushld": {
+          "hp": 10080,
+          "atk": 847,
+          "def": 750,
+          "res": 70,
+          "fly": false
+        }
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "四人加入陨星",
+      "key": "enemy_1174_duholy",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 6,
+      "killed": 6,
+      "leaks": 0,
+      "duration": 91.033,
+      "damage": {
+        "native": 29292.938565771376,
+        "curse": 1440.6497232167296,
+        "fire": 946.4117110118792
+      },
+      "firstFire": 54.86666666666667,
+      "generated": 4599.987512948927,
+      "metrics": {
+        "guards": 1,
+        "curse": 1440.6497232167296,
+        "release": 3551.845703372931,
+        "rescue": 277.1480000000002,
+        "deferred": 2665.476000000001,
+        "repaid": 899.6856
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "四人加入陨星",
+      "key": "enemy_1017_defdrn",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 70.367,
+      "damage": {
+        "native": 11879.750625321576,
+        "curse": 2808.2493746784235,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 946.5318273599995,
+      "metrics": {
+        "guards": 0,
+        "curse": 2808.2493746784235,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 559.2157200000006,
+        "repaid": 528.1768000000002
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "四人加入陨星",
+      "key": "enemy_1017_defdrn",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 73.033,
+      "damage": {
+        "native": 11947.179969896171,
+        "curse": 2740.8200301038314,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 770.2297478399994,
+      "metrics": {
+        "guards": 0,
+        "curse": 2740.8200301038314,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 458.1998400000005,
+        "repaid": 424.33920000000006
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "四人加入陨星",
+      "key": "enemy_1017_defdrn",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 73.033,
+      "damage": {
+        "native": 11957.098415536078,
+        "curse": 2730.901584463923,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 810.9581267199994,
+      "metrics": {
+        "guards": 0,
+        "curse": 2730.901584463923,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 481.77424000000053,
+        "repaid": 447.9136000000001
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "四人加入陨星",
+      "key": "enemy_10084_hlegle",
+      "seed": 17,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 75.833,
+      "damage": {
+        "native": 15737.010220791135,
+        "curse": 3990.989779208863,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 1003.7420142399995,
+      "metrics": {
+        "guards": 0,
+        "curse": 3990.989779208863,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 592.3301200000006,
+        "repaid": 561.2912000000002
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "四人加入陨星",
+      "key": "enemy_10084_hlegle",
+      "seed": 73,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 74.433,
+      "damage": {
+        "native": 15920.135863761398,
+        "curse": 3807.8641362386024,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 908.8966924799996,
+      "metrics": {
+        "guards": 0,
+        "curse": 3807.8641362386024,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 538.4630400000005,
+        "repaid": 504.60240000000016
+      },
+      "enemyStats": {}
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "lineup": "四人加入陨星",
+      "key": "enemy_10084_hlegle",
+      "seed": 131,
+      "round": 3,
+      "layers": 12,
+      "total": 9,
+      "killed": 9,
+      "leaks": 0,
+      "duration": 75.833,
+      "damage": {
+        "native": 15579.016539185592,
+        "curse": 4148.983460814405,
+        "fire": 0
+      },
+      "firstFire": null,
+      "generated": 1156.4595839999993,
+      "metrics": {
+        "guards": 0,
+        "curse": 4148.983460814405,
+        "release": 0,
+        "rescue": 0,
+        "deferred": 675.4150400000007,
+        "repaid": 617.9800000000001
+      },
+      "enemyStats": {}
+    }
+  ]
+}

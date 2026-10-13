@@ -1,0 +1,24 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {getData} from '../../server/data.js';
+import {buildEncyclopediaCatalog} from '../../server/sim/content/expansion/encyclopedia-catalog.js';
+import {appPage} from '../helpers/appPage.mjs';
+const chrome=process.env.CHROME_PATH;
+test('encyclopedia main-screen entry, full catalogs, search, layers and narrow viewport',{skip:process.env.SP_E2E!=='1'||!chrome},async t=>{
+ const catalog=buildEncyclopediaCatalog(getData());
+ const {startServer}=await import('../../server/index.js');const puppeteer=(await import('puppeteer-core')).default;
+ const srv=await startServer({auth:false,ranked:{filename:':memory:'},port:0,host:'127.0.0.1',quiet:true});t.after(()=>srv.close());
+ const browser=await puppeteer.launch({executablePath:chrome,headless:true,args:['--no-sandbox']});t.after(()=>browser.close());const page=await appPage(await browser.newPage());const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.setViewport({width:1440,height:900});await page.goto('http://127.0.0.1:'+srv.port,{waitUntil:'domcontentloaded',timeout:60000});
+ await page.waitForSelector('.title-library',{timeout:60000});const buttons=await page.$eval('.title-library',el=>[...el.querySelectorAll('button')].map(b=>b.textContent.trim()));assert.deepEqual(buttons,['百科大全','玩法说明']);await page.click('.title-library button');await page.waitForSelector('[data-entry-id="penguinShip"]');
+ assert.equal(await page.$$eval('.encyclopedia__list article',a=>a.length),Object.keys(catalog.bonds).length);
+ await page.type('[aria-label="搜索百科"]','企鹅物流');assert.equal(await page.$$eval('.encyclopedia__list article',a=>a.length),1);const text=await page.$eval('.encyclopedia__list',el=>el.textContent);assert.match(text,/攻击力\+40/);assert.match(text,/\+80/);assert.match(text,/岁与企鹅/);
+ await page.click('details summary');assert.ok((await page.$eval('.encyclopedia__members',el=>el.textContent)).includes('可颂'));assert.ok((await page.$eval('.encyclopedia__members',el=>el.textContent)).includes('休整期结束'));
+ await page.$eval('[aria-label="预览层数"]',el=>{el.value='50';el.dispatchEvent(new Event('input',{bubbles:true}));});
+ fs.mkdirSync('../reports/rhine-0.5.2/encyclopedia-original',{recursive:true});await page.screenshot({path:'../reports/rhine-0.5.2/encyclopedia-original/bonds-desktop.png'});
+ await page.$eval('[aria-label="搜索百科"]',el=>{el.value='叙拉古';el.dispatchEvent(new Event('input',{bubbles:true}));});await page.click('details summary');const vigil=await page.$eval('[data-member-id="chess_char_3_19_a"]',el=>({normal:el.querySelectorAll('[data-quality="normal"] p').length,elite:el.querySelectorAll('[data-quality="elite"] p').length,text:el.textContent}));assert.equal(vigil.normal,1);assert.equal(vigil.elite,1);assert.ok(!vigil.text.includes('【152】'));assert.ok(vigil.text.includes('奇迹'));
+ await page.evaluate(()=>[...document.querySelectorAll('.encyclopedia__tools button')].find(b=>b.textContent.includes('装备大全')).click());assert.equal(await page.$$eval('.encyclopedia__list article',a=>a.length),Object.values(catalog.items).filter(r=>!r.isGolden).length);await page.type('[aria-label="搜索百科"]','坚守盾牌');assert.equal(await page.$$eval('.encyclopedia__list article',a=>a.length),1);assert.equal(await page.$$eval('.encyclopedia__qualities section',a=>a.length),2);
+ await page.setViewport({width:568,height:320,isMobile:true,hasTouch:true});await page.waitForSelector('.title-library',{timeout:60000});await page.click('.title-library button');await page.waitForSelector('[data-entry-id="penguinShip"]');await page.evaluate(()=>[...document.querySelectorAll('.encyclopedia__tools button')].find(b=>b.textContent.includes('装备大全')).click());await page.type('[aria-label="搜索百科"]','坚守盾牌');await page.screenshot({path:'../reports/rhine-0.5.2/encyclopedia-original/items-narrow.png'});const rect=await page.$eval('.encyclopedia',e=>{const r=e.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:innerWidth,height:innerHeight};});assert.ok(rect.left>=0&&rect.right<=rect.width&&rect.top>=0&&rect.bottom<=rect.height,JSON.stringify(rect));
+ await page.evaluate(()=>[...document.querySelectorAll('.encyclopedia .modal__actions button')].find(b=>b.textContent.includes('关闭')).click());await page.waitForFunction(()=>!document.querySelector('.encyclopedia'));assert.deepEqual(errors,[]);
+});

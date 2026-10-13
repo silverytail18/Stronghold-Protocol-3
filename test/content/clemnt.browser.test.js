@@ -1,0 +1,20 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {existsSync} from 'node:fs';
+import {startServer} from '../../server/index.js';
+import {appPage} from '../helpers/appPage.mjs';
+import {getData} from '../../server/data.js';
+import {buildExpansionData} from '../../server/sim/content/expansion/expansion-data.js';
+import {buildBattleSpec,createBattleFromSpec} from '../../server/sim/spec.js';
+import {DataSource} from '../../server/sim/simdata.js';
+import {enemyRec} from '../helpers/battleHarness.js';
+const chrome=process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe';
+test('six Clementia loadouts replay identically in real browser and server simulation',{skip:!existsSync(chrome)},async t=>{
+ const enemy=enemyRec({key:'enemy_clemnt_browser',hp:1e7,def:500,atk:0,speed:0}),raw=buildExpansionData(getData());raw.enemies[enemy.key]=enemy;
+ const specs=[];for(const suffix of ['a','b'])for(let skillIndex=0;skillIndex<3;skillIndex++)specs.push(buildBattleSpec({battleId:'qa.clemnt.'+suffix+skillIndex,fieldId:'n:p1',kind:'normal',seed:77,modeId:'mode_single_hard',round:8,stageId:'act2autochess_m01',timeLimit:120,players:[{playerId:'p1',seat:0,side:'L',colOffset:0,units:[{chessId:'chess_exp_clemnt_'+suffix,uid:1,kind:'chess',row:10,col:4,dir:'RIGHT',skillIndex,moduleId:'none'}],bonds:{},playerEffects:[]}],spawns:[],routes:[],flags:{startOpCooldown:0}}));
+ const simulate=(b)=>{b.autoFinish=false;b.step();const e=b.spawnEnemy(enemy.key,{pos:[10,5]}),u=b.allyUnits[0];u.skill.addCharge(1);u.skill.activate('test');for(let i=0;i<500;i++)b.step();return {hp:e.hp,damage:u.stats.dmg,skill:u.skill.id,casts:u.skill.activations,ammo:u.skill.ammoLeft,errors:b.errors};};
+ const expected=specs.map(s=>simulate(createBattleFromSpec(s,new DataSource(raw,null),{quiet:true})));assert.ok(expected.every(e=>e.damage>0));for(const e of expected)assert.deepEqual(e.errors,[]);
+ const srv=await startServer({port:0,host:'127.0.0.1',quiet:true,auth:false,ranked:false});t.after(()=>srv.close());const browser=await(await import('puppeteer-core')).default.launch({executablePath:chrome,headless:true,args:['--no-sandbox']});t.after(()=>browser.close());const page=await appPage(await browser.newPage()),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto(srv.url+'/dev/render-demo.html?scene=prep&paused=1&panel=0',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.__demo?.ready||window.__demo?.error,{timeout:60000});
+ const actual=await page.evaluate(async({specs,enemy})=>{const {setMatchContent}=await import('/js/data.js'),{loadBrowserSim}=await import('/js/battle/runner.js'),{DataSource}=await import('/sim/simdata.js');const rules={batches:[{id:'arknights-expansion-v1'}]};await setMatchContent(rules);const {spec:S,ds}=await loadBrowserSim({testRules:rules}),source=new DataSource({...ds.raw,enemies:{...ds.raw.enemies,[enemy.key]:enemy}},ds.fallback),results=[];for(const spec of specs){const b=S.createBattleFromSpec(spec,source,{quiet:true});b.autoFinish=false;b.step();const e=b.spawnEnemy(enemy.key,{pos:[10,5]}),u=b.allyUnits[0];u.skill.addCharge(1);u.skill.activate('test');for(let i=0;i<500;i++)b.step();results.push({hp:e.hp,damage:u.stats.dmg,skill:u.skill.id,casts:u.skill.activations,ammo:u.skill.ammoLeft,errors:b.errors});}return results;},{specs,enemy});assert.deepEqual(actual,expected);assert.deepEqual(errors,[]);
+});

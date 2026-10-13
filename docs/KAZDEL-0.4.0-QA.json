@@ -1,0 +1,366 @@
+{
+  "appVersion": "0.4.0",
+  "designVersion": "5.1",
+  "batch": "kazdel-expansion-v1",
+  "batchVersion": "kazdel-test-3",
+  "clientCapability": 17,
+  "fullRegression": {
+    "tests": 4057,
+    "pass": 4043,
+    "fail": 1,
+    "skipped": 13
+  },
+  "fullRegressionFailure": {
+    "test": "resource-scenes.test.js",
+    "reason": "Native browser waitForFunction exceeded 30 seconds during concurrent full suite",
+    "independentRecheck": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "skipped": 0
+    },
+    "unresolvedFailures": 0
+  },
+  "kazdelMechanisms": {
+    "tests": 100,
+    "pass": 100,
+    "fail": 0,
+    "skipped": 0
+  },
+  "browserSpecial": {
+    "tests": 7,
+    "pass": 7,
+    "fail": 0,
+    "skipped": 0
+  },
+  "deliveryRecheck": {
+    "tests": 35,
+    "pass": 35,
+    "fail": 0,
+    "skipped": 0
+  },
+  "latestUIUnit": {
+    "tests": 404,
+    "pass": 404,
+    "fail": 0,
+    "skipped": 0
+  },
+  "latestDisplay": {
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "skipped": 0
+  },
+  "latestNativeUI": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "skipped": 0
+  },
+  "earlyGame": {
+    "scenarios": 108,
+    "balanceChanged": false,
+    "report": "KAZDEL-0.4.0-EARLY.json"
+  },
+  "realWaves": {
+    "method": "Controlled formed lineups on the actual stage #01 and native round spawn/scaling pipeline, with 3 seeds per faction. No claim of full-match draft win rate. Soul layers/elite status are scenario assumptions.",
+    "scenarios": 549,
+    "zeroLeakScenarios": 330,
+    "groups": [
+      {
+        "mode": "mode_multi_normal",
+        "lineup": "3核心普通＋隐现",
+        "scenarios": 12,
+        "zeroLeaks": 12,
+        "leaks": 0
+      },
+      {
+        "mode": "mode_multi_normal",
+        "lineup": "6核心混合精锐",
+        "scenarios": 12,
+        "zeroLeaks": 12,
+        "leaks": 0
+      },
+      {
+        "mode": "mode_multi_normal",
+        "lineup": "6核心无W＋隐现",
+        "scenarios": 12,
+        "zeroLeaks": 9,
+        "leaks": 7
+      },
+      {
+        "mode": "mode_multi_normal",
+        "lineup": "9核心精锐无逻各斯",
+        "scenarios": 21,
+        "zeroLeaks": 0,
+        "leaks": 205
+      },
+      {
+        "mode": "mode_multi_normal",
+        "lineup": "9核心精锐逻各斯S3",
+        "scenarios": 21,
+        "zeroLeaks": 17,
+        "leaks": 6
+      },
+      {
+        "mode": "mode_multi_normal",
+        "lineup": "9核心650质变前",
+        "scenarios": 21,
+        "zeroLeaks": 19,
+        "leaks": 2
+      },
+      {
+        "mode": "mode_multi_normal",
+        "lineup": "9核心650质变后",
+        "scenarios": 21,
+        "zeroLeaks": 21,
+        "leaks": 0
+      },
+      {
+        "mode": "mode_multi_normal",
+        "lineup": "9核心良好发育675",
+        "scenarios": 21,
+        "zeroLeaks": 21,
+        "leaks": 0
+      },
+      {
+        "mode": "mode_multi_normal",
+        "lineup": "9核心充分发育837",
+        "scenarios": 21,
+        "zeroLeaks": 21,
+        "leaks": 0
+      },
+      {
+        "mode": "mode_multi_normal",
+        "lineup": "9核心999极限",
+        "scenarios": 21,
+        "zeroLeaks": 21,
+        "leaks": 0
+      },
+      {
+        "mode": "mode_multi_hard",
+        "lineup": "3核心普通＋隐现",
+        "scenarios": 12,
+        "zeroLeaks": 9,
+        "leaks": 3
+      },
+      {
+        "mode": "mode_multi_hard",
+        "lineup": "6核心混合精锐",
+        "scenarios": 12,
+        "zeroLeaks": 6,
+        "leaks": 29
+      },
+      {
+        "mode": "mode_multi_hard",
+        "lineup": "6核心无W＋隐现",
+        "scenarios": 12,
+        "zeroLeaks": 3,
+        "leaks": 35
+      },
+      {
+        "mode": "mode_multi_hard",
+        "lineup": "9核心精锐无逻各斯",
+        "scenarios": 21,
+        "zeroLeaks": 0,
+        "leaks": 280
+      },
+      {
+        "mode": "mode_multi_hard",
+        "lineup": "9核心精锐逻各斯S3",
+        "scenarios": 21,
+        "zeroLeaks": 13,
+        "leaks": 63
+      },
+      {
+        "mode": "mode_multi_hard",
+        "lineup": "9核心650质变前",
+        "scenarios": 21,
+        "zeroLeaks": 17,
+        "leaks": 4
+      },
+      {
+        "mode": "mode_multi_hard",
+        "lineup": "9核心650质变后",
+        "scenarios": 21,
+        "zeroLeaks": 20,
+        "leaks": 1
+      },
+      {
+        "mode": "mode_multi_hard",
+        "lineup": "9核心良好发育675",
+        "scenarios": 21,
+        "zeroLeaks": 19,
+        "leaks": 2
+      },
+      {
+        "mode": "mode_multi_hard",
+        "lineup": "9核心充分发育837",
+        "scenarios": 21,
+        "zeroLeaks": 21,
+        "leaks": 0
+      },
+      {
+        "mode": "mode_multi_hard",
+        "lineup": "9核心999极限",
+        "scenarios": 21,
+        "zeroLeaks": 21,
+        "leaks": 0
+      },
+      {
+        "mode": "mode_multi_abyss",
+        "lineup": "3核心普通＋隐现",
+        "scenarios": 12,
+        "zeroLeaks": 9,
+        "leaks": 3
+      },
+      {
+        "mode": "mode_multi_abyss",
+        "lineup": "6核心混合精锐",
+        "scenarios": 12,
+        "zeroLeaks": 0,
+        "leaks": 109
+      },
+      {
+        "mode": "mode_multi_abyss",
+        "lineup": "6核心无W＋隐现",
+        "scenarios": 12,
+        "zeroLeaks": 0,
+        "leaks": 140
+      },
+      {
+        "mode": "mode_multi_abyss",
+        "lineup": "9核心精锐无逻各斯",
+        "scenarios": 21,
+        "zeroLeaks": 0,
+        "leaks": 446
+      },
+      {
+        "mode": "mode_multi_abyss",
+        "lineup": "9核心精锐逻各斯S3",
+        "scenarios": 21,
+        "zeroLeaks": 1,
+        "leaks": 236
+      },
+      {
+        "mode": "mode_multi_abyss",
+        "lineup": "9核心650质变前",
+        "scenarios": 21,
+        "zeroLeaks": 6,
+        "leaks": 27
+      },
+      {
+        "mode": "mode_multi_abyss",
+        "lineup": "9核心650质变后",
+        "scenarios": 21,
+        "zeroLeaks": 9,
+        "leaks": 16
+      },
+      {
+        "mode": "mode_multi_abyss",
+        "lineup": "9核心良好发育675",
+        "scenarios": 21,
+        "zeroLeaks": 9,
+        "leaks": 18
+      },
+      {
+        "mode": "mode_multi_abyss",
+        "lineup": "9核心充分发育837",
+        "scenarios": 21,
+        "zeroLeaks": 3,
+        "leaks": 95
+      },
+      {
+        "mode": "mode_multi_abyss",
+        "lineup": "9核心999极限",
+        "scenarios": 21,
+        "zeroLeaks": 11,
+        "leaks": 53
+      }
+    ]
+  },
+  "instantBurst": {
+    "method": "Three same-frame attack packets using actual R13/R23 hard and abyss enemy stats and the native mitigation/shield/fatal pipeline. Chimera has both physical and arts packets. Hodrer uses native S3. This isolates the instant HP pressure; enemy stun/aura/skill timing are covered separately by actual AI wave simulations. The single operator fixture supplies a nine-core snapshot to compare protection, not a full legal lineup.",
+    "scenarios": 48
+  },
+  "formalDataUnchanged": [
+    {
+      "file": "assets.json",
+      "sha256": "f30716df8b396f1a0f63060ef3a219fc716d807683cad007724b7b9efd636d0d"
+    },
+    {
+      "file": "bands.json",
+      "sha256": "8f18abc99eb50639a1f2fc679a84015d6d8cc8aa3ff7c7d22ad6db5dc347053b"
+    },
+    {
+      "file": "bonds.json",
+      "sha256": "73fe3949e97a5107b08f57a229d48e080b9ff44b55af6dd3c5b929866ce370ad"
+    },
+    {
+      "file": "bosses.json",
+      "sha256": "427c12bcdb23c449ab2d423129b1d339ecd76cc7c70a181a3d2b5a4af88b96a9"
+    },
+    {
+      "file": "chess.json",
+      "sha256": "d05eb6f30cd224a4ef08c2a97b122c243496ff64073ee8413e4c04b29720bf2b"
+    },
+    {
+      "file": "choices.json",
+      "sha256": "c0b43cfdb03bac3964ce398a4d94e313d2de2e89926a55e7337cec5a19ce193a"
+    },
+    {
+      "file": "config.json",
+      "sha256": "a8e1fc4cf9bd33626d3aa8fd9628fdd9bad57d7656d1825647e3b9ce48fb4511"
+    },
+    {
+      "file": "effects.json",
+      "sha256": "96e28be614f04da6d58c9e95706d742863c756b94dcad498e808c3410ba620e3"
+    },
+    {
+      "file": "emotes.json",
+      "sha256": "1c63ef4c57c1184b140d7830d1ada3ee4f1e4db7bb877570ab033399f7565aa4"
+    },
+    {
+      "file": "enemies.json",
+      "sha256": "7361604e47bd39544a1a490756de793bcc507ecf52e6a2a41e007f0dd32eacdc"
+    },
+    {
+      "file": "factions.json",
+      "sha256": "6bdcf7933eee4b156476769d724d60b34f4b69b095726d1638f02b91d8a22362"
+    },
+    {
+      "file": "garrisons.json",
+      "sha256": "f5b1f5558a263c95abcf36411c31e781efd3ebb1bebdced99ad1f242c2a960e3"
+    },
+    {
+      "file": "items.json",
+      "sha256": "6122a3cd75531f551a03082f000426a2d6b8028788fbd1abbaea5286592fbba4"
+    },
+    {
+      "file": "local-assets.json",
+      "sha256": "ea084eed55886042b727a107fb5d9c92659061eb86f93d8baf510a028eb80dea"
+    },
+    {
+      "file": "stages.json",
+      "sha256": "daf6cb635a3919b402b58c2cba5cd1c8cbfbc94b3fb894e37e03437e555f246f"
+    },
+    {
+      "file": "tokens.json",
+      "sha256": "c2a85310c22fcc306937ac877927b660a20d481290266d307f2c8bb77c6d3636"
+    },
+    {
+      "file": "tuning.json",
+      "sha256": "931253292844e51327e5273197dc03fb425bc966b65cb496f1f55f26832da3fd"
+    },
+    {
+      "file": "waves.json",
+      "sha256": "80cb535958f22a1bf4ea71b26155c6f92ee1b49dd24b88acf4b2bcdf73d80e68"
+    }
+  ],
+  "limitations": [
+    "全量运行保留一次浏览器超时记录；该项单独复测通过，没有把首次运行改写成零失败。",
+    "成型阵容、魂契层数和精锐比例为测试预设；不是完整商店发育轨迹或真人胜率。",
+    "终极难度后期仍有漏怪，当前合并保持已确认的5.1规则，没有凭单场样本改平衡。",
+    "本轮不重建安卓单机APK；轻量客户端加载服务器代码与固定资源。"
+  ]
+}

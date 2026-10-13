@@ -1,0 +1,1083 @@
+{
+  "designVersion": "1.13",
+  "status": "0.5.3：区分研发与开战生效人数，高于6人的已研发科技开战仅需6人；T13研究席继承T01/T02当前区域额外加成",
+  "date": "2026-10-12",
+  "baselineVersion": "1.10",
+  "core": {
+    "name": "莱茵生命",
+    "thresholds": [
+      3,
+      6,
+      9,
+      10
+    ],
+    "layerCap": 999,
+    "firstActivationPoints": 0,
+    "pointStep": 50,
+    "strategyBonusCap": 3,
+    "baseGrowth": [
+      6,
+      10,
+      12,
+      14
+    ],
+    "experimentGrowth": [
+      4,
+      8,
+      12,
+      14
+    ],
+    "newTraitGrowthCapPerRound": 20,
+    "regions": {
+      "policy": "每项区域科技初始可选1个单格；全体科技选格互斥",
+      "regionTechnologyIds": [
+        "T01",
+        "T02",
+        "T03",
+        "T04",
+        "T06",
+        "T13"
+      ],
+      "basePositionsPerTechnology": 1,
+      "tilesPerPosition": 1,
+      "exclusiveAcrossTechnologies": true,
+      "selectLocationButton": "选择位置",
+      "positionSelectionPhase": "休整",
+      "expandedIds": [
+        "T01",
+        "T02",
+        "T04"
+      ],
+      "expansionTechnology": "T09",
+      "expandedPositionsPerTechnology": 2,
+      "globalTileBudget": null,
+      "attachedEffects": {
+        "T07": {
+          "positionOwner": "T04",
+          "independentSelection": false,
+          "baseCombinedTargetCap": 3,
+          "combinedTargetCapWithT10": 5
+        }
+      },
+      "effectsActivePhase": "仅战斗",
+      "preparationPhase": "只研究、选格预览/保存；不赋战斗增益、不伤害/治疗/显隐敌人、不授予T13身份",
+      "selectionUI": {
+        "type": "2D俯视平面地图",
+        "usesActualBattleGrid": true,
+        "button": "选择位置",
+        "phase": "休整",
+        "shows": [
+          "地形/高低台",
+          "禁选格",
+          "已有科技占用",
+          "已部署干员",
+          "T09可选格额度",
+          "T13合法部署条件，无相邻要求"
+        ],
+        "confirmationRequired": true,
+        "cancelPreservesSavedPositions": true,
+        "invalidTilesDisabled": true,
+        "sharedTileSelectionProhibited": true
+      },
+      "visualization": {
+        "symbol": "原创六角R莱茵主题标志",
+        "palette": {
+          "T01": "#ffce78",
+          "T02": "#79b8ff",
+          "T03": "#c69cff",
+          "T04": "#ff8299",
+          "T06": "#8ad9a1",
+          "T13": "#71dfd4"
+        },
+        "pausedDimmed": true,
+        "regularHighlightsIndependent": true,
+        "changesTerrainOrOccupancy": false,
+        "battleUsesOpeningEligibility": true,
+        "surfaces": [
+          "三维战场",
+          "二维选格",
+          "兼容平面战场",
+          "观战休整"
+        ]
+      },
+      "allDeployableTechnologyIds": [
+        "T01",
+        "T02",
+        "T03",
+        "T13"
+      ]
+    },
+    "respecPerMatch": 1,
+    "pointFormulaAfterFirstActivation": "floor(highestLegalLayer / 50) + earnedTenMemberPoint + earnedStrategyMilestonePoints；正常最多19，十人额外最多1，策略另计",
+    "refundCountsAsNewEarnedPoints": false,
+    "upgradePolicy": "单级一次付费；研发要求3/6/9保持，生效要求min(研发门槛,6)；休整少于3全部暂停且保留数据，每场开战冻结资格，战斗减员不改。",
+    "baseArmyBenefits": {
+      "scope": "仅本人具有真实莱茵身份的在场干员，莱茵人数至少3；非莱茵/队友/无身份召唤物/仅虚拟调和受益者不直接获得",
+      "attackBaseByTier": [
+        10,
+        10,
+        10,
+        10
+      ],
+      "attackPercentPerLayer": 0.1,
+      "hpBaseByTier": [
+        10,
+        10,
+        10,
+        10
+      ],
+      "hpPercentPerLayer": 0.1,
+      "additionalAttackBenefitRemoved": true,
+      "additionalHpBenefitRemoved": true,
+      "firstDeploymentSPByTier": [
+        3,
+        6,
+        9,
+        10
+      ],
+      "formula": "攻击和最大生命各+（10+0.1*L）%，同档位公式，0<=L<=999"
+    },
+    "defaultTechnologyBeneficiary": "本人具有天然/合法装备/局内访学莱茵身份的干员；所有科技对干员的增益和原生触发均限此身份，包括T03；无身份召唤物/队友/仅虚拟调和受益者不享科技。对敌科技作用于敌人，T13先授予候选身份，授予后才享科技。",
+    "normalPointCap": 19,
+    "pointFormula": "floor(highestLegalLayer / 50) + earnedTenMemberPoint + earnedStrategyMilestonePoints；正常最多19，十人额外最多1，策略另计",
+    "strategyPointRules": {
+      "maximumWithNoStrategy": 20,
+      "maximumWithFirstStrategy": 21,
+      "maximumWithSecondStrategy": 23,
+      "strategyRewardsOutsideNormalCap": true,
+      "firstActivationGift": false,
+      "milestonesCannotBeReearned": true,
+      "maximaRequireTenMemberReward": true,
+      "tenMemberRewardsOutsideNormalCap": true
+    },
+    "newTraitGrowthCapScope": "仅新增角色研究特质，取消旧采样器计次奖励；新装备每回合定时增层独立结算，仍受对应盟约成长锁与上限",
+    "tenMemberTechnologyPointReward": {
+      "count": 10,
+      "points": 1,
+      "maxClaimsPerMatch": 1,
+      "source": "十人档基础盟约里程碑",
+      "requiresT13": false,
+      "independentOfStrategy": true,
+      "resetOnRespec": false,
+      "retainedBelowTen": true,
+      "countMode": "沿正常合法莱茵盟约人数，包含合法装备/访学身份及本体调和人数语义，手牌不计"
+    },
+    "normalCumulativePointCap": 19,
+    "maximumTotalPointIncome": 23,
+    "sixMemberTechnologyEnhancement": {
+      "removed": true,
+      "replacedBy": "T01/T02按3/6/9/10人数档位固定全体及本格加成"
+    },
+    "technologyActivation": {
+      "minimumPresentCount": 3,
+      "countMode": "休整合法作战区计数，开战人数资格快照；战斗死亡/离场不改变科技资格",
+      "belowThree": "所有科技暂停，不删除任何对局数据",
+      "restoreAtThree": "恢复三人科技；六人及更高科技须开战至少六人及前置，区域仅战斗有效",
+      "preserved": [
+        "科研层数",
+        "科技点及里程碑",
+        "已研究科技",
+        "科技选格与占用",
+        "十人及策略领取记录",
+        "触发次数与进度"
+      ],
+      "resetOnPause": false,
+      "catchUpOnResume": false,
+      "battlePrerequisiteCountsFrozen": true,
+      "qualificationUpdatePhase": "休整",
+      "battleAttritionChangesTechnologyEffects": false,
+      "battleStartRechecksAllRequirements": true,
+      "researchCountPolicy": "解锁人数保持各科技原门槛3/6/9",
+      "activationCountPolicy": "每次开战生效人数为min(研发人数门槛,6)；全部前置仍须已研发且生效"
+    }
+  },
+  "roster": [
+    {
+      "charId": "char_242_otter",
+      "name": "梅尔",
+      "tier": 1,
+      "origin": "new"
+    },
+    {
+      "charId": "char_135_halo",
+      "name": "星源",
+      "tier": 2,
+      "origin": "new"
+    },
+    {
+      "charId": "char_108_silent",
+      "name": "赫默",
+      "tier": 2,
+      "origin": "existing"
+    },
+    {
+      "charId": "char_248_mgllan",
+      "name": "麦哲伦",
+      "tier": 3,
+      "origin": "new"
+    },
+    {
+      "charId": "char_274_astesi",
+      "name": "星极",
+      "tier": 3,
+      "origin": "new",
+      "membershipBasis": "文献学顾问剧情纳入，原groupId并非rhine"
+    },
+    {
+      "charId": "char_128_plosis",
+      "name": "白面鸮",
+      "tier": 4,
+      "origin": "existing"
+    },
+    {
+      "charId": "char_1031_slent2",
+      "name": "淬羽赫默",
+      "tier": 5,
+      "origin": "new"
+    },
+    {
+      "charId": "char_202_demkni",
+      "name": "塞雷娅",
+      "tier": 5,
+      "origin": "existing"
+    },
+    {
+      "charId": "char_134_ifrit",
+      "name": "伊芙利特",
+      "tier": 5,
+      "origin": "new"
+    },
+    {
+      "charId": "char_249_mlyss",
+      "name": "缪尔赛思",
+      "tier": 6,
+      "origin": "existing"
+    },
+    {
+      "charId": "char_1047_halo2",
+      "name": "溯光星源",
+      "tier": 6,
+      "origin": "existing"
+    }
+  ],
+  "technology": [
+    {
+      "id": "T21",
+      "name": "定向招募",
+      "minCount": 3,
+      "prerequisites": [],
+      "ranks": [
+        {
+          "level": 1,
+          "minCount": 3,
+          "additionalPointCost": 1,
+          "effect": "每回合前1次主动刷新，优先出现1名当前可招募的莱茵核心干员；刷新与购买照常付费，遵守当前商店阶数及候选池，不提供免费刷新",
+          "activationMinCount": 3
+        }
+      ],
+      "regionTechnology": false,
+      "treeLayer": 1,
+      "singleLevel": true,
+      "activationMinCount": 3
+    },
+    {
+      "id": "T04",
+      "name": "观测标记",
+      "minCount": 3,
+      "prerequisites": [],
+      "ranks": [
+        {
+          "level": 1,
+          "minCount": 3,
+          "additionalPointCost": 1,
+          "effect": "选1个实验格；格内敌人减速50%且显隐，实验标记离格保留3秒；受本人莱茵原生有效伤害后追加实际生命伤害10%的真实科技伤害",
+          "activationMinCount": 3
+        }
+      ],
+      "regionTechnology": true,
+      "treeLayer": 1,
+      "singleLevel": true,
+      "activationMinCount": 3
+    },
+    {
+      "id": "T01",
+      "name": "精密校准",
+      "minCount": 3,
+      "prerequisites": [
+        "T04"
+      ],
+      "ranks": [
+        {
+          "level": 1,
+          "minCount": 3,
+          "additionalPointCost": 1,
+          "effect": "所有本人莱茵原生伤害增加10%/15%/20%/30%（3/6/9/10人）；所选格内额外增加相同幅度，合计20%/30%/40%/60%，不随层数增加；支持所有合法部署格",
+          "activationMinCount": 3
+        }
+      ],
+      "regionTechnology": true,
+      "treeLayer": 2,
+      "singleLevel": true,
+      "activationMinCount": 3
+    },
+    {
+      "id": "T02",
+      "name": "细胞适应",
+      "minCount": 3,
+      "prerequisites": [
+        "T04"
+      ],
+      "ranks": [
+        {
+          "level": 1,
+          "minCount": 3,
+          "additionalPointCost": 1,
+          "effect": "所有本人莱茵受到敌伤降低2%/4%/6%/8%（3/6/9/10人）；所选格内额外降低8%/16%/24%/32%，合计10%/20%/30%/40%，不随层数增加；支持高台",
+          "activationMinCount": 3
+        }
+      ],
+      "regionTechnology": true,
+      "treeLayer": 2,
+      "singleLevel": true,
+      "activationMinCount": 3
+    },
+    {
+      "id": "T16",
+      "name": "结构解析",
+      "minCount": 6,
+      "prerequisites": [
+        "T04"
+      ],
+      "ranks": [
+        {
+          "level": 1,
+          "minCount": 6,
+          "additionalPointCost": 2,
+          "effect": "本人莱茵原生物法攻击标记敌人：防御≥800时无视60%防御，法抗≥40时无视25点法抗",
+          "activationMinCount": 6
+        }
+      ],
+      "regionTechnology": false,
+      "treeLayer": 2,
+      "singleLevel": true,
+      "activationMinCount": 6
+    },
+    {
+      "id": "T07",
+      "name": "离子实验",
+      "minCount": 6,
+      "prerequisites": [
+        "T01"
+      ],
+      "ranks": [
+        {
+          "level": 1,
+          "minCount": 6,
+          "additionalPointCost": 2,
+          "effect": "开战2秒首次，此后每1秒，只对T04所选格内最多3名合法敌人各造成120＋2L物理科技伤害，优先高生命敌人；不独立选格，离格或仅有实验标记不会受到脉冲",
+          "activationMinCount": 6
+        }
+      ],
+      "regionTechnology": false,
+      "treeLayer": 3,
+      "singleLevel": true,
+      "activationMinCount": 6
+    },
+    {
+      "id": "T06",
+      "name": "生态修复",
+      "minCount": 6,
+      "prerequisites": [
+        "T02"
+      ],
+      "ranks": [
+        {
+          "level": 1,
+          "minCount": 6,
+          "additionalPointCost": 2,
+          "effect": "所有本人莱茵每秒恢复当前最大生命1%，所选恢复格内改为3%；仅战斗生效",
+          "activationMinCount": 6
+        }
+      ],
+      "regionTechnology": true,
+      "treeLayer": 3,
+      "singleLevel": true,
+      "activationMinCount": 6
+    },
+    {
+      "id": "T09",
+      "name": "区域扩建",
+      "minCount": 6,
+      "prerequisites": [
+        "T01",
+        "T02"
+      ],
+      "ranks": [
+        {
+          "level": 1,
+          "minCount": 6,
+          "additionalPointCost": 3,
+          "effect": "T01/T02/T04各自可选格数+1，由1变2；所有科技选格仍互斥",
+          "activationMinCount": 6
+        }
+      ],
+      "regionTechnology": false,
+      "treeLayer": 3,
+      "singleLevel": true,
+      "activationMinCount": 6
+    },
+    {
+      "id": "T12",
+      "name": "全域扫描",
+      "minCount": 6,
+      "prerequisites": [
+        "T07"
+      ],
+      "ranks": [
+        {
+          "level": 1,
+          "minCount": 6,
+          "additionalPointCost": 3,
+          "effect": "存在有效T04格时，开战2秒首扫、此后每10秒，全战场合法敌人显隐并获得实验标记3秒；区外不附加T04减速",
+          "activationMinCount": 6
+        }
+      ],
+      "regionTechnology": false,
+      "treeLayer": 4,
+      "singleLevel": true,
+      "activationMinCount": 6
+    },
+    {
+      "id": "T11",
+      "name": "应急隔离",
+      "minCount": 6,
+      "prerequisites": [
+        "T06"
+      ],
+      "ranks": [
+        {
+          "level": 1,
+          "minCount": 6,
+          "additionalPointCost": 2,
+          "effect": "每名本人莱茵本场一次：敌伤后生命≤40%或首次致命敌伤时救援，致命时保留1生命；获得无敌2秒，恢复最大生命30%，获得最大生命50%屏障8秒，解除晕眩/冻结并免疫5秒",
+          "activationMinCount": 6
+        }
+      ],
+      "regionTechnology": false,
+      "treeLayer": 4,
+      "singleLevel": true,
+      "activationMinCount": 6
+    },
+    {
+      "id": "T08",
+      "name": "并行运算",
+      "minCount": 6,
+      "prerequisites": [
+        "T09"
+      ],
+      "ranks": [
+        {
+          "level": 1,
+          "minCount": 6,
+          "additionalPointCost": 2,
+          "effect": "所有本人莱茵自然技力额外＋1/秒；本场3名不同莱茵成员首次开技后，所有本人莱茵额外回复8技力一次",
+          "activationMinCount": 6
+        }
+      ],
+      "regionTechnology": false,
+      "treeLayer": 4,
+      "singleLevel": true,
+      "activationMinCount": 6
+    },
+    {
+      "id": "T10",
+      "name": "联合实验",
+      "minCount": 6,
+      "prerequisites": [
+        "T08"
+      ],
+      "ranks": [
+        {
+          "level": 1,
+          "minCount": 6,
+          "additionalPointCost": 3,
+          "effect": "T01与T04至少一对选格正交相邻时，所有本人莱茵原生物法对标记目标增伤50%；T01格内成员原生伤敌也标记3秒；T07上限增至5，脉冲命中停顿0.5秒",
+          "activationMinCount": 6
+        }
+      ],
+      "regionTechnology": false,
+      "treeLayer": 5,
+      "singleLevel": true,
+      "activationMinCount": 6
+    },
+    {
+      "id": "T03",
+      "name": "数据广播",
+      "minCount": 9,
+      "prerequisites": [
+        "T10",
+        "T12"
+      ],
+      "ranks": [
+        {
+          "level": 1,
+          "minCount": 9,
+          "additionalPointCost": 3,
+          "effect": "选1个支援格含高台；格内存活莱茵将当前攻击力50%固定分享给本人其他所有场上莱茵；剔除广播赠攻，源本人不领；有效广播时所有本人莱茵攻速＋30",
+          "activationMinCount": 6
+        }
+      ],
+      "regionTechnology": true,
+      "treeLayer": 6,
+      "singleLevel": true,
+      "activationMinCount": 6
+    },
+    {
+      "id": "T13",
+      "name": "访学聘任",
+      "minCount": 9,
+      "prerequisites": [
+        "T10",
+        "T09"
+      ],
+      "ranks": [
+        {
+          "level": 1,
+          "minCount": 9,
+          "additionalPointCost": 3,
+          "effect": "9人解锁；研发后每场开战授予身份前至少6莱茵且前置满足时，所选合法部署格上的本人非莱茵干员获得莱茵身份，仅本场战斗有效。研究席内莱茵成员另享有效T01/T02当前区域额外增伤和减伤，各计一次。自动授予，无需安排、相邻条件或一次性聘任，不占装备槽",
+          "activationMinCount": 6
+        }
+      ],
+      "regionTechnology": true,
+      "treeLayer": 6,
+      "singleLevel": true,
+      "activationMinCount": 6
+    }
+  ],
+  "strategies": [
+    {
+      "name": "赫默",
+      "effect": "联合招募",
+      "hp": 29,
+      "giftRounds": [
+        2,
+        3
+      ],
+      "giftOperatorsPerRound": 1,
+      "maxGiftTier": "奖励结算时当前商店阶数",
+      "eligibleGiftPool": "当局可招募的天然莱茵核心名单及设计纳入的星极，普通形态，排除隐藏/禁用/访学外部角色",
+      "milestones": [
+        {
+          "count": 8,
+          "technologyPoints": 1
+        }
+      ],
+      "maximumBonusTechnologyPoints": 1,
+      "manualRefreshBenefits": false
+    },
+    {
+      "name": "克丽斯腾",
+      "effect": "阶段成果",
+      "hp": 26,
+      "milestones": [
+        {
+          "count": 3,
+          "technologyPoints": 1
+        },
+        {
+          "count": 6,
+          "technologyPoints": 1
+        },
+        {
+          "count": 9,
+          "technologyPoints": 1
+        }
+      ],
+      "maximumBonusTechnologyPoints": 3,
+      "baseBenefitMultiplier": 1,
+      "manualRefreshBenefits": false
+    }
+  ],
+  "equipment": [
+    {
+      "name": "莱茵场域控制器",
+      "tier": 4,
+      "scope": "rhine",
+      "prices": [
+        2,
+        5
+      ],
+      "fixedStats": [],
+      "trigger": "本回合第一次受到合法敌方攻击伤害，在伤害结算前授盾，同一次攻击可被此屏障吸收",
+      "shieldMaxHpPercent": [
+        10,
+        25
+      ],
+      "shieldDuration": "本回合结束或耗尽",
+      "oncePerRoundPerInstance": true,
+      "sharesRoundUseAcrossBattles": true,
+      "identityWithMetamorphosis": true,
+      "standaloneGrantsIdentity": false,
+      "requiresRhineIdentityForShield": true
+    },
+    {
+      "name": "实验采样器",
+      "tier": 3,
+      "scope": "general",
+      "prices": [
+        2,
+        5
+      ],
+      "fixedStats": [],
+      "trigger": "休整结束时携带者真实在本人作战区，每回合一次",
+      "otherActiveOwnBondLayerGain": [
+        1,
+        1
+      ],
+      "rhineActiveOwnBondLayerGain": [
+        2,
+        3
+      ],
+      "rhineSpecialReplacesGeneralGain": true,
+      "activeOwnBondsOnly": true,
+      "stacking": "同实例同名只取最高档；不同真实携带者分别结算、增层可累加；同盟约每携带者去重",
+      "respectsBondGrowthLocks": true,
+      "outsideNewTraitGrowthCap": true,
+      "identityWithMetamorphosis": false
+    }
+  ],
+  "technologyBudgets": {
+    "researchAllCost": 29,
+    "minimumToResearchAll": 29,
+    "normalPointCap": 19,
+    "strategyPointCaps": [
+      21,
+      23
+    ],
+    "tenMemberBonusCap": 1,
+    "totalCapWithoutStrategy": 20
+  },
+  "membershipTechnology": {
+    "id": "T13",
+    "minCount": 9,
+    "minimumCostIncludingPrerequisites": 14,
+    "scope": "仅本场战斗，所选部署格上的本人非莱茵干员",
+    "identityAssignmentPhase": "battle_start",
+    "approval": false,
+    "adjacency": false,
+    "oncePerMatch": false,
+    "persistsInPreparation": false,
+    "minResearchCount": 9,
+    "activationMinCount": 6,
+    "checkBeforeIdentityAssignment": true,
+    "localBonuses": {
+      "sources": [
+        "T01",
+        "T02"
+      ],
+      "requiresSourceActive": true,
+      "currentOpeningTier": true,
+      "beneficiaries": "研究席内本人莱茵身份干员，包括访学及天然成员",
+      "positionCheckedAtHit": true,
+      "eachLocalBonusOnce": true,
+      "countsAsOtherSelectedCells": false
+    }
+  },
+  "growthTarget": {
+    "rounds": 20,
+    "targetLayers": 600,
+    "referenceLedgerLayers": 602,
+    "targetBand": [
+      560,
+      640
+    ],
+    "techPointsAtTarget": 12,
+    "assumptions": [
+      "R3三人，R6六人，R11九人",
+      "普通早期角色上限足以覆盖，无强制R5精锐",
+      "有效区域成果持续触发，后期接近20层角色特质额度（新装备定时增层另计）",
+      "不计旧特质、策略、十人额外收益",
+      "账本R20为首领成长锁"
+    ],
+    "ledger": [
+      {
+        "round": 1,
+        "count": 0,
+        "growthLocked": false,
+        "baseLayers": 0,
+        "experimentLayers": 0,
+        "conditionLayers": 0,
+        "totalLayers": 0,
+        "cumulativeLayers": 0
+      },
+      {
+        "round": 2,
+        "count": 0,
+        "growthLocked": false,
+        "baseLayers": 0,
+        "experimentLayers": 0,
+        "conditionLayers": 0,
+        "totalLayers": 0,
+        "cumulativeLayers": 0
+      },
+      {
+        "round": 3,
+        "count": 3,
+        "growthLocked": false,
+        "baseLayers": 6,
+        "experimentLayers": 4,
+        "conditionLayers": 10,
+        "totalLayers": 20,
+        "cumulativeLayers": 20
+      },
+      {
+        "round": 4,
+        "count": 3,
+        "growthLocked": false,
+        "baseLayers": 6,
+        "experimentLayers": 4,
+        "conditionLayers": 12,
+        "totalLayers": 22,
+        "cumulativeLayers": 42
+      },
+      {
+        "round": 5,
+        "count": 3,
+        "growthLocked": false,
+        "baseLayers": 6,
+        "experimentLayers": 4,
+        "conditionLayers": 14,
+        "totalLayers": 24,
+        "cumulativeLayers": 66
+      },
+      {
+        "round": 6,
+        "count": 6,
+        "growthLocked": false,
+        "baseLayers": 10,
+        "experimentLayers": 8,
+        "conditionLayers": 10,
+        "totalLayers": 28,
+        "cumulativeLayers": 94
+      },
+      {
+        "round": 7,
+        "count": 6,
+        "growthLocked": false,
+        "baseLayers": 10,
+        "experimentLayers": 8,
+        "conditionLayers": 12,
+        "totalLayers": 30,
+        "cumulativeLayers": 124
+      },
+      {
+        "round": 8,
+        "count": 6,
+        "growthLocked": false,
+        "baseLayers": 10,
+        "experimentLayers": 8,
+        "conditionLayers": 14,
+        "totalLayers": 32,
+        "cumulativeLayers": 156
+      },
+      {
+        "round": 9,
+        "count": 6,
+        "growthLocked": false,
+        "baseLayers": 10,
+        "experimentLayers": 8,
+        "conditionLayers": 16,
+        "totalLayers": 34,
+        "cumulativeLayers": 190
+      },
+      {
+        "round": 10,
+        "count": 6,
+        "growthLocked": false,
+        "baseLayers": 10,
+        "experimentLayers": 8,
+        "conditionLayers": 18,
+        "totalLayers": 36,
+        "cumulativeLayers": 226
+      },
+      {
+        "round": 11,
+        "count": 9,
+        "growthLocked": false,
+        "baseLayers": 12,
+        "experimentLayers": 12,
+        "conditionLayers": 12,
+        "totalLayers": 36,
+        "cumulativeLayers": 262
+      },
+      {
+        "round": 12,
+        "count": 9,
+        "growthLocked": false,
+        "baseLayers": 12,
+        "experimentLayers": 12,
+        "conditionLayers": 14,
+        "totalLayers": 38,
+        "cumulativeLayers": 300
+      },
+      {
+        "round": 13,
+        "count": 9,
+        "growthLocked": false,
+        "baseLayers": 12,
+        "experimentLayers": 12,
+        "conditionLayers": 16,
+        "totalLayers": 40,
+        "cumulativeLayers": 340
+      },
+      {
+        "round": 14,
+        "count": 9,
+        "growthLocked": false,
+        "baseLayers": 12,
+        "experimentLayers": 12,
+        "conditionLayers": 18,
+        "totalLayers": 42,
+        "cumulativeLayers": 382
+      },
+      {
+        "round": 15,
+        "count": 9,
+        "growthLocked": false,
+        "baseLayers": 12,
+        "experimentLayers": 12,
+        "conditionLayers": 20,
+        "totalLayers": 44,
+        "cumulativeLayers": 426
+      },
+      {
+        "round": 16,
+        "count": 9,
+        "growthLocked": false,
+        "baseLayers": 12,
+        "experimentLayers": 12,
+        "conditionLayers": 20,
+        "totalLayers": 44,
+        "cumulativeLayers": 470
+      },
+      {
+        "round": 17,
+        "count": 9,
+        "growthLocked": false,
+        "baseLayers": 12,
+        "experimentLayers": 12,
+        "conditionLayers": 20,
+        "totalLayers": 44,
+        "cumulativeLayers": 514
+      },
+      {
+        "round": 18,
+        "count": 9,
+        "growthLocked": false,
+        "baseLayers": 12,
+        "experimentLayers": 12,
+        "conditionLayers": 20,
+        "totalLayers": 44,
+        "cumulativeLayers": 558
+      },
+      {
+        "round": 19,
+        "count": 9,
+        "growthLocked": false,
+        "baseLayers": 12,
+        "experimentLayers": 12,
+        "conditionLayers": 20,
+        "totalLayers": 44,
+        "cumulativeLayers": 602
+      },
+      {
+        "round": 20,
+        "count": 9,
+        "growthLocked": true,
+        "baseLayers": 0,
+        "experimentLayers": 0,
+        "conditionLayers": 0,
+        "totalLayers": 0,
+        "cumulativeLayers": 602
+      }
+    ],
+    "ledgerStatus": "旧602层账本保留为目标参照；新装备移除旧采样计次并新增定时增层，事件频率与装备携带数未验证，非本版实战证明"
+  },
+  "currentReadOnlyReferenceVersion": "1.13",
+  "countermeasureTechnologyIds": [
+    "T04",
+    "T12",
+    "T16"
+  ],
+  "removedTechnologyIds": [
+    "T05",
+    "T14",
+    "T17",
+    "T19",
+    "T20",
+    "T15",
+    "T18"
+  ],
+  "revisionDecisions": [
+    "0.5.1科技数值及机制大幅加强",
+    "移除多萝西全部运行内容",
+    "新增专项研究2/4，成员共享两套独立CD",
+    "所有本人莱茵收益保持身份限定",
+    "主界面版本入口右上角，标题与大厅共用"
+  ],
+  "techMenu": {
+    "status": "已实现并验证",
+    "layout": "纵向可滚动科技树",
+    "maxNodesPerLayer": 3,
+    "layers": [
+      {
+        "layer": 1,
+        "name": "起步研究",
+        "ids": [
+          "T21",
+          "T04"
+        ]
+      },
+      {
+        "layer": 2,
+        "name": "战斗基础",
+        "ids": [
+          "T01",
+          "T02",
+          "T16"
+        ]
+      },
+      {
+        "layer": 3,
+        "name": "区域建设",
+        "ids": [
+          "T07",
+          "T06",
+          "T09"
+        ]
+      },
+      {
+        "layer": 4,
+        "name": "应用研究",
+        "ids": [
+          "T12",
+          "T11",
+          "T08"
+        ]
+      },
+      {
+        "layer": 5,
+        "name": "联合实验",
+        "ids": [
+          "T10"
+        ]
+      },
+      {
+        "layer": 6,
+        "name": "最终成果",
+        "ids": [
+          "T03",
+          "T13"
+        ]
+      }
+    ],
+    "allSingleLevel": true,
+    "edgesRequireAllPrerequisites": true,
+    "terminalEarlyOptions": [
+      "T21"
+    ],
+    "cardFields": [
+      "编号与名称",
+      "解锁人数和开战生效人数",
+      "一次性科技点费用",
+      "研究状态",
+      "简短效果",
+      "区域科技的选择位置按钮",
+      "全科技暂停/区域仅战斗状态"
+    ],
+    "battleActions": false,
+    "layerPolicy": "六层固定布局2/3/3/3/1/2，按最长前置路径分层，每层最多3项；多前置全部满足，不要求清空上一层",
+    "entry": {
+      "visibleWhenPresentCountAtLeast": 3,
+      "hiddenBelowThree": true,
+      "openedPanelBelowThree": "显示整体暂停并禁用操作，关闭二维选格预览且不提交",
+      "battleOpenReadOnly": true,
+      "battleEntryUsesOpeningSnapshot": true
+    }
+  },
+  "authoritativeDocument": "RHINE-LAB-DESIGN-1.13.md",
+  "techRows": [
+    [
+      "T21",
+      "T04"
+    ],
+    [
+      "T01",
+      "T02",
+      "T16"
+    ],
+    [
+      "T07",
+      "T06",
+      "T09"
+    ],
+    [
+      "T12",
+      "T11",
+      "T08"
+    ],
+    [
+      "T10"
+    ],
+    [
+      "T03",
+      "T13"
+    ]
+  ],
+  "currentRoster": [
+    "梅尔",
+    "星源",
+    "赫默",
+    "麦哲伦",
+    "星极",
+    "白面鸮",
+    "淬羽赫默",
+    "塞雷娅",
+    "伊芙利特",
+    "缪尔赛思",
+    "溯光星源"
+  ],
+  "specialResearch": {
+    "members": [
+      "星源",
+      "溯光星源",
+      "赫默",
+      "淬羽赫默"
+    ],
+    "thresholds": [
+      2,
+      4
+    ],
+    "attackRatio": 1.5,
+    "healRatio": 3,
+    "radius": 1,
+    "cooldowns2": [
+      10,
+      10
+    ],
+    "cooldowns4": [
+      8,
+      5
+    ],
+    "sharedPerPlayer": true,
+    "independentChannels": true
+  },
+  "release": {
+    "version": "0.5.3",
+    "batch": "rhine-test-4",
+    "capability": 32,
+    "entry": "title top-right only",
+    "summary": "莱茵科技调整与研究席强化"
+  }
+}

@@ -1,0 +1,75 @@
+# --- dependencies & generated client libs -------------------------------------------------------
+node_modules/
+# copied from node_modules by tools/vendor.mjs (postinstall); never commit third-party builds
+public/vendor/
+
+# --- game assets: (c) Hypergryph / Yostar, fetched or extracted locally, NEVER committed ----------
+# tools/fetch-assets.mjs → public/assets/** (~250 MB) and public/fonts/** (+ fonts.css)
+public/assets/
+public/fonts/
+# tools/local-extract/extract.py → public/assets/local/** and this per-machine manifest
+# (optional: the client and the tests work without it)
+data/local-assets.json
+# download caches, upstream tables, ledgers, reports, setup state
+.cache/
+
+# --- Python (optional local-client extraction) ----------------------------------------------------
+.venv*/
+venv/
+__pycache__/
+*.py[cod]
+
+# --- tests & logs ----------------------------------------------------------------------------------
+test/e2e/out/
+logs/
+*.log
+
+# --- per-machine config (scripts/install-service-windows.ps1) ------------------------------------
+scripts/service.env.cmd
+.env
+.env.*
+config/auth-users.json
+config/auth-users.json.*.tmp
+config/server.env
+# Only the public configuration template belongs in the source repository.
+/config/*
+!/config/server.env.example
+config/ranked.sqlite*
+config/ranked-backup-*.sqlite
+mobile/dist/
+mobile/full-dist/
+mobile/offline-dist/
+resource-packs/
+mobile/windows/bin/
+mobile/windows/obj/
+test/windows-cache/bin/
+test/windows-cache/obj/
+test/resource-scenes/bin/
+test/resource-scenes/obj/
+mobile/android/.gradle/
+mobile/android/.signing/
+mobile/android/local.properties
+.backups/
+storage/
+# Private databases and signing material, wherever generated.
+*.sqlite
+*.sqlite-*
+*.db
+*.db-*
+*.jks
+*.keystore
+*.p12
+*.pfx
+credentials.json
+auth-users.json
+test-content-access.json
+mobile/android/**/build/
+
+# --- OS / editor clutter ---------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+.idea/
+.vscode/
+.claude/

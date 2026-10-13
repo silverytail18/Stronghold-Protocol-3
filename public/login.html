@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>登录 · 卫戍协议：盟约</title>
+  <link rel="stylesheet" href="/css/login.css">
+  <script type="module" src="/js/login.js"></script>
+</head>
+<body>
+  <main class="login-card">
+    <div class="eyebrow">STRONGHOLD PROTOCOL · COVENANT</div>
+    <h1>卫戍协议：盟约</h1>
+    <p class="intro">浏览器登录后进入账号管理；Windows 客户端或安卓 App 登录后进入游戏。请使用服务器管理员提供的账号。</p>
+    <p id="login-info" class="hint" role="status"></p>
+    <form id="login-form">
+      <label for="username">账号</label>
+      <input id="username" name="username" type="text" autocomplete="username" maxlength="64" required autofocus spellcheck="false" autocapitalize="none">
+      <label for="password">密码</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required>
+      <p id="login-error" class="error" role="alert" aria-live="polite"></p>
+      <button id="login-submit" type="submit">登录并进入</button>
+    </form>
+    <p class="hint">忘记密码或需要账号？请联系服务器管理员。</p>
+    <noscript>请启用 JavaScript 后登录。</noscript>
+  </main>
+</body>
+</html>

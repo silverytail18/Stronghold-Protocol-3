@@ -1,0 +1,31 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import {TestContentAccess} from '../server/test-content-access.js';
+import {TestContent} from '../server/test-content.js';
+test('Admin tool defaults off, persists independently and old save clients preserve it',async t=>{
+  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'sp-admin-tools-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));
+  const filename=path.join(dir,'test-content-access.json'),content=new TestContent(),store=await TestContentAccess.load(filename);
+  const body=()=>({revision:store.revision,catalog:content.version,publicIds:[]});
+  assert.equal(store.adminEnabled('testOperatorGrant'),false);
+  await store.update({...body(),adminControls:{testOperatorGrant:true}},content);
+  assert.equal(store.adminEnabled('testOperatorGrant'),true);assert.deepEqual(store.publicIds,[]);
+  await store.update(body(),content);assert.equal(store.adminEnabled('testOperatorGrant'),true);
+  const restarted=await TestContentAccess.load(filename);assert.equal(restarted.adminEnabled('testOperatorGrant'),true);
+  await store.update({...body(),adminControls:{testOperatorGrant:false}},content);assert.equal(store.adminEnabled('testOperatorGrant'),false);
+});
+test('Legacy settings load disabled, retired tool values remain inert, invalid or stale saves never publish',async t=>{
+  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'sp-admin-tools-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));
+  const filename=path.join(dir,'test-content-access.json'),content=new TestContent();
+  await fs.writeFile(filename,JSON.stringify({format:1,revision:3,publicIds:[]}));
+  let store=await TestContentAccess.load(filename);assert.equal(store.adminEnabled('testOperatorGrant'),false);
+  await fs.writeFile(filename,JSON.stringify({format:1,revision:3,publicIds:[],adminControls:{retiredControl:true}}));
+  store=await TestContentAccess.load(filename);assert.equal(store.adminEnabled('retiredControl'),false);
+  const body={revision:3,catalog:content.version,publicIds:[]};
+  for(const adminControls of [null,[],{testOperatorGrant:1},{notRegistered:true}])await assert.rejects(store.update({...body,adminControls},content));
+  await assert.rejects(store.update({...body,revision:2,adminControls:{testOperatorGrant:true}},content));assert.equal(store.adminEnabled('testOperatorGrant'),false);
+  await store.update({...body,adminControls:{testOperatorGrant:true}},content);assert.equal(store.adminControls.retiredControl,true);
+  await fs.writeFile(filename,JSON.stringify({format:1,revision:3,publicIds:[],adminControls:{testOperatorGrant:'true'}}));await assert.rejects(TestContentAccess.load(filename),/格式无效/);
+});

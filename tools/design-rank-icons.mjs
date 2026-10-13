@@ -1,0 +1,23 @@
+// Original vector artwork: metal shield → blades → wings → crystal → crown.
+import fs from 'node:fs/promises';
+const designs = [
+  ['bronze','青铜','#ffd2a0','#ad693f','#442b24', '<path d="M30 28h36v22L48 72 30 50z" fill="url(#metal)"/><path d="M37 40l11-7 11 7-11 18z" fill="#4a2e25" stroke="#ffcd9a" stroke-width="2"/>'],
+  ['silver','白银','#f4fbff','#8daebd','#293c50', '<path d="M27 31l8-9 13 7 13-7 8 9-5 30-16 14-16-14z" fill="url(#metal)"/><path d="M33 27l30 37m0-37L33 64" stroke="#31485e" stroke-width="7"/><path d="M48 26l11 18-11 22-11-22z" fill="#ebf9ff" stroke="#4f7187" stroke-width="3"/>'],
+  ['gold','黄金','#fff8c3','#e8b344','#603615', '<path d="M32 30L7 18l8 17 17 9-21-4 10 13 16 5m27-28l25-12-8 17-17 9 21-4-10 13-16 5" fill="url(#metal)" stroke="#fff4b4" stroke-width="1.5"/><path d="M48 20l22 14-6 31-16 16-16-16-6-31z" fill="url(#metal)"/><path d="M48 34l12 13-12 18-12-18z" fill="#764720" stroke="#fff4c0" stroke-width="2"/>'],
+  ['platinum','铂金','#e4fcff','#61a8dc','#193360', '<path d="M31 28L6 16l6 22 18 9L9 45l15 16 12 1m29-34l25-12-6 22-18 9 21-2-15 16-12 1" fill="url(#metal)" stroke="#c6f2ff" stroke-width="1.5"/><path d="M48 13l23 21-7 36-16 15-16-15-7-36z" fill="#17283c" stroke="url(#metal)" stroke-width="5"/><path d="M48 25l15 20-15 26-15-26z" fill="url(#metal)"/><path d="M48 25v46M33 45h30" stroke="#fbffff" stroke-width="1.5"/>'],
+  ['diamond','钻石','#efffff','#56e8ee','#17507d', '<path d="M31 31L5 12l4 23 22 15L9 44l14 19 13 1m29-33l26-19-4 23-22 15 22-6-14 19-13 1" fill="url(#metal)" stroke="#b4ffff" stroke-width="1.5"/><path d="M48 9l25 31-11 31-14 16-14-16-11-31z" fill="#103949" stroke="url(#metal)" stroke-width="3"/><path d="M37 29h22l9 15-20 30-20-30z" fill="url(#metal)"/><path d="M37 29l11 15 11-15M28 44h40M48 44v30" fill="none" stroke="#fff" stroke-width="1.5"/>'],
+  ['master','大师','#f6eaff','#bc85fa','#3b1a77', '<path d="M33 34L5 10l3 26 23 18L9 47l13 20 15-4m26-29L91 10l-3 26-23 18 22-7-13 20-15-4" fill="url(#metal)" stroke="#e5c7ff" stroke-width="1.5"/><path d="M19 78L67 18l8 3-48 64zM77 78L29 18l-8 3 48 64z" fill="url(#metal)"/><path d="M48 11l24 30-8 29-16 16-16-16-8-29z" fill="#271444" stroke="url(#metal)" stroke-width="3"/><path d="M48 27l15 21-15 23-15-23z" fill="url(#metal)"/><path d="M48 22v10m0 34v10M30 48h9m18 0h9" stroke="#fff5cf" stroke-width="3"/>'],
+  ['legend','传奇','#fff4c0','#ffc84e','#70243c', '<path d="M33 38L3 15l5 28 23 12L9 49l13 20 16-2m25-29l30-23-5 28-23 12 22-6-13 20-16-2" fill="url(#metal)" stroke="#fff1bc" stroke-width="1.5"/><path d="M48 18l25 23-7 32-18 17-18-17-7-32z" fill="#571b33" stroke="url(#metal)" stroke-width="4"/><path d="M27 15l11 8L48 5l10 18 11-8-4 19H31z" fill="url(#metal)" stroke="#fff2c8" stroke-width="1.5"/><path d="M48 37l16 15-16 23-16-23z" fill="#ff4163" stroke="#ffe49e" stroke-width="2"/><path d="M48 40v28M37 52h22" stroke="#fff0c0" stroke-width="1.5"/><circle cx="48" cy="9" r="3" fill="#fff5cf"/>'],
+];
+await fs.mkdir('public/icons/ranks', {recursive:true});
+const gallery = [];
+for (const [id,name,light,mid,dark,art] of designs) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="${name}段位"><defs><linearGradient id="metal" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="${light}"/><stop offset=".45" stop-color="${mid}"/><stop offset="1" stop-color="${dark}"/></linearGradient><radialGradient id="halo"><stop stop-color="${mid}" stop-opacity=".3"/><stop offset="1" stop-color="${mid}" stop-opacity="0"/></radialGradient></defs><circle cx="48" cy="49" r="46" fill="url(#halo)"/><path d="M48 15L78 32l-7 38-23 21-23-21-7-38z" fill="${dark}" stroke="${mid}" stroke-opacity=".6" stroke-width="1.5"/>${art}<path d="M36 80l12 6 12-6" fill="none" stroke="${light}" stroke-width="2"/></svg>\n`;
+  await fs.writeFile(`public/icons/ranks/${id}.svg`,svg);
+  const unique = svg.replaceAll('id="metal"', `id="${id}-metal"`).replaceAll('url(#metal)', `url(#${id}-metal)`)
+    .replaceAll('id="halo"', `id="${id}-halo"`).replaceAll('url(#halo)', `url(#${id}-halo)`);
+  gallery.push(`<g transform="translate(${24 + gallery.length * 144},30)">${unique.replace('viewBox="0 0 96 96"', 'viewBox="0 0 96 96" width="120" height="120"')}<text x="60" y="146" text-anchor="middle" fill="${light}" font-size="18" font-family="sans-serif">${name}</text></g>`);
+}
+const showcase = `<svg xmlns="http://www.w3.org/2000/svg" width="1056" height="214" viewBox="0 0 1056 214"><rect width="1056" height="214" rx="12" fill="#091416"/>${gallery.join('')}</svg>\n`;
+await fs.writeFile('docs/rank-icons.svg', showcase);
+await fs.writeFile('public/icons/ranks/gallery.svg', showcase);

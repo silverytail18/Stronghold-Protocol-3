@@ -1,0 +1,3581 @@
+{
+  "method": "Three same-frame attack packets using actual R13/R23 hard and abyss enemy stats and the native mitigation/shield/fatal pipeline. Chimera has both physical and arts packets. Hodrer uses native S3. This isolates the instant HP pressure; enemy stun/aura/skill timing are covered separately by actual AI wave simulations. The single operator fixture supplies a nine-core snapshot to compare protection, not a full legal lineup.",
+  "results": [
+    {
+      "modeId": "mode_multi_hard",
+      "round": 13,
+      "layers": 237,
+      "operator": "泥岩",
+      "state": "精锐",
+      "key": "enemy_1045_hammer_2",
+      "charged": false,
+      "start": {
+        "hp": 9098.775,
+        "maxHp": 9098.775,
+        "def": 555,
+        "res": 10,
+        "fire": 0
+      },
+      "packets": [
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 9098.775,
+          "after": 9098.775,
+          "dealt": 0,
+          "debt": 0,
+          "fire": 0,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 9098.775,
+          "after": 7473.564784349999,
+          "dealt": 1625.2102156500005,
+          "debt": 742.86528435,
+          "fire": 650.0840862600003,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 7473.564784349999,
+          "after": 5848.354568699999,
+          "dealt": 1625.2102156500005,
+          "debt": 1485.7305687,
+          "fire": 1300.1681725200006,
+          "alive": true,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 5848.354568699999,
+        "fire": 1300.1681725200006,
+        "guards": 0,
+        "debt": 1485.7305687
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "round": 13,
+      "layers": 237,
+      "operator": "泥岩",
+      "state": "精锐",
+      "key": "enemy_1045_hammer_2",
+      "charged": true,
+      "start": {
+        "hp": 9098.775,
+        "maxHp": 9098.775,
+        "def": 555,
+        "res": 10,
+        "fire": 6925
+      },
+      "packets": [
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 9098.775,
+          "after": 9098.775,
+          "dealt": 0,
+          "debt": 0,
+          "fire": 6925,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 9098.775,
+          "after": 7473.564784349999,
+          "dealt": 1625.2102156500005,
+          "debt": 742.86528435,
+          "fire": 7575.08408626,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 7473.564784349999,
+          "after": 5848.354568699999,
+          "dealt": 1625.2102156500005,
+          "debt": 1485.7305687,
+          "fire": 8225.16817252,
+          "alive": true,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 5848.354568699999,
+        "fire": 8225.16817252,
+        "guards": 0,
+        "debt": 1485.7305687
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "round": 13,
+      "layers": 237,
+      "operator": "泥岩",
+      "state": "精锐",
+      "key": "enemy_1425_lrcmra_2",
+      "charged": false,
+      "start": {
+        "hp": 9098.775,
+        "maxHp": 9098.775,
+        "def": 555,
+        "res": 10,
+        "fire": 0
+      },
+      "packets": [
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 9098.775,
+          "after": 9098.775,
+          "dealt": 0,
+          "debt": 0,
+          "fire": 0,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 9098.775,
+          "after": 8087.6972153124,
+          "dealt": 1011.0777846875999,
+          "debt": 462.1522673124,
+          "fire": 404.43111387503996,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 8087.6972153124,
+          "after": 7230.9050045484,
+          "dealt": 856.7922107639997,
+          "debt": 853.7823365484,
+          "fire": 747.1479981806399,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 7230.9050045484,
+          "after": 6219.8272198608,
+          "dealt": 1011.0777846875999,
+          "debt": 1315.9346038608,
+          "fire": 1151.5791120556798,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 6219.8272198608,
+          "after": 5363.0350090968,
+          "dealt": 856.7922107639997,
+          "debt": 1707.5646730968,
+          "fire": 1494.2959963612798,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 5363.0350090968,
+          "after": 4351.9572244092005,
+          "dealt": 1011.0777846875999,
+          "debt": 2169.7169404092,
+          "fire": 1585,
+          "alive": true,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 4351.9572244092005,
+        "fire": 1585,
+        "guards": 0,
+        "debt": 2169.7169404092
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "round": 13,
+      "layers": 237,
+      "operator": "泥岩",
+      "state": "精锐",
+      "key": "enemy_1425_lrcmra_2",
+      "charged": true,
+      "start": {
+        "hp": 9098.775,
+        "maxHp": 9098.775,
+        "def": 555,
+        "res": 10,
+        "fire": 6925
+      },
+      "packets": [
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 9098.775,
+          "after": 9098.775,
+          "dealt": 0,
+          "debt": 0,
+          "fire": 6925,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 9098.775,
+          "after": 8087.6972153124,
+          "dealt": 1011.0777846875999,
+          "debt": 462.1522673124,
+          "fire": 7329.43111387504,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 8087.6972153124,
+          "after": 7230.9050045484,
+          "dealt": 856.7922107639997,
+          "debt": 853.7823365484,
+          "fire": 7672.14799818064,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 7230.9050045484,
+          "after": 6219.8272198608,
+          "dealt": 1011.0777846875999,
+          "debt": 1315.9346038608,
+          "fire": 8076.57911205568,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 6219.8272198608,
+          "after": 5363.0350090968,
+          "dealt": 856.7922107639997,
+          "debt": 1707.5646730968,
+          "fire": 8419.29599636128,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 5363.0350090968,
+          "after": 4351.9572244092005,
+          "dealt": 1011.0777846875999,
+          "debt": 2169.7169404092,
+          "fire": 8510,
+          "alive": true,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 4351.9572244092005,
+        "fire": 8510,
+        "guards": 0,
+        "debt": 2169.7169404092
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "round": 13,
+      "layers": 237,
+      "operator": "赫德雷",
+      "state": "精锐",
+      "key": "enemy_1045_hammer_2",
+      "charged": false,
+      "start": {
+        "hp": 16539.39,
+        "maxHp": 16539.39,
+        "def": 0,
+        "res": 0,
+        "fire": 0
+      },
+      "packets": [
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 16539.39,
+          "after": 14894.382493166999,
+          "dealt": 1645.0075068330007,
+          "debt": 751.914403167,
+          "fire": 658.0030027332003,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 14894.382493166999,
+          "after": 13249.374986333998,
+          "dealt": 1645.0075068330007,
+          "debt": 1503.828806334,
+          "fire": 1316.0060054664007,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 13249.374986333998,
+          "after": 11604.367479500997,
+          "dealt": 1645.0075068330007,
+          "debt": 2255.743209501,
+          "fire": 1585,
+          "alive": true,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 11604.367479500997,
+        "fire": 1585,
+        "guards": 0,
+        "debt": 2255.743209501
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "round": 13,
+      "layers": 237,
+      "operator": "赫德雷",
+      "state": "精锐",
+      "key": "enemy_1045_hammer_2",
+      "charged": true,
+      "start": {
+        "hp": 16539.39,
+        "maxHp": 16539.39,
+        "def": 0,
+        "res": 0,
+        "fire": 6925
+      },
+      "packets": [
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 16539.39,
+          "after": 14894.382493166999,
+          "dealt": 1645.0075068330007,
+          "debt": 751.914403167,
+          "fire": 7583.0030027332,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 14894.382493166999,
+          "after": 13249.374986333998,
+          "dealt": 1645.0075068330007,
+          "debt": 1503.828806334,
+          "fire": 8241.0060054664,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 13249.374986333998,
+          "after": 11604.367479500997,
+          "dealt": 1645.0075068330007,
+          "debt": 2255.743209501,
+          "fire": 8510,
+          "alive": true,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 11604.367479500997,
+        "fire": 8510,
+        "guards": 0,
+        "debt": 2255.743209501
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "round": 13,
+      "layers": 237,
+      "operator": "赫德雷",
+      "state": "精锐",
+      "key": "enemy_1425_lrcmra_2",
+      "charged": false,
+      "start": {
+        "hp": 16539.39,
+        "maxHp": 16539.39,
+        "def": 0,
+        "res": 0,
+        "fire": 0
+      },
+      "packets": [
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 16539.39,
+          "after": 15223.3839945336,
+          "dealt": 1316.006005466399,
+          "debt": 601.5315225336001,
+          "fire": 526.4024021865597,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 15223.3839945336,
+          "after": 13907.377989067201,
+          "dealt": 1316.006005466399,
+          "debt": 1203.0630450672002,
+          "fire": 1052.8048043731194,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 13907.377989067201,
+          "after": 12591.371983600802,
+          "dealt": 1316.006005466399,
+          "debt": 1804.5945676008002,
+          "fire": 1579.207206559679,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 12591.371983600802,
+          "after": 11275.365978134403,
+          "dealt": 1316.006005466399,
+          "debt": 2406.1260901344003,
+          "fire": 1585,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 11275.365978134403,
+          "after": 9959.359972668004,
+          "dealt": 1316.006005466399,
+          "debt": 3007.657612668,
+          "fire": 1585,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 9959.359972668004,
+          "after": 8643.353967201605,
+          "dealt": 1316.006005466399,
+          "debt": 3609.1891352016,
+          "fire": 1585,
+          "alive": true,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 8643.353967201605,
+        "fire": 1585,
+        "guards": 0,
+        "debt": 3609.1891352016
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "round": 13,
+      "layers": 237,
+      "operator": "赫德雷",
+      "state": "精锐",
+      "key": "enemy_1425_lrcmra_2",
+      "charged": true,
+      "start": {
+        "hp": 16539.39,
+        "maxHp": 16539.39,
+        "def": 0,
+        "res": 0,
+        "fire": 6925
+      },
+      "packets": [
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 16539.39,
+          "after": 15223.3839945336,
+          "dealt": 1316.006005466399,
+          "debt": 601.5315225336001,
+          "fire": 7451.40240218656,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 15223.3839945336,
+          "after": 13907.377989067201,
+          "dealt": 1316.006005466399,
+          "debt": 1203.0630450672002,
+          "fire": 7977.80480437312,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 13907.377989067201,
+          "after": 12591.371983600802,
+          "dealt": 1316.006005466399,
+          "debt": 1804.5945676008002,
+          "fire": 8504.207206559679,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 12591.371983600802,
+          "after": 11275.365978134403,
+          "dealt": 1316.006005466399,
+          "debt": 2406.1260901344003,
+          "fire": 8510,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 11275.365978134403,
+          "after": 9959.359972668004,
+          "dealt": 1316.006005466399,
+          "debt": 3007.657612668,
+          "fire": 8510,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 9959.359972668004,
+          "after": 8643.353967201605,
+          "dealt": 1316.006005466399,
+          "debt": 3609.1891352016,
+          "fire": 8510,
+          "alive": true,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 8643.353967201605,
+        "fire": 8510,
+        "guards": 0,
+        "debt": 3609.1891352016
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "round": 13,
+      "layers": 237,
+      "operator": "红豆",
+      "state": "普通",
+      "key": "enemy_1045_hammer_2",
+      "charged": false,
+      "start": {
+        "hp": 3021.7949999999996,
+        "maxHp": 3021.7949999999996,
+        "def": 281,
+        "res": 0,
+        "fire": 0
+      },
+      "packets": [
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 3021.7949999999996,
+          "after": 1208.5385843499998,
+          "dealt": 1813.2564156499998,
+          "debt": 828.81908435,
+          "fire": 725.3025662599999,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 1208.5385843499998,
+          "after": 0,
+          "dealt": 1208.5385843499998,
+          "debt": 1657.6381687,
+          "fire": 1208.7179999999998,
+          "alive": false,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 0,
+          "after": 0,
+          "dealt": 0,
+          "debt": 1657.6381687,
+          "fire": 1208.7179999999998,
+          "alive": false,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": false,
+        "hp": 0,
+        "fire": 1208.7179999999998,
+        "guards": 0,
+        "debt": 1657.6381687
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "round": 13,
+      "layers": 237,
+      "operator": "红豆",
+      "state": "普通",
+      "key": "enemy_1045_hammer_2",
+      "charged": true,
+      "start": {
+        "hp": 3021.7949999999996,
+        "maxHp": 3021.7949999999996,
+        "def": 281,
+        "res": 0,
+        "fire": 6925
+      },
+      "packets": [
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 3021.7949999999996,
+          "after": 1208.5385843499998,
+          "dealt": 1813.2564156499998,
+          "debt": 828.81908435,
+          "fire": 7650.30256626,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 1208.5385843499998,
+          "after": 1208.5385843499998,
+          "dealt": 0,
+          "debt": 828.81908435,
+          "fire": 4187.80256626,
+          "alive": true,
+          "guards": 1
+        },
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 1208.5385843499998,
+          "after": 0,
+          "dealt": 1208.5385843499998,
+          "debt": 1657.6381687,
+          "fire": 4671.218,
+          "alive": false,
+          "guards": 1
+        }
+      ],
+      "end": {
+        "alive": false,
+        "hp": 0,
+        "fire": 4671.218,
+        "guards": 1,
+        "debt": 1657.6381687
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "round": 13,
+      "layers": 237,
+      "operator": "红豆",
+      "state": "普通",
+      "key": "enemy_1425_lrcmra_2",
+      "charged": false,
+      "start": {
+        "hp": 3021.7949999999996,
+        "maxHp": 3021.7949999999996,
+        "def": 281,
+        "res": 0,
+        "fire": 0
+      },
+      "packets": [
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 3021.7949999999996,
+          "after": 1609.7599274799998,
+          "dealt": 1412.0350725199999,
+          "debt": 645.4253274800001,
+          "fire": 564.8140290079999,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 1609.7599274799998,
+          "after": 4.874554959999841,
+          "dealt": 1604.88537252,
+          "debt": 1379.00035496,
+          "fire": 1206.768178016,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 4.874554959999841,
+          "after": 0,
+          "dealt": 4.874554959999841,
+          "debt": 2024.4256824400002,
+          "fire": 1208.718,
+          "alive": false,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 0,
+          "after": 0,
+          "dealt": 0,
+          "debt": 2024.4256824400002,
+          "fire": 1208.718,
+          "alive": false,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 0,
+          "after": 0,
+          "dealt": 0,
+          "debt": 2024.4256824400002,
+          "fire": 1208.718,
+          "alive": false,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 0,
+          "after": 0,
+          "dealt": 0,
+          "debt": 2024.4256824400002,
+          "fire": 1208.718,
+          "alive": false,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": false,
+        "hp": 0,
+        "fire": 1208.718,
+        "guards": 0,
+        "debt": 2024.4256824400002
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "round": 13,
+      "layers": 237,
+      "operator": "红豆",
+      "state": "普通",
+      "key": "enemy_1425_lrcmra_2",
+      "charged": true,
+      "start": {
+        "hp": 3021.7949999999996,
+        "maxHp": 3021.7949999999996,
+        "def": 281,
+        "res": 0,
+        "fire": 6925
+      },
+      "packets": [
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 3021.7949999999996,
+          "after": 1609.7599274799998,
+          "dealt": 1412.0350725199999,
+          "debt": 645.4253274800001,
+          "fire": 7489.814029008,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 1609.7599274799998,
+          "after": 4.874554959999841,
+          "dealt": 1604.88537252,
+          "debt": 1379.00035496,
+          "fire": 8131.768178016,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 4.874554959999841,
+          "after": 4.874554959999841,
+          "dealt": 0,
+          "debt": 1379.00035496,
+          "fire": 4669.268178016,
+          "alive": true,
+          "guards": 1
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 4.874554959999841,
+          "after": 0,
+          "dealt": 4.874554959999841,
+          "debt": 2112.57538244,
+          "fire": 4671.218,
+          "alive": false,
+          "guards": 1
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 0,
+          "after": 0,
+          "dealt": 0,
+          "debt": 2112.57538244,
+          "fire": 4671.218,
+          "alive": false,
+          "guards": 1
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 0,
+          "after": 0,
+          "dealt": 0,
+          "debt": 2112.57538244,
+          "fire": 4671.218,
+          "alive": false,
+          "guards": 1
+        }
+      ],
+      "end": {
+        "alive": false,
+        "hp": 0,
+        "fire": 4671.218,
+        "guards": 1,
+        "debt": 2112.57538244
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "round": 23,
+      "layers": 657,
+      "operator": "泥岩",
+      "state": "精锐",
+      "key": "enemy_1045_hammer_2",
+      "charged": false,
+      "start": {
+        "hp": 17110.275,
+        "maxHp": 17110.275,
+        "def": 555,
+        "res": 10,
+        "fire": 0
+      },
+      "packets": [
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 17110.275,
+          "after": 17110.275,
+          "dealt": 0,
+          "debt": 0,
+          "fire": 0,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 17110.275,
+          "after": 14831.188937490002,
+          "dealt": 2279.0860625099995,
+          "debt": 1258.21963749,
+          "fire": 911.6344250039998,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 14831.188937490002,
+          "after": 12552.102874980003,
+          "dealt": 2279.0860625099995,
+          "debt": 2516.43927498,
+          "fire": 1823.2688500079996,
+          "alive": true,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 12552.102874980003,
+        "fire": 1823.2688500079996,
+        "guards": 0,
+        "debt": 2516.43927498
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "round": 23,
+      "layers": 657,
+      "operator": "泥岩",
+      "state": "精锐",
+      "key": "enemy_1045_hammer_2",
+      "charged": true,
+      "start": {
+        "hp": 17110.275,
+        "maxHp": 17110.275,
+        "def": 555,
+        "res": 10,
+        "fire": 17425
+      },
+      "packets": [
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 17110.275,
+          "after": 17110.275,
+          "dealt": 0,
+          "debt": 0,
+          "fire": 17425,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 17110.275,
+          "after": 14831.188937490002,
+          "dealt": 2279.0860625099995,
+          "debt": 1258.21963749,
+          "fire": 18336.634425004,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 14831.188937490002,
+          "after": 12552.102874980003,
+          "dealt": 2279.0860625099995,
+          "debt": 2516.43927498,
+          "fire": 19248.268850007997,
+          "alive": true,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 12552.102874980003,
+        "fire": 19248.268850007997,
+        "guards": 0,
+        "debt": 2516.43927498
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "round": 23,
+      "layers": 657,
+      "operator": "泥岩",
+      "state": "精锐",
+      "key": "enemy_1425_lrcmra_2",
+      "charged": false,
+      "start": {
+        "hp": 17110.275,
+        "maxHp": 17110.275,
+        "def": 555,
+        "res": 10,
+        "fire": 0
+      },
+      "packets": [
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 17110.275,
+          "after": 17110.275,
+          "dealt": 0,
+          "debt": 0,
+          "fire": 0,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 17110.275,
+          "after": 15781.392028494962,
+          "dealt": 1328.8829715050397,
+          "debt": 733.63910129496,
+          "fire": 531.5531886020159,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 15781.392028494962,
+          "after": 14555.165943489363,
+          "dealt": 1226.226085005599,
+          "debt": 1410.60420828936,
+          "fire": 1022.0436226042556,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 14555.165943489363,
+          "after": 13226.282971984323,
+          "dealt": 1328.8829715050397,
+          "debt": 2144.24330958432,
+          "fire": 1553.5968112062715,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 13226.282971984323,
+          "after": 12000.056886978724,
+          "dealt": 1226.226085005599,
+          "debt": 2821.2084165787196,
+          "fire": 2044.0872452085111,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 12000.056886978724,
+          "after": 10671.173915473684,
+          "dealt": 1328.8829715050397,
+          "debt": 3554.84751787368,
+          "fire": 2575.640433810527,
+          "alive": true,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 10671.173915473684,
+        "fire": 2575.640433810527,
+        "guards": 0,
+        "debt": 3554.84751787368
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "round": 23,
+      "layers": 657,
+      "operator": "泥岩",
+      "state": "精锐",
+      "key": "enemy_1425_lrcmra_2",
+      "charged": true,
+      "start": {
+        "hp": 17110.275,
+        "maxHp": 17110.275,
+        "def": 555,
+        "res": 10,
+        "fire": 17425
+      },
+      "packets": [
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 17110.275,
+          "after": 17110.275,
+          "dealt": 0,
+          "debt": 0,
+          "fire": 17425,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 17110.275,
+          "after": 15781.392028494962,
+          "dealt": 1328.8829715050397,
+          "debt": 733.63910129496,
+          "fire": 17956.553188602014,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 15781.392028494962,
+          "after": 14555.165943489363,
+          "dealt": 1226.226085005599,
+          "debt": 1410.60420828936,
+          "fire": 18447.043622604255,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 14555.165943489363,
+          "after": 13226.282971984323,
+          "dealt": 1328.8829715050397,
+          "debt": 2144.24330958432,
+          "fire": 18978.59681120627,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 13226.282971984323,
+          "after": 12000.056886978724,
+          "dealt": 1226.226085005599,
+          "debt": 2821.2084165787196,
+          "fire": 19469.08724520851,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 12000.056886978724,
+          "after": 10671.173915473684,
+          "dealt": 1328.8829715050397,
+          "debt": 3554.84751787368,
+          "fire": 20000.640433810524,
+          "alive": true,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 10671.173915473684,
+        "fire": 20000.640433810524,
+        "guards": 0,
+        "debt": 3554.84751787368
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "round": 23,
+      "layers": 657,
+      "operator": "赫德雷",
+      "state": "精锐",
+      "key": "enemy_1045_hammer_2",
+      "charged": false,
+      "start": {
+        "hp": 28790.790000000005,
+        "maxHp": 28790.790000000005,
+        "def": 0,
+        "res": 0,
+        "fire": 0
+      },
+      "packets": [
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 28790.790000000005,
+          "after": 26628.718498741804,
+          "dealt": 2162.0715012582004,
+          "debt": 1193.6191727418,
+          "fire": 864.8286005032802,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 26628.718498741804,
+          "after": 24466.646997483604,
+          "dealt": 2162.0715012582004,
+          "debt": 2387.2383454836,
+          "fire": 1729.6572010065604,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 24466.646997483604,
+          "after": 22304.575496225403,
+          "dealt": 2162.0715012582004,
+          "debt": 3580.8575182254,
+          "fire": 2594.4858015098407,
+          "alive": true,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 22304.575496225403,
+        "fire": 2594.4858015098407,
+        "guards": 0,
+        "debt": 3580.8575182254
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "round": 23,
+      "layers": 657,
+      "operator": "赫德雷",
+      "state": "精锐",
+      "key": "enemy_1045_hammer_2",
+      "charged": true,
+      "start": {
+        "hp": 28790.790000000005,
+        "maxHp": 28790.790000000005,
+        "def": 0,
+        "res": 0,
+        "fire": 17425
+      },
+      "packets": [
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 28790.790000000005,
+          "after": 26628.718498741804,
+          "dealt": 2162.0715012582004,
+          "debt": 1193.6191727418,
+          "fire": 18289.82860050328,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 26628.718498741804,
+          "after": 24466.646997483604,
+          "dealt": 2162.0715012582004,
+          "debt": 2387.2383454836,
+          "fire": 19154.657201006557,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 24466.646997483604,
+          "after": 22304.575496225403,
+          "dealt": 2162.0715012582004,
+          "debt": 3580.8575182254,
+          "fire": 20019.485801509836,
+          "alive": true,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 22304.575496225403,
+        "fire": 20019.485801509836,
+        "guards": 0,
+        "debt": 3580.8575182254
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "round": 23,
+      "layers": 657,
+      "operator": "赫德雷",
+      "state": "精锐",
+      "key": "enemy_1425_lrcmra_2",
+      "charged": false,
+      "start": {
+        "hp": 28790.790000000005,
+        "maxHp": 28790.790000000005,
+        "def": 0,
+        "res": 0,
+        "fire": 0
+      },
+      "packets": [
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 28790.790000000005,
+          "after": 27061.132798993443,
+          "dealt": 1729.657201006561,
+          "debt": 954.89533819344,
+          "fire": 691.8628804026245,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 27061.132798993443,
+          "after": 25331.475597986882,
+          "dealt": 1729.657201006561,
+          "debt": 1909.79067638688,
+          "fire": 1383.725760805249,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 25331.475597986882,
+          "after": 23601.81839698032,
+          "dealt": 1729.657201006561,
+          "debt": 2864.6860145803203,
+          "fire": 2075.5886412078735,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 23601.81839698032,
+          "after": 21872.16119597376,
+          "dealt": 1729.657201006561,
+          "debt": 3819.58135277376,
+          "fire": 2767.451521610498,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 21872.16119597376,
+          "after": 20142.5039949672,
+          "dealt": 1729.657201006561,
+          "debt": 4774.4766909672,
+          "fire": 3459.314402013122,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 20142.5039949672,
+          "after": 18412.846793960638,
+          "dealt": 1729.657201006561,
+          "debt": 5729.37202916064,
+          "fire": 3685,
+          "alive": true,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 18412.846793960638,
+        "fire": 3685,
+        "guards": 0,
+        "debt": 5729.37202916064
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "round": 23,
+      "layers": 657,
+      "operator": "赫德雷",
+      "state": "精锐",
+      "key": "enemy_1425_lrcmra_2",
+      "charged": true,
+      "start": {
+        "hp": 28790.790000000005,
+        "maxHp": 28790.790000000005,
+        "def": 0,
+        "res": 0,
+        "fire": 17425
+      },
+      "packets": [
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 28790.790000000005,
+          "after": 27061.132798993443,
+          "dealt": 1729.657201006561,
+          "debt": 954.89533819344,
+          "fire": 18116.862880402623,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 27061.132798993443,
+          "after": 25331.475597986882,
+          "dealt": 1729.657201006561,
+          "debt": 1909.79067638688,
+          "fire": 18808.725760805246,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 25331.475597986882,
+          "after": 23601.81839698032,
+          "dealt": 1729.657201006561,
+          "debt": 2864.6860145803203,
+          "fire": 19500.58864120787,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 23601.81839698032,
+          "after": 21872.16119597376,
+          "dealt": 1729.657201006561,
+          "debt": 3819.58135277376,
+          "fire": 20192.451521610492,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 21872.16119597376,
+          "after": 20142.5039949672,
+          "dealt": 1729.657201006561,
+          "debt": 4774.4766909672,
+          "fire": 20884.314402013115,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 20142.5039949672,
+          "after": 18412.846793960638,
+          "dealt": 1729.657201006561,
+          "debt": 5729.37202916064,
+          "fire": 21109.999999999993,
+          "alive": true,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 18412.846793960638,
+        "fire": 21109.999999999993,
+        "guards": 0,
+        "debt": 5729.37202916064
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "round": 23,
+      "layers": 657,
+      "operator": "红豆",
+      "state": "普通",
+      "key": "enemy_1045_hammer_2",
+      "charged": false,
+      "start": {
+        "hp": 5682.495000000001,
+        "maxHp": 5682.495000000001,
+        "def": 281,
+        "res": 0,
+        "fire": 0
+      },
+      "packets": [
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 5682.495000000001,
+          "after": 3226.8707374900014,
+          "dealt": 2455.6242625099994,
+          "debt": 1355.6814374899998,
+          "fire": 982.2497050039998,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 3226.8707374900014,
+          "after": 771.246474980002,
+          "dealt": 2455.6242625099994,
+          "debt": 2711.3628749799996,
+          "fire": 1964.4994100079996,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 771.246474980002,
+          "after": 0,
+          "dealt": 771.246474980002,
+          "debt": 4067.0443124699996,
+          "fire": 2272.9980000000005,
+          "alive": false,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": false,
+        "hp": 0,
+        "fire": 2272.9980000000005,
+        "guards": 0,
+        "debt": 4067.0443124699996
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "round": 23,
+      "layers": 657,
+      "operator": "红豆",
+      "state": "普通",
+      "key": "enemy_1045_hammer_2",
+      "charged": true,
+      "start": {
+        "hp": 5682.495000000001,
+        "maxHp": 5682.495000000001,
+        "def": 281,
+        "res": 0,
+        "fire": 17425
+      },
+      "packets": [
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 5682.495000000001,
+          "after": 3226.8707374900014,
+          "dealt": 2455.6242625099994,
+          "debt": 1355.6814374899998,
+          "fire": 18407.249705004,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 3226.8707374900014,
+          "after": 771.246474980002,
+          "dealt": 2455.6242625099994,
+          "debt": 2711.3628749799996,
+          "fire": 19389.499410008,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 771.246474980002,
+          "after": 771.246474980002,
+          "dealt": 0,
+          "debt": 2711.3628749799996,
+          "fire": 10676.999410008,
+          "alive": true,
+          "guards": 1
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 771.246474980002,
+        "fire": 10676.999410008,
+        "guards": 1,
+        "debt": 2711.3628749799996
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "round": 23,
+      "layers": 657,
+      "operator": "红豆",
+      "state": "普通",
+      "key": "enemy_1425_lrcmra_2",
+      "charged": false,
+      "start": {
+        "hp": 5682.495000000001,
+        "maxHp": 5682.495000000001,
+        "def": 281,
+        "res": 0,
+        "fire": 0
+      },
+      "packets": [
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 5682.495000000001,
+          "after": 3754.205249992001,
+          "dealt": 1928.2897500079998,
+          "debt": 1064.554809992,
+          "fire": 771.3159000032,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 3754.205249992001,
+          "after": 1644.8671999840012,
+          "dealt": 2109.3380500079998,
+          "debt": 2229.061319984,
+          "fire": 1615.0511200064,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 1644.8671999840012,
+          "after": 0,
+          "dealt": 1644.8671999840012,
+          "debt": 3293.6161299759997,
+          "fire": 2272.9980000000005,
+          "alive": false,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 0,
+          "after": 0,
+          "dealt": 0,
+          "debt": 3293.6161299759997,
+          "fire": 2272.9980000000005,
+          "alive": false,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 0,
+          "after": 0,
+          "dealt": 0,
+          "debt": 3293.6161299759997,
+          "fire": 2272.9980000000005,
+          "alive": false,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 0,
+          "after": 0,
+          "dealt": 0,
+          "debt": 3293.6161299759997,
+          "fire": 2272.9980000000005,
+          "alive": false,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": false,
+        "hp": 0,
+        "fire": 2272.9980000000005,
+        "guards": 0,
+        "debt": 3293.6161299759997
+      }
+    },
+    {
+      "modeId": "mode_multi_hard",
+      "round": 23,
+      "layers": 657,
+      "operator": "红豆",
+      "state": "普通",
+      "key": "enemy_1425_lrcmra_2",
+      "charged": true,
+      "start": {
+        "hp": 5682.495000000001,
+        "maxHp": 5682.495000000001,
+        "def": 281,
+        "res": 0,
+        "fire": 17425
+      },
+      "packets": [
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 5682.495000000001,
+          "after": 3754.205249992001,
+          "dealt": 1928.2897500079998,
+          "debt": 1064.554809992,
+          "fire": 18196.3159000032,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 3754.205249992001,
+          "after": 1644.8671999840012,
+          "dealt": 2109.3380500079998,
+          "debt": 2229.061319984,
+          "fire": 19040.0511200064,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 1644.8671999840012,
+          "after": 1644.8671999840012,
+          "dealt": 0,
+          "debt": 2229.061319984,
+          "fire": 10327.5511200064,
+          "alive": true,
+          "guards": 1
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 1644.8671999840012,
+          "after": 0,
+          "dealt": 1644.8671999840012,
+          "debt": 3393.5678299759998,
+          "fire": 10985.498,
+          "alive": false,
+          "guards": 1
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 0,
+          "after": 0,
+          "dealt": 0,
+          "debt": 3393.5678299759998,
+          "fire": 10985.498,
+          "alive": false,
+          "guards": 1
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 0,
+          "after": 0,
+          "dealt": 0,
+          "debt": 3393.5678299759998,
+          "fire": 10985.498,
+          "alive": false,
+          "guards": 1
+        }
+      ],
+      "end": {
+        "alive": false,
+        "hp": 0,
+        "fire": 10985.498,
+        "guards": 1,
+        "debt": 3393.5678299759998
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "round": 13,
+      "layers": 237,
+      "operator": "泥岩",
+      "state": "精锐",
+      "key": "enemy_1045_hammer_2",
+      "charged": false,
+      "start": {
+        "hp": 9098.775,
+        "maxHp": 9098.775,
+        "def": 555,
+        "res": 10,
+        "fire": 0
+      },
+      "packets": [
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 9098.775,
+          "after": 9098.775,
+          "dealt": 0,
+          "debt": 0,
+          "fire": 0,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 9098.775,
+          "after": 7473.564784349999,
+          "dealt": 1625.2102156500005,
+          "debt": 742.86528435,
+          "fire": 650.0840862600003,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 7473.564784349999,
+          "after": 5848.354568699999,
+          "dealt": 1625.2102156500005,
+          "debt": 1485.7305687,
+          "fire": 1300.1681725200006,
+          "alive": true,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 5848.354568699999,
+        "fire": 1300.1681725200006,
+        "guards": 0,
+        "debt": 1485.7305687
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "round": 13,
+      "layers": 237,
+      "operator": "泥岩",
+      "state": "精锐",
+      "key": "enemy_1045_hammer_2",
+      "charged": true,
+      "start": {
+        "hp": 9098.775,
+        "maxHp": 9098.775,
+        "def": 555,
+        "res": 10,
+        "fire": 6925
+      },
+      "packets": [
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 9098.775,
+          "after": 9098.775,
+          "dealt": 0,
+          "debt": 0,
+          "fire": 6925,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 9098.775,
+          "after": 7473.564784349999,
+          "dealt": 1625.2102156500005,
+          "debt": 742.86528435,
+          "fire": 7575.08408626,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 7473.564784349999,
+          "after": 5848.354568699999,
+          "dealt": 1625.2102156500005,
+          "debt": 1485.7305687,
+          "fire": 8225.16817252,
+          "alive": true,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 5848.354568699999,
+        "fire": 8225.16817252,
+        "guards": 0,
+        "debt": 1485.7305687
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "round": 13,
+      "layers": 237,
+      "operator": "泥岩",
+      "state": "精锐",
+      "key": "enemy_1425_lrcmra_2",
+      "charged": false,
+      "start": {
+        "hp": 9098.775,
+        "maxHp": 9098.775,
+        "def": 555,
+        "res": 10,
+        "fire": 0
+      },
+      "packets": [
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 9098.775,
+          "after": 9098.775,
+          "dealt": 0,
+          "debt": 0,
+          "fire": 0,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 9098.775,
+          "after": 8087.6972153124,
+          "dealt": 1011.0777846875999,
+          "debt": 462.1522673124,
+          "fire": 404.43111387503996,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 8087.6972153124,
+          "after": 7230.9050045484,
+          "dealt": 856.7922107639997,
+          "debt": 853.7823365484,
+          "fire": 747.1479981806399,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 7230.9050045484,
+          "after": 6219.8272198608,
+          "dealt": 1011.0777846875999,
+          "debt": 1315.9346038608,
+          "fire": 1151.5791120556798,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 6219.8272198608,
+          "after": 5363.0350090968,
+          "dealt": 856.7922107639997,
+          "debt": 1707.5646730968,
+          "fire": 1494.2959963612798,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 5363.0350090968,
+          "after": 4351.9572244092005,
+          "dealt": 1011.0777846875999,
+          "debt": 2169.7169404092,
+          "fire": 1585,
+          "alive": true,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 4351.9572244092005,
+        "fire": 1585,
+        "guards": 0,
+        "debt": 2169.7169404092
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "round": 13,
+      "layers": 237,
+      "operator": "泥岩",
+      "state": "精锐",
+      "key": "enemy_1425_lrcmra_2",
+      "charged": true,
+      "start": {
+        "hp": 9098.775,
+        "maxHp": 9098.775,
+        "def": 555,
+        "res": 10,
+        "fire": 6925
+      },
+      "packets": [
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 9098.775,
+          "after": 9098.775,
+          "dealt": 0,
+          "debt": 0,
+          "fire": 6925,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 9098.775,
+          "after": 8087.6972153124,
+          "dealt": 1011.0777846875999,
+          "debt": 462.1522673124,
+          "fire": 7329.43111387504,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 8087.6972153124,
+          "after": 7230.9050045484,
+          "dealt": 856.7922107639997,
+          "debt": 853.7823365484,
+          "fire": 7672.14799818064,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 7230.9050045484,
+          "after": 6219.8272198608,
+          "dealt": 1011.0777846875999,
+          "debt": 1315.9346038608,
+          "fire": 8076.57911205568,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 6219.8272198608,
+          "after": 5363.0350090968,
+          "dealt": 856.7922107639997,
+          "debt": 1707.5646730968,
+          "fire": 8419.29599636128,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 5363.0350090968,
+          "after": 4351.9572244092005,
+          "dealt": 1011.0777846875999,
+          "debt": 2169.7169404092,
+          "fire": 8510,
+          "alive": true,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 4351.9572244092005,
+        "fire": 8510,
+        "guards": 0,
+        "debt": 2169.7169404092
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "round": 13,
+      "layers": 237,
+      "operator": "赫德雷",
+      "state": "精锐",
+      "key": "enemy_1045_hammer_2",
+      "charged": false,
+      "start": {
+        "hp": 16539.39,
+        "maxHp": 16539.39,
+        "def": 0,
+        "res": 0,
+        "fire": 0
+      },
+      "packets": [
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 16539.39,
+          "after": 14894.382493166999,
+          "dealt": 1645.0075068330007,
+          "debt": 751.914403167,
+          "fire": 658.0030027332003,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 14894.382493166999,
+          "after": 13249.374986333998,
+          "dealt": 1645.0075068330007,
+          "debt": 1503.828806334,
+          "fire": 1316.0060054664007,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 13249.374986333998,
+          "after": 11604.367479500997,
+          "dealt": 1645.0075068330007,
+          "debt": 2255.743209501,
+          "fire": 1585,
+          "alive": true,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 11604.367479500997,
+        "fire": 1585,
+        "guards": 0,
+        "debt": 2255.743209501
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "round": 13,
+      "layers": 237,
+      "operator": "赫德雷",
+      "state": "精锐",
+      "key": "enemy_1045_hammer_2",
+      "charged": true,
+      "start": {
+        "hp": 16539.39,
+        "maxHp": 16539.39,
+        "def": 0,
+        "res": 0,
+        "fire": 6925
+      },
+      "packets": [
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 16539.39,
+          "after": 14894.382493166999,
+          "dealt": 1645.0075068330007,
+          "debt": 751.914403167,
+          "fire": 7583.0030027332,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 14894.382493166999,
+          "after": 13249.374986333998,
+          "dealt": 1645.0075068330007,
+          "debt": 1503.828806334,
+          "fire": 8241.0060054664,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 13249.374986333998,
+          "after": 11604.367479500997,
+          "dealt": 1645.0075068330007,
+          "debt": 2255.743209501,
+          "fire": 8510,
+          "alive": true,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 11604.367479500997,
+        "fire": 8510,
+        "guards": 0,
+        "debt": 2255.743209501
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "round": 13,
+      "layers": 237,
+      "operator": "赫德雷",
+      "state": "精锐",
+      "key": "enemy_1425_lrcmra_2",
+      "charged": false,
+      "start": {
+        "hp": 16539.39,
+        "maxHp": 16539.39,
+        "def": 0,
+        "res": 0,
+        "fire": 0
+      },
+      "packets": [
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 16539.39,
+          "after": 15223.3839945336,
+          "dealt": 1316.006005466399,
+          "debt": 601.5315225336001,
+          "fire": 526.4024021865597,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 15223.3839945336,
+          "after": 13907.377989067201,
+          "dealt": 1316.006005466399,
+          "debt": 1203.0630450672002,
+          "fire": 1052.8048043731194,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 13907.377989067201,
+          "after": 12591.371983600802,
+          "dealt": 1316.006005466399,
+          "debt": 1804.5945676008002,
+          "fire": 1579.207206559679,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 12591.371983600802,
+          "after": 11275.365978134403,
+          "dealt": 1316.006005466399,
+          "debt": 2406.1260901344003,
+          "fire": 1585,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 11275.365978134403,
+          "after": 9959.359972668004,
+          "dealt": 1316.006005466399,
+          "debt": 3007.657612668,
+          "fire": 1585,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 9959.359972668004,
+          "after": 8643.353967201605,
+          "dealt": 1316.006005466399,
+          "debt": 3609.1891352016,
+          "fire": 1585,
+          "alive": true,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 8643.353967201605,
+        "fire": 1585,
+        "guards": 0,
+        "debt": 3609.1891352016
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "round": 13,
+      "layers": 237,
+      "operator": "赫德雷",
+      "state": "精锐",
+      "key": "enemy_1425_lrcmra_2",
+      "charged": true,
+      "start": {
+        "hp": 16539.39,
+        "maxHp": 16539.39,
+        "def": 0,
+        "res": 0,
+        "fire": 6925
+      },
+      "packets": [
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 16539.39,
+          "after": 15223.3839945336,
+          "dealt": 1316.006005466399,
+          "debt": 601.5315225336001,
+          "fire": 7451.40240218656,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 15223.3839945336,
+          "after": 13907.377989067201,
+          "dealt": 1316.006005466399,
+          "debt": 1203.0630450672002,
+          "fire": 7977.80480437312,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 13907.377989067201,
+          "after": 12591.371983600802,
+          "dealt": 1316.006005466399,
+          "debt": 1804.5945676008002,
+          "fire": 8504.207206559679,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 12591.371983600802,
+          "after": 11275.365978134403,
+          "dealt": 1316.006005466399,
+          "debt": 2406.1260901344003,
+          "fire": 8510,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 11275.365978134403,
+          "after": 9959.359972668004,
+          "dealt": 1316.006005466399,
+          "debt": 3007.657612668,
+          "fire": 8510,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 9959.359972668004,
+          "after": 8643.353967201605,
+          "dealt": 1316.006005466399,
+          "debt": 3609.1891352016,
+          "fire": 8510,
+          "alive": true,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 8643.353967201605,
+        "fire": 8510,
+        "guards": 0,
+        "debt": 3609.1891352016
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "round": 13,
+      "layers": 237,
+      "operator": "红豆",
+      "state": "普通",
+      "key": "enemy_1045_hammer_2",
+      "charged": false,
+      "start": {
+        "hp": 3021.7949999999996,
+        "maxHp": 3021.7949999999996,
+        "def": 281,
+        "res": 0,
+        "fire": 0
+      },
+      "packets": [
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 3021.7949999999996,
+          "after": 1208.5385843499998,
+          "dealt": 1813.2564156499998,
+          "debt": 828.81908435,
+          "fire": 725.3025662599999,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 1208.5385843499998,
+          "after": 0,
+          "dealt": 1208.5385843499998,
+          "debt": 1657.6381687,
+          "fire": 1208.7179999999998,
+          "alive": false,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 0,
+          "after": 0,
+          "dealt": 0,
+          "debt": 1657.6381687,
+          "fire": 1208.7179999999998,
+          "alive": false,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": false,
+        "hp": 0,
+        "fire": 1208.7179999999998,
+        "guards": 0,
+        "debt": 1657.6381687
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "round": 13,
+      "layers": 237,
+      "operator": "红豆",
+      "state": "普通",
+      "key": "enemy_1045_hammer_2",
+      "charged": true,
+      "start": {
+        "hp": 3021.7949999999996,
+        "maxHp": 3021.7949999999996,
+        "def": 281,
+        "res": 0,
+        "fire": 6925
+      },
+      "packets": [
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 3021.7949999999996,
+          "after": 1208.5385843499998,
+          "dealt": 1813.2564156499998,
+          "debt": 828.81908435,
+          "fire": 7650.30256626,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 1208.5385843499998,
+          "after": 1208.5385843499998,
+          "dealt": 0,
+          "debt": 828.81908435,
+          "fire": 4187.80256626,
+          "alive": true,
+          "guards": 1
+        },
+        {
+          "enemyAtk": 2923.0755,
+          "type": "phys",
+          "before": 1208.5385843499998,
+          "after": 0,
+          "dealt": 1208.5385843499998,
+          "debt": 1657.6381687,
+          "fire": 4671.218,
+          "alive": false,
+          "guards": 1
+        }
+      ],
+      "end": {
+        "alive": false,
+        "hp": 0,
+        "fire": 4671.218,
+        "guards": 1,
+        "debt": 1657.6381687
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "round": 13,
+      "layers": 237,
+      "operator": "红豆",
+      "state": "普通",
+      "key": "enemy_1425_lrcmra_2",
+      "charged": false,
+      "start": {
+        "hp": 3021.7949999999996,
+        "maxHp": 3021.7949999999996,
+        "def": 281,
+        "res": 0,
+        "fire": 0
+      },
+      "packets": [
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 3021.7949999999996,
+          "after": 1609.7599274799998,
+          "dealt": 1412.0350725199999,
+          "debt": 645.4253274800001,
+          "fire": 564.8140290079999,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 1609.7599274799998,
+          "after": 4.874554959999841,
+          "dealt": 1604.88537252,
+          "debt": 1379.00035496,
+          "fire": 1206.768178016,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 4.874554959999841,
+          "after": 0,
+          "dealt": 4.874554959999841,
+          "debt": 2024.4256824400002,
+          "fire": 1208.718,
+          "alive": false,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 0,
+          "after": 0,
+          "dealt": 0,
+          "debt": 2024.4256824400002,
+          "fire": 1208.718,
+          "alive": false,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 0,
+          "after": 0,
+          "dealt": 0,
+          "debt": 2024.4256824400002,
+          "fire": 1208.718,
+          "alive": false,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 0,
+          "after": 0,
+          "dealt": 0,
+          "debt": 2024.4256824400002,
+          "fire": 1208.718,
+          "alive": false,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": false,
+        "hp": 0,
+        "fire": 1208.718,
+        "guards": 0,
+        "debt": 2024.4256824400002
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "round": 13,
+      "layers": 237,
+      "operator": "红豆",
+      "state": "普通",
+      "key": "enemy_1425_lrcmra_2",
+      "charged": true,
+      "start": {
+        "hp": 3021.7949999999996,
+        "maxHp": 3021.7949999999996,
+        "def": 281,
+        "res": 0,
+        "fire": 6925
+      },
+      "packets": [
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 3021.7949999999996,
+          "after": 1609.7599274799998,
+          "dealt": 1412.0350725199999,
+          "debt": 645.4253274800001,
+          "fire": 7489.814029008,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 1609.7599274799998,
+          "after": 4.874554959999841,
+          "dealt": 1604.88537252,
+          "debt": 1379.00035496,
+          "fire": 8131.768178016,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 4.874554959999841,
+          "after": 4.874554959999841,
+          "dealt": 0,
+          "debt": 1379.00035496,
+          "fire": 4669.268178016,
+          "alive": true,
+          "guards": 1
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 4.874554959999841,
+          "after": 0,
+          "dealt": 4.874554959999841,
+          "debt": 2112.57538244,
+          "fire": 4671.218,
+          "alive": false,
+          "guards": 1
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "phys",
+          "before": 0,
+          "after": 0,
+          "dealt": 0,
+          "debt": 2112.57538244,
+          "fire": 4671.218,
+          "alive": false,
+          "guards": 1
+        },
+        {
+          "enemyAtk": 2338.4604,
+          "type": "arts",
+          "before": 0,
+          "after": 0,
+          "dealt": 0,
+          "debt": 2112.57538244,
+          "fire": 4671.218,
+          "alive": false,
+          "guards": 1
+        }
+      ],
+      "end": {
+        "alive": false,
+        "hp": 0,
+        "fire": 4671.218,
+        "guards": 1,
+        "debt": 2112.57538244
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "round": 23,
+      "layers": 657,
+      "operator": "泥岩",
+      "state": "精锐",
+      "key": "enemy_1045_hammer_2",
+      "charged": false,
+      "start": {
+        "hp": 17110.275,
+        "maxHp": 17110.275,
+        "def": 555,
+        "res": 10,
+        "fire": 0
+      },
+      "packets": [
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 17110.275,
+          "after": 17110.275,
+          "dealt": 0,
+          "debt": 0,
+          "fire": 0,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 17110.275,
+          "after": 14831.188937490002,
+          "dealt": 2279.0860625099995,
+          "debt": 1258.21963749,
+          "fire": 911.6344250039998,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 14831.188937490002,
+          "after": 12552.102874980003,
+          "dealt": 2279.0860625099995,
+          "debt": 2516.43927498,
+          "fire": 1823.2688500079996,
+          "alive": true,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 12552.102874980003,
+        "fire": 1823.2688500079996,
+        "guards": 0,
+        "debt": 2516.43927498
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "round": 23,
+      "layers": 657,
+      "operator": "泥岩",
+      "state": "精锐",
+      "key": "enemy_1045_hammer_2",
+      "charged": true,
+      "start": {
+        "hp": 17110.275,
+        "maxHp": 17110.275,
+        "def": 555,
+        "res": 10,
+        "fire": 17425
+      },
+      "packets": [
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 17110.275,
+          "after": 17110.275,
+          "dealt": 0,
+          "debt": 0,
+          "fire": 17425,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 17110.275,
+          "after": 14831.188937490002,
+          "dealt": 2279.0860625099995,
+          "debt": 1258.21963749,
+          "fire": 18336.634425004,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 14831.188937490002,
+          "after": 12552.102874980003,
+          "dealt": 2279.0860625099995,
+          "debt": 2516.43927498,
+          "fire": 19248.268850007997,
+          "alive": true,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 12552.102874980003,
+        "fire": 19248.268850007997,
+        "guards": 0,
+        "debt": 2516.43927498
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "round": 23,
+      "layers": 657,
+      "operator": "泥岩",
+      "state": "精锐",
+      "key": "enemy_1425_lrcmra_2",
+      "charged": false,
+      "start": {
+        "hp": 17110.275,
+        "maxHp": 17110.275,
+        "def": 555,
+        "res": 10,
+        "fire": 0
+      },
+      "packets": [
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 17110.275,
+          "after": 17110.275,
+          "dealt": 0,
+          "debt": 0,
+          "fire": 0,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 17110.275,
+          "after": 15781.392028494962,
+          "dealt": 1328.8829715050397,
+          "debt": 733.63910129496,
+          "fire": 531.5531886020159,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 15781.392028494962,
+          "after": 14555.165943489363,
+          "dealt": 1226.226085005599,
+          "debt": 1410.60420828936,
+          "fire": 1022.0436226042556,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 14555.165943489363,
+          "after": 13226.282971984323,
+          "dealt": 1328.8829715050397,
+          "debt": 2144.24330958432,
+          "fire": 1553.5968112062715,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 13226.282971984323,
+          "after": 12000.056886978724,
+          "dealt": 1226.226085005599,
+          "debt": 2821.2084165787196,
+          "fire": 2044.0872452085111,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 12000.056886978724,
+          "after": 10671.173915473684,
+          "dealt": 1328.8829715050397,
+          "debt": 3554.84751787368,
+          "fire": 2575.640433810527,
+          "alive": true,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 10671.173915473684,
+        "fire": 2575.640433810527,
+        "guards": 0,
+        "debt": 3554.84751787368
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "round": 23,
+      "layers": 657,
+      "operator": "泥岩",
+      "state": "精锐",
+      "key": "enemy_1425_lrcmra_2",
+      "charged": true,
+      "start": {
+        "hp": 17110.275,
+        "maxHp": 17110.275,
+        "def": 555,
+        "res": 10,
+        "fire": 17425
+      },
+      "packets": [
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 17110.275,
+          "after": 17110.275,
+          "dealt": 0,
+          "debt": 0,
+          "fire": 17425,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 17110.275,
+          "after": 15781.392028494962,
+          "dealt": 1328.8829715050397,
+          "debt": 733.63910129496,
+          "fire": 17956.553188602014,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 15781.392028494962,
+          "after": 14555.165943489363,
+          "dealt": 1226.226085005599,
+          "debt": 1410.60420828936,
+          "fire": 18447.043622604255,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 14555.165943489363,
+          "after": 13226.282971984323,
+          "dealt": 1328.8829715050397,
+          "debt": 2144.24330958432,
+          "fire": 18978.59681120627,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 13226.282971984323,
+          "after": 12000.056886978724,
+          "dealt": 1226.226085005599,
+          "debt": 2821.2084165787196,
+          "fire": 19469.08724520851,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 12000.056886978724,
+          "after": 10671.173915473684,
+          "dealt": 1328.8829715050397,
+          "debt": 3554.84751787368,
+          "fire": 20000.640433810524,
+          "alive": true,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 10671.173915473684,
+        "fire": 20000.640433810524,
+        "guards": 0,
+        "debt": 3554.84751787368
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "round": 23,
+      "layers": 657,
+      "operator": "赫德雷",
+      "state": "精锐",
+      "key": "enemy_1045_hammer_2",
+      "charged": false,
+      "start": {
+        "hp": 28790.790000000005,
+        "maxHp": 28790.790000000005,
+        "def": 0,
+        "res": 0,
+        "fire": 0
+      },
+      "packets": [
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 28790.790000000005,
+          "after": 26628.718498741804,
+          "dealt": 2162.0715012582004,
+          "debt": 1193.6191727418,
+          "fire": 864.8286005032802,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 26628.718498741804,
+          "after": 24466.646997483604,
+          "dealt": 2162.0715012582004,
+          "debt": 2387.2383454836,
+          "fire": 1729.6572010065604,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 24466.646997483604,
+          "after": 22304.575496225403,
+          "dealt": 2162.0715012582004,
+          "debt": 3580.8575182254,
+          "fire": 2594.4858015098407,
+          "alive": true,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 22304.575496225403,
+        "fire": 2594.4858015098407,
+        "guards": 0,
+        "debt": 3580.8575182254
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "round": 23,
+      "layers": 657,
+      "operator": "赫德雷",
+      "state": "精锐",
+      "key": "enemy_1045_hammer_2",
+      "charged": true,
+      "start": {
+        "hp": 28790.790000000005,
+        "maxHp": 28790.790000000005,
+        "def": 0,
+        "res": 0,
+        "fire": 17425
+      },
+      "packets": [
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 28790.790000000005,
+          "after": 26628.718498741804,
+          "dealt": 2162.0715012582004,
+          "debt": 1193.6191727418,
+          "fire": 18289.82860050328,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 26628.718498741804,
+          "after": 24466.646997483604,
+          "dealt": 2162.0715012582004,
+          "debt": 2387.2383454836,
+          "fire": 19154.657201006557,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 24466.646997483604,
+          "after": 22304.575496225403,
+          "dealt": 2162.0715012582004,
+          "debt": 3580.8575182254,
+          "fire": 20019.485801509836,
+          "alive": true,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 22304.575496225403,
+        "fire": 20019.485801509836,
+        "guards": 0,
+        "debt": 3580.8575182254
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "round": 23,
+      "layers": 657,
+      "operator": "赫德雷",
+      "state": "精锐",
+      "key": "enemy_1425_lrcmra_2",
+      "charged": false,
+      "start": {
+        "hp": 28790.790000000005,
+        "maxHp": 28790.790000000005,
+        "def": 0,
+        "res": 0,
+        "fire": 0
+      },
+      "packets": [
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 28790.790000000005,
+          "after": 27061.132798993443,
+          "dealt": 1729.657201006561,
+          "debt": 954.89533819344,
+          "fire": 691.8628804026245,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 27061.132798993443,
+          "after": 25331.475597986882,
+          "dealt": 1729.657201006561,
+          "debt": 1909.79067638688,
+          "fire": 1383.725760805249,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 25331.475597986882,
+          "after": 23601.81839698032,
+          "dealt": 1729.657201006561,
+          "debt": 2864.6860145803203,
+          "fire": 2075.5886412078735,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 23601.81839698032,
+          "after": 21872.16119597376,
+          "dealt": 1729.657201006561,
+          "debt": 3819.58135277376,
+          "fire": 2767.451521610498,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 21872.16119597376,
+          "after": 20142.5039949672,
+          "dealt": 1729.657201006561,
+          "debt": 4774.4766909672,
+          "fire": 3459.314402013122,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 20142.5039949672,
+          "after": 18412.846793960638,
+          "dealt": 1729.657201006561,
+          "debt": 5729.37202916064,
+          "fire": 3685,
+          "alive": true,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 18412.846793960638,
+        "fire": 3685,
+        "guards": 0,
+        "debt": 5729.37202916064
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "round": 23,
+      "layers": 657,
+      "operator": "赫德雷",
+      "state": "精锐",
+      "key": "enemy_1425_lrcmra_2",
+      "charged": true,
+      "start": {
+        "hp": 28790.790000000005,
+        "maxHp": 28790.790000000005,
+        "def": 0,
+        "res": 0,
+        "fire": 17425
+      },
+      "packets": [
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 28790.790000000005,
+          "after": 27061.132798993443,
+          "dealt": 1729.657201006561,
+          "debt": 954.89533819344,
+          "fire": 18116.862880402623,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 27061.132798993443,
+          "after": 25331.475597986882,
+          "dealt": 1729.657201006561,
+          "debt": 1909.79067638688,
+          "fire": 18808.725760805246,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 25331.475597986882,
+          "after": 23601.81839698032,
+          "dealt": 1729.657201006561,
+          "debt": 2864.6860145803203,
+          "fire": 19500.58864120787,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 23601.81839698032,
+          "after": 21872.16119597376,
+          "dealt": 1729.657201006561,
+          "debt": 3819.58135277376,
+          "fire": 20192.451521610492,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 21872.16119597376,
+          "after": 20142.5039949672,
+          "dealt": 1729.657201006561,
+          "debt": 4774.4766909672,
+          "fire": 20884.314402013115,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 20142.5039949672,
+          "after": 18412.846793960638,
+          "dealt": 1729.657201006561,
+          "debt": 5729.37202916064,
+          "fire": 21109.999999999993,
+          "alive": true,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 18412.846793960638,
+        "fire": 21109.999999999993,
+        "guards": 0,
+        "debt": 5729.37202916064
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "round": 23,
+      "layers": 657,
+      "operator": "红豆",
+      "state": "普通",
+      "key": "enemy_1045_hammer_2",
+      "charged": false,
+      "start": {
+        "hp": 5682.495000000001,
+        "maxHp": 5682.495000000001,
+        "def": 281,
+        "res": 0,
+        "fire": 0
+      },
+      "packets": [
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 5682.495000000001,
+          "after": 3226.8707374900014,
+          "dealt": 2455.6242625099994,
+          "debt": 1355.6814374899998,
+          "fire": 982.2497050039998,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 3226.8707374900014,
+          "after": 771.246474980002,
+          "dealt": 2455.6242625099994,
+          "debt": 2711.3628749799996,
+          "fire": 1964.4994100079996,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 771.246474980002,
+          "after": 0,
+          "dealt": 771.246474980002,
+          "debt": 4067.0443124699996,
+          "fire": 2272.9980000000005,
+          "alive": false,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": false,
+        "hp": 0,
+        "fire": 2272.9980000000005,
+        "guards": 0,
+        "debt": 4067.0443124699996
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "round": 23,
+      "layers": 657,
+      "operator": "红豆",
+      "state": "普通",
+      "key": "enemy_1045_hammer_2",
+      "charged": true,
+      "start": {
+        "hp": 5682.495000000001,
+        "maxHp": 5682.495000000001,
+        "def": 281,
+        "res": 0,
+        "fire": 17425
+      },
+      "packets": [
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 5682.495000000001,
+          "after": 3226.8707374900014,
+          "dealt": 2455.6242625099994,
+          "debt": 1355.6814374899998,
+          "fire": 18407.249705004,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 3226.8707374900014,
+          "after": 771.246474980002,
+          "dealt": 2455.6242625099994,
+          "debt": 2711.3628749799996,
+          "fire": 19389.499410008,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 4092.3056999999994,
+          "type": "phys",
+          "before": 771.246474980002,
+          "after": 771.246474980002,
+          "dealt": 0,
+          "debt": 2711.3628749799996,
+          "fire": 10676.999410008,
+          "alive": true,
+          "guards": 1
+        }
+      ],
+      "end": {
+        "alive": true,
+        "hp": 771.246474980002,
+        "fire": 10676.999410008,
+        "guards": 1,
+        "debt": 2711.3628749799996
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "round": 23,
+      "layers": 657,
+      "operator": "红豆",
+      "state": "普通",
+      "key": "enemy_1425_lrcmra_2",
+      "charged": false,
+      "start": {
+        "hp": 5682.495000000001,
+        "maxHp": 5682.495000000001,
+        "def": 281,
+        "res": 0,
+        "fire": 0
+      },
+      "packets": [
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 5682.495000000001,
+          "after": 3754.205249992001,
+          "dealt": 1928.2897500079998,
+          "debt": 1064.554809992,
+          "fire": 771.3159000032,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 3754.205249992001,
+          "after": 1644.8671999840012,
+          "dealt": 2109.3380500079998,
+          "debt": 2229.061319984,
+          "fire": 1615.0511200064,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 1644.8671999840012,
+          "after": 0,
+          "dealt": 1644.8671999840012,
+          "debt": 3293.6161299759997,
+          "fire": 2272.9980000000005,
+          "alive": false,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 0,
+          "after": 0,
+          "dealt": 0,
+          "debt": 3293.6161299759997,
+          "fire": 2272.9980000000005,
+          "alive": false,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 0,
+          "after": 0,
+          "dealt": 0,
+          "debt": 3293.6161299759997,
+          "fire": 2272.9980000000005,
+          "alive": false,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 0,
+          "after": 0,
+          "dealt": 0,
+          "debt": 3293.6161299759997,
+          "fire": 2272.9980000000005,
+          "alive": false,
+          "guards": 0
+        }
+      ],
+      "end": {
+        "alive": false,
+        "hp": 0,
+        "fire": 2272.9980000000005,
+        "guards": 0,
+        "debt": 3293.6161299759997
+      }
+    },
+    {
+      "modeId": "mode_multi_abyss",
+      "round": 23,
+      "layers": 657,
+      "operator": "红豆",
+      "state": "普通",
+      "key": "enemy_1425_lrcmra_2",
+      "charged": true,
+      "start": {
+        "hp": 5682.495000000001,
+        "maxHp": 5682.495000000001,
+        "def": 281,
+        "res": 0,
+        "fire": 17425
+      },
+      "packets": [
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 5682.495000000001,
+          "after": 3754.205249992001,
+          "dealt": 1928.2897500079998,
+          "debt": 1064.554809992,
+          "fire": 18196.3159000032,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 3754.205249992001,
+          "after": 1644.8671999840012,
+          "dealt": 2109.3380500079998,
+          "debt": 2229.061319984,
+          "fire": 19040.0511200064,
+          "alive": true,
+          "guards": 0
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 1644.8671999840012,
+          "after": 1644.8671999840012,
+          "dealt": 0,
+          "debt": 2229.061319984,
+          "fire": 10327.5511200064,
+          "alive": true,
+          "guards": 1
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 1644.8671999840012,
+          "after": 0,
+          "dealt": 1644.8671999840012,
+          "debt": 3393.5678299759998,
+          "fire": 10985.498,
+          "alive": false,
+          "guards": 1
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "phys",
+          "before": 0,
+          "after": 0,
+          "dealt": 0,
+          "debt": 3393.5678299759998,
+          "fire": 10985.498,
+          "alive": false,
+          "guards": 1
+        },
+        {
+          "enemyAtk": 3273.8445599999995,
+          "type": "arts",
+          "before": 0,
+          "after": 0,
+          "dealt": 0,
+          "debt": 3393.5678299759998,
+          "fire": 10985.498,
+          "alive": false,
+          "guards": 1
+        }
+      ],
+      "end": {
+        "alive": false,
+        "hp": 0,
+        "fire": 10985.498,
+        "guards": 1,
+        "debt": 3393.5678299759998
+      }
+    }
+  ]
+}

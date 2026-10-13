@@ -1,0 +1,60 @@
+{
+  "at": "2026-10-07T04:13:48.184Z",
+  "passed": true,
+  "scope": "Chromium simulates native WebView UA; memory accounts/ranked DB only; controlled prep fixture. Not Android/Windows device acceptance.",
+  "steps": [
+    "Both WebView clients authenticate against memory-only lab users",
+    "Admin solo host enables only new batch, expanded catalog is ready before briefing",
+    "Existing Exusiai skin remains trusted and selectable inside the expansion overlay",
+    "Real admin panel defaults grant tool off; enable/disable updates current first prep immediately without publishing the content",
+    "Admin solo touch UI defaults quick-grant off, enables owner switch and grants both normal test copies at first prep",
+    "Leaving test match removes new catalog from next formal lobby",
+    "Ordinary host with ready admin member starts formal content only",
+    "Ranked admin-host coop broadcasts identical new batch to ordinary member",
+    "Real loadout UI selects new S3/no-module, syncs all new operators and keeps saved formal preferences",
+    "Both new start strategies can be drafted in a real match",
+    "Admin UI claims elite Shu/Aglna once, ordinary member cannot forge grant, shared pool and teammate state stay byte-identical",
+    "All six new Spine operator models load in real prep renderer",
+    "Client runs actual BattleSpec with new kits and renders battle without simulation errors",
+    "Ling S3 real advanced summon model and _02 animation load in actual combat",
+    "Quick-grant controls automatically hide after first prep and remain unavailable in subsequent rounds",
+    "Authoritative WebView completes actual first round and server accepts settlement before round 2",
+    "844x390 touch viewport also resumes and renders the test match"
+  ],
+  "stats": {
+    "ticks": 199,
+    "stepMs": 38.19999999925494,
+    "maxFrameMs": 22.59999999962747,
+    "catchups": 2,
+    "errors": 0,
+    "battles": 1,
+    "frames": 4,
+    "avgTickMs": 0.19195979899123086,
+    "entries": 1,
+    "loadingSim": true
+  },
+  "finalStats": {
+    "ticks": 1141,
+    "stepMs": 141.19999999646097,
+    "maxFrameMs": 22.59999999962747,
+    "catchups": 20,
+    "errors": 0,
+    "battles": 2,
+    "frames": 35,
+    "avgTickMs": 0.12375109552713495,
+    "entries": 0,
+    "loadingSim": true
+  },
+  "server": {
+    "errorCount": 0,
+    "simErrors": 0,
+    "verifyStats": {
+      "checked": 0,
+      "mismatches": 0,
+      "rejected": 0,
+      "takeovers": 0
+    }
+  },
+  "errors": [],
+  "badResources": []
+}

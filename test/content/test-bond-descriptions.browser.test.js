@@ -1,0 +1,41 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {existsSync,readFileSync,mkdirSync} from 'node:fs';
+import path from 'node:path';
+import {startServer,ROOT} from '../../server/index.js';
+import {appPage} from '../helpers/appPage.mjs';
+const executablePath='C:/Program Files/Google/Chrome/Application/chrome.exe';
+test('five real bond popups and encyclopedia resolve active tiers, live values and compact/expanded rules on desktop and mobile',async t=>{
+ if(!existsSync(executablePath)){t.skip('Chrome required');return;}
+ const srv=await startServer({port:0,host:'127.0.0.1',quiet:true,auth:false,ranked:false});t.after(()=>srv.close());
+ const browser=await(await import('puppeteer-core')).default.launch({executablePath,headless:true,args:['--no-sandbox']});t.after(()=>browser.close());
+ const page=await appPage(await browser.newPage()),errors=[],requests=[];page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>requests.push(r.url()));await page.setViewport({width:1280,height:720});
+ const head=readFileSync(path.join(ROOT,'public/index.html'),'utf8').split('</head>')[0];await page.setRequestInterception(true);
+ page.on('request',r=>{if(new URL(r.url()).pathname!=='/dev/test-bond-description.html'){r.continue();return;}r.respond({status:200,contentType:'text/html',body:head+`</head><body><div id="app"></div><script type="module">
+ import {h,render} from '/vendor/preact.module.js';import {BondPopup} from '/js/ui/bondStrip.js';import {EncyclopediaHost,openEncyclopedia} from '/js/ui/encyclopedia.js';import {data,setMatchContent} from '/js/data.js';
+ await setMatchContent({batches:[{id:'arknights-expansion-v1'},{id:'rhodes-mujica-v1'}]});await data.loadAll(['assets','chess','items','bonds']);
+ window.__ctx=null;window.__show=(id,tier,L,owner=null,context=null,off=false)=>{window.__ctx=context;render(h(BondPopup,{key:id,bondId:id,entry:{count:data.lookup('bonds',id).thresholds[Math.max(0,tier-1)],layers:L,tier,active:tier>0},priv:{board:[],hand:[]},owner,ownerId:owner?'b':'a',off,bondContext:()=>__ctx,rhodesContext:()=>__ctx,onClose:()=>{render(null,document.getElementById('app'));}}),document.getElementById('app'));};
+ window.__book=()=>{render(h(EncyclopediaHost),document.getElementById('app'));openEncyclopedia();};window.__ready=true;
+ </script></body>`});});
+ await page.goto(srv.url+'/dev/test-bond-description.html');await page.waitForFunction(()=>__ready);
+ const now=()=>page.$eval('.bpop__sec--now',e=>e.textContent);
+ await page.evaluate(()=>__show('suiShip',1,40));await page.waitForSelector('.bpop');assert.ok((await now()).includes('280%'));assert.ok(!(await now()).includes('物理'));
+ await page.evaluate(()=>__show('suiShip',2,999));await page.waitForFunction(()=>document.querySelector('.bpop__sec--now').textContent.includes('340%'));assert.ok((await now()).includes('200%'));
+ await page.evaluate(()=>__show('penguinShip',2,999,null,{claimed:1}));await page.waitForFunction(()=>document.querySelector('.bpop__sec--now').textContent.includes('1/3'));assert.ok((await now()).includes('30层'));
+ await page.evaluate(()=>__show('girlbandShip',2,0,'队友乙',{live:true,heat:0,feverRemaining:5,encoreRemaining:0,layers:0,tier:2}));await page.waitForFunction(()=>document.querySelector('.bpop__sec--now').textContent.includes('+40%'));assert.ok(await page.$('.bpop[data-owner="队友乙"]'));
+ await page.waitForNetworkIdle({idleTime:500});const count=requests.length;await page.evaluate(()=>{__ctx={...__ctx,feverRemaining:0,encoreRemaining:0};});await page.waitForFunction(()=>document.querySelector('.bpop__sec--now').textContent.includes('当前常态'));assert.ok((await now()).includes('+20%'));assert.deepEqual(requests.slice(count),[],'ticker reads cached context without requests');
+ await page.evaluate(()=>__show('rhodesShip',2,300,null,{atk:10000,live:false}));await page.waitForFunction(()=>document.querySelector('.bpop__sec--now').textContent.includes('2374'));
+ assert.ok(!(await now()).includes('底伤'));assert.ok(!(await now()).includes('屏障'));assert.equal(await page.$eval('.bpop__rules',e=>e.open),false);await page.click('.bpop__rules summary');assert.ok((await page.$eval('.bpop__rules',e=>e.textContent)).includes('攻击力总和 10000'));
+ await page.evaluate(()=>__show('snowfieldGuideShip',2,0,'队友乙',{live:true,tier:2,layers:0,coldRemaining:5,iceRemaining:10,members:[{uid:1,name:'成员甲',atk:1000},{uid:2,name:'成员乙',atk:2000}]}));await page.waitForFunction(()=>document.querySelector('.bpop__sec--now').textContent.includes('750—780'));await page.click('.bpop__rules summary');assert.ok((await page.$eval('[data-bond-member-value="1"]',e=>e.textContent)).includes('750'));assert.ok((await page.$eval('[data-bond-member-value="2"]',e=>e.textContent)).includes('780'));
+ const out=path.resolve(ROOT,'../reports/bond-descriptions-20261011/visuals');mkdirSync(out,{recursive:true});await page.screenshot({path:path.join(out,'snow-desktop.png')});
+ await page.evaluate(()=>__show('snowfieldGuideShip',2,0,null,null,true));await page.waitForFunction(()=>document.querySelector('.bpop__off'));assert.equal(await page.$('.bpop__sec--now'),null);
+ await page.setViewport({width:568,height:320,isMobile:true,hasTouch:true});await page.waitForFunction(()=>window.__ready);await page.evaluate(()=>__show('rhodesShip',2,300,null,{atk:10000,live:false}));await page.waitForSelector('.bpop');await page.screenshot({path:path.join(out,'rhodes-mobile.png')});
+ const rect=await page.$eval('.bpop',e=>{const r=e.getBoundingClientRect();return {left:r.left,right:r.right,width:innerWidth,scroll:e.scrollHeight,height:e.clientHeight};});assert.ok(rect.left>=0&&rect.right<=rect.width+1,JSON.stringify(rect));
+ await page.setViewport({width:1280,height:720,isMobile:false,hasTouch:false});await page.waitForFunction(()=>window.__ready);await page.evaluate(()=>__book());await page.waitForSelector('[data-entry-id="rhodesShip"]');
+ await page.select('[aria-label="罗德岛预览档位"]','2');await page.$eval('[aria-label="罗德岛示例攻击力"]',e=>{e.value='10000';e.dispatchEvent(new Event('input',{bubbles:true}));});
+ const ri=await page.$eval('[data-entry-id="rhodesShip"]',e=>e.textContent);assert.ok(ri.includes('理论效果预览'));assert.ok(ri.includes('示例单发伤害'));assert.ok(!ri.includes('未激活'));
+ await page.select('[aria-label="雪境向导预览档位"]','2');await page.waitForFunction(()=>document.querySelector('[data-entry-id="snowfieldGuideShip"]')?.textContent.includes('示例成员冰爆'));
+ assert.ok((await page.$eval('[data-entry-id="snowfieldGuideShip"]',e=>e.textContent)).includes('750'));
+ await page.evaluate(async()=>{const {setMatchContent,data}=await import('/js/data.js');await setMatchContent(null);window.__clean=['suiShip','penguinShip','snowfieldGuideShip','rhodesShip','girlbandShip'].every(id=>!data.lookup('bonds',id));});assert.equal(await page.evaluate(()=>__clean),true);
+ assert.deepEqual(errors,[]);
+});

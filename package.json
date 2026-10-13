@@ -1,0 +1,60 @@
+{
+  "name": "stronghold-protocol-covenant",
+  "version": "0.5.5",
+  "private": true,
+  "description": "明日方舟「卫戍协议：盟约」非官方同人联机网页复刻（1–4 人合作，Node.js 服务器 + 浏览器客户端）",
+  "license": "GPL-3.0-or-later",
+  "homepage": "https://github.com/silverytail18/Stronghold-Protocol-3#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/silverytail18/Stronghold-Protocol-3.git"
+  },
+  "bugs": {
+    "url": "https://github.com/silverytail18/Stronghold-Protocol-3/issues"
+  },
+  "keywords": [
+    "arknights",
+    "auto-chess",
+    "tower-defense",
+    "co-op",
+    "browser-game",
+    "fan-game"
+  ],
+  "type": "module",
+  "main": "server/index.js",
+  "scripts": {
+    "auth:user": "node tools/auth-user.mjs",
+    "mobile:build": "node tools/build-android.mjs",
+    "mobile:offline": "node tools/build-android-offline.mjs",
+    "resources:build": "node tools/build-resource-pack.mjs",
+    "server:release": "node tools/build-server-release.mjs",
+    "windows:build": "node tools/build-windows.mjs",
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "node --test",
+    "test:ranked": "node --test test/ranked.test.js test/ranked-integration.test.js test/auth.test.js test/auth-admin.test.js",
+    "ranked:backup": "node tools/ranked-backup.mjs",
+    "ranked:benchmark": "node tools/ranked-benchmark.mjs",
+    "vendor": "node tools/vendor.mjs",
+    "build-data": "node tools/build-data.mjs",
+    "assets": "node tools/vendor.mjs && node tools/fetch-assets.mjs",
+    "postinstall": "node tools/vendor.mjs",
+    "setup": "node tools/setup.mjs",
+    "doctor": "node tools/doctor.mjs",
+    "launch": "node scripts/launch.mjs"
+  },
+  "engines": {
+    "node": ">=22.16.0"
+  },
+  "dependencies": {
+    "htm": "^3.1.1",
+    "pixi-spine": "^4.0.6",
+    "pixi.js": "^7.4.2",
+    "preact": "^10.29.8",
+    "three": "^0.186.1",
+    "ws": "^8.22.0"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^25.12.0"
+  }
+}

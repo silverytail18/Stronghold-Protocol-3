@@ -1,0 +1,24 @@
+// Player-facing research numbers and battle formulas share this pure module.
+const layers=n=>Math.max(0,Math.min(999,Math.floor(Number(n)||0)));
+export const RESEARCH = 'specialResearchShip';
+export const RESEARCH_ATTACK_RATIO = 1.5;
+export const RESEARCH_HEAL_RATIO = 3;
+export const RESEARCH_RADIUS = 1;
+const tierValue=(count,values)=>count>=10?values[3]:count>=9?values[2]:count>=6?values[1]:count>=3?values[0]:0;
+export const calibrationGlobal=count=>tierValue(count,[.1,.15,.2,.3]);
+export const calibrationLocal=calibrationGlobal;
+export const adaptationGlobal=count=>tierValue(count,[.02,.04,.06,.08]);
+export const adaptationLocal=count=>tierValue(count,[.08,.16,.24,.32]);
+export const calibration=(_layers,count,inside)=>calibrationGlobal(count)+(inside?calibrationLocal(count):0);
+export const adaptation=(_layers,count,inside)=>adaptationGlobal(count)+(inside?adaptationLocal(count):0);
+export const PULSE = Object.freeze({first:2,interval:1,base:120,perLayer:2,targets:3,jointTargets:5,pause:.5});
+export const pulseDamage=n=>PULSE.base+PULSE.perLayer*layers(n);
+export const MARK = Object.freeze({slow:.5,linger:3,trueRatio:.1});
+export const SCAN = Object.freeze({first:2,interval:10,duration:3});
+export const BROADCAST = Object.freeze({ratio:.5,aspd:30});
+export const REPAIR = Object.freeze({outside:.01,inside:.03});
+export const PARALLEL = Object.freeze({recovery:1,bonusSp:8,casters:3});
+export const EMERGENCY = Object.freeze({hpThreshold:.4,heal:.3,shield:.5,shieldDuration:8,immuneDuration:5,invulnerableDuration:2});
+export const STRUCTURE = Object.freeze({defThreshold:800,defIgnore:.6,resThreshold:40,resIgnore:25});
+export const JOINT_DAMAGE = .5;
+export const researchCooldowns=count=>({attack:count>=4?8:10,heal:count>=4?5:10});

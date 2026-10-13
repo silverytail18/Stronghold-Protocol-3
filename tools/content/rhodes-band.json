@@ -1,0 +1,139 @@
+{
+  "id": "rhodes-mujica-v1",
+  "version": "ri-mujica-test-15",
+  "name": "罗德岛与乐队",
+  "operators": [
+    {
+      "charId": "char_002_amiya",
+      "key": "amiya",
+      "tier": 3,
+      "bonds": [
+        "rhodesShip",
+        "arcaneShip"
+      ],
+      "defaultSkill": 0,
+      "modules": [
+        "uniequip_002_amiya"
+      ],
+      "dmgType": "arts",
+      "attackKind": "ranged",
+      "identifier": 11003
+    },
+    {
+      "charId": "char_4184_dolris",
+      "key": "dolris",
+      "tier": 2,
+      "bonds": [
+        "rhodesShip",
+        "girlbandShip"
+      ],
+      "defaultSkill": 0,
+      "modules": [
+        "uniequip_002_dolris"
+      ],
+      "dmgType": "heal",
+      "attackKind": "ranged",
+      "identifier": 11004
+    },
+    {
+      "charId": "char_4185_amoris",
+      "key": "amoris",
+      "tier": 3,
+      "bonds": [
+        "rhodesShip",
+        "girlbandShip"
+      ],
+      "defaultSkill": 0,
+      "modules": [
+        "uniequip_002_amoris"
+      ],
+      "dmgType": "phys",
+      "attackKind": "melee",
+      "identifier": 11005
+    },
+    {
+      "charId": "char_4183_mortis",
+      "key": "mortis",
+      "tier": 4,
+      "bonds": [
+        "rhodesShip",
+        "girlbandShip"
+      ],
+      "defaultSkill": 0,
+      "modules": [
+        "uniequip_002_mortis"
+      ],
+      "dmgType": "phys",
+      "attackKind": "melee",
+      "identifier": 11006
+    },
+    {
+      "charId": "char_4186_tmoris",
+      "key": "tmoris",
+      "tier": 5,
+      "bonds": [
+        "rhodesShip",
+        "girlbandShip"
+      ],
+      "defaultSkill": 1,
+      "modules": [
+        "uniequip_002_tmoris"
+      ],
+      "dmgType": "phys",
+      "attackKind": "melee",
+      "identifier": 11007
+    },
+    {
+      "charId": "char_4182_oblvns",
+      "key": "oblvns",
+      "tier": 6,
+      "bonds": [
+        "rhodesShip",
+        "girlbandShip"
+      ],
+      "defaultSkill": 2,
+      "modules": [
+        "uniequip_002_oblvns"
+      ],
+      "dmgType": "phys",
+      "attackKind": "ranged",
+      "identifier": 11008
+    },
+    {
+      "charId": "char_1052_kalts2",
+      "key": "kalts2",
+      "tier": 5,
+      "bonds": [
+        "rhodesShip",
+        "deputShip"
+      ],
+      "defaultSkill": 1,
+      "modules": [],
+      "dmgType": "heal",
+      "attackKind": "ranged",
+      "identifier": 11010
+    },
+    {
+      "charId": "char_148_nearl",
+      "key": "nearl",
+      "tier": 3,
+      "bonds": [
+        "rhodesShip"
+      ],
+      "defaultSkill": 0,
+      "modules": [
+        "uniequip_002_nearl"
+      ],
+      "dmgType": "phys",
+      "attackKind": "melee",
+      "identifier": 11011
+    }
+  ],
+  "oldMembers": [
+    "波登可",
+    "休谟斯",
+    "寒芒克洛丝",
+    "泥岩",
+    "妮芙"
+  ]
+}

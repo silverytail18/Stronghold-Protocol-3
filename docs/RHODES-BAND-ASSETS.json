@@ -1,0 +1,699 @@
+{
+  "repository": "fexli/ArknightsResource",
+  "commit": "d0b5af0b004b044d322397ce5ae79632b6d9fcdd",
+  "files": [
+    {
+      "source": "avatar/ASSISTANT/char_123_fang.png",
+      "url": "/assets/char/avatar/char_123_fang.png",
+      "gitBlob": "4140a8222d7a6da6b3ac9a0ebc66f42b9577151e",
+      "sha256": "fc99a661aae5fcb2745b3f4af4717f64b48ede116d709e06166bf947a6e08db8",
+      "bytes": 53003
+    },
+    {
+      "source": "charpor/char_123_fang_1.png",
+      "url": "/assets/char/portrait/char_123_fang_1.png",
+      "gitBlob": "c9f10c198c054f659ee72aa7e771975d11a5c576",
+      "sha256": "28b99bf62d2f5e21b57741131a7b64ff7dc42efd48bd25c201904ad3ccfb8403",
+      "bytes": 111398
+    },
+    {
+      "source": "spine/char_123_fang/char_123_fang/Front/char_123_fang.atlas",
+      "url": "/assets/spine/op/char_123_fang/front/char_123_fang.atlas",
+      "gitBlob": "18e48f39fbc019b57e8e0f3ddffe696ce7311583",
+      "sha256": "b107b441ebac6cb9c2c439a70962f4ee154c2d32253cec33602de7dacf38f9d8",
+      "bytes": 7882
+    },
+    {
+      "source": "spine/char_123_fang/char_123_fang/Front/char_123_fang.png",
+      "url": "/assets/spine/op/char_123_fang/front/char_123_fang.png",
+      "gitBlob": "c8ce22550149c2e515ce9f2e0b55fbec4837f068",
+      "sha256": "8f1e0d2e3f833b5b149e244bc1992a6e010b0e837a5f35c2eba1cff21bcc663d",
+      "bytes": 73954
+    },
+    {
+      "source": "spine/char_123_fang/char_123_fang/Front/char_123_fang.skel",
+      "url": "/assets/spine/op/char_123_fang/front/char_123_fang.skel",
+      "gitBlob": "0f868187c1c7298f2590c11240a73f6d702e7fc4",
+      "sha256": "42897e9a249de97ee7917a70aafaba332892d365e15efda367f4053ae9a3d066",
+      "bytes": 116683
+    },
+    {
+      "source": "spine/char_123_fang/char_123_fang/Back/char_123_fang.atlas",
+      "url": "/assets/spine/op/char_123_fang/back/char_123_fang.atlas",
+      "gitBlob": "4772f137f0049e2e96188ef1599108215e2f5949",
+      "sha256": "4ca737870e1c7d5f1f91f9cf9c187a6ec529ebfb93cf0039c0d1ec5456050654",
+      "bytes": 3472
+    },
+    {
+      "source": "spine/char_123_fang/char_123_fang/Back/char_123_fang.png",
+      "url": "/assets/spine/op/char_123_fang/back/char_123_fang.png",
+      "gitBlob": "8f3f3be949f92cd6b95685b6c41b868951b735f2",
+      "sha256": "f32ac5ff11e4acb780bfef974b79069e9f24e368ea9948c0312e0c3c64c3aa19",
+      "bytes": 47647
+    },
+    {
+      "source": "spine/char_123_fang/char_123_fang/Back/char_123_fang.skel",
+      "url": "/assets/spine/op/char_123_fang/back/char_123_fang.skel",
+      "gitBlob": "5b5b7760ed5cbb206f35c7899382ad62f578e170",
+      "sha256": "52eb3c7a9f8b961eebf56a75769c221ac9351b557aecad66d4bf86483e88bd20",
+      "bytes": 67492
+    },
+    {
+      "source": "skills/skill_icon_skcom_charge_cost[1].png",
+      "url": "/assets/skill/skcom_charge_cost[1].png",
+      "gitBlob": "e66621b6f664a4aa5d678d6c80c58b092caf86c2",
+      "sha256": "328137280973111a809a5da6e5c7aca8170615a135b472a727e16d1d954487f9",
+      "bytes": 13617
+    },
+    {
+      "source": "avatar/ASSISTANT/char_122_beagle.png",
+      "url": "/assets/char/avatar/char_122_beagle.png",
+      "gitBlob": "f4ae3a9f2f0c56f541f0dbd43a812e25f69cf5b0",
+      "sha256": "58f0697a6a5c439ffb55ef06c603c0d74cfa2edec7c38e127782fb3588c54e95",
+      "bytes": 54000
+    },
+    {
+      "source": "charpor/char_122_beagle_1.png",
+      "url": "/assets/char/portrait/char_122_beagle_1.png",
+      "gitBlob": "847adc340a3f4e2af5b4349a8fec4b2a6f3e5154",
+      "sha256": "37804c7bb2748a94138c54dd61d337234d83c43fa8bfa0a1178aa4d26e58565b",
+      "bytes": 103639
+    },
+    {
+      "source": "spine/char_122_beagle/char_122_beagle/Front/char_122_beagle.atlas",
+      "url": "/assets/spine/op/char_122_beagle/front/char_122_beagle.atlas",
+      "gitBlob": "8c30ef29f23866f31b74d11b8fd2f9348677015b",
+      "sha256": "bc0d59bf4463ae5ad8bf272de758066e7c62dcc5da37422bf10d729e70d624a9",
+      "bytes": 6255
+    },
+    {
+      "source": "spine/char_122_beagle/char_122_beagle/Front/char_122_beagle.png",
+      "url": "/assets/spine/op/char_122_beagle/front/char_122_beagle.png",
+      "gitBlob": "3125aff871f43c8bc96f1e1f7172f8132ef85db2",
+      "sha256": "e6511c715a83f5716c901d93f4ebdf0cbac4b589c55340dc049e718923993fbd",
+      "bytes": 73028
+    },
+    {
+      "source": "spine/char_122_beagle/char_122_beagle/Front/char_122_beagle.skel",
+      "url": "/assets/spine/op/char_122_beagle/front/char_122_beagle.skel",
+      "gitBlob": "7ef22251374ea31ff9f9f20de5e2ebb018754462",
+      "sha256": "02f0f09ad393831d8c9b90a0748fce41508c4d4f153fbc504bd41243d4e6ae9a",
+      "bytes": 122143
+    },
+    {
+      "source": "spine/char_122_beagle/char_122_beagle/Back/char_122_beagle.atlas",
+      "url": "/assets/spine/op/char_122_beagle/back/char_122_beagle.atlas",
+      "gitBlob": "99d67d8ded8f57d52d374549e53fa63a8dfa719f",
+      "sha256": "c7e2e7b4cf4ce4d2450a661cd05ea13f35b8c7fc4b7dff5905d8bdf79ff8ee02",
+      "bytes": 2614
+    },
+    {
+      "source": "spine/char_122_beagle/char_122_beagle/Back/char_122_beagle.png",
+      "url": "/assets/spine/op/char_122_beagle/back/char_122_beagle.png",
+      "gitBlob": "320b1f56131a4c6cbedc2e14a04ad27c8b737646",
+      "sha256": "eeb9e2032750b48ebd2d73319d084bad29f5c22e70b6804913e3bb03dbfd38ef",
+      "bytes": 51162
+    },
+    {
+      "source": "spine/char_122_beagle/char_122_beagle/Back/char_122_beagle.skel",
+      "url": "/assets/spine/op/char_122_beagle/back/char_122_beagle.skel",
+      "gitBlob": "5d19ebc2d8906ce7814b72e1216d5e4810410a2d",
+      "sha256": "e8851c0a5ca8ab16d3e43d6ce3379c059a49c6135ed28289aaa417edb70d1a61",
+      "bytes": 61483
+    },
+    {
+      "source": "skills/skill_icon_skcom_def_up[1].png",
+      "url": "/assets/skill/skcom_def_up[1].png",
+      "gitBlob": "cdff73a219acde62c128ac1e2464ba9c69767394",
+      "sha256": "fc1b79b93c98765e36cb3f754f01c0cf4b7c3f6a562333351b3a721543fce8df",
+      "bytes": 9861
+    },
+    {
+      "source": "avatar/ASSISTANT/char_002_amiya.png",
+      "url": "/assets/char/avatar/char_002_amiya.png",
+      "gitBlob": "c7a5ca2bc2f4d5c6186129705cd2671686aaec7a",
+      "sha256": "373399462e2210a65dfcfef3a4553170bde08c5e1607f5bae700f2ead29722ea",
+      "bytes": 56957
+    },
+    {
+      "source": "avatar/ASSISTANT/char_002_amiya_2.png",
+      "url": "/assets/char/avatar/char_002_amiya_2.png",
+      "gitBlob": "6a8f84c69922d667582a2222080bc08f8d812b10",
+      "sha256": "a6c7feb54fa11f5b3a3ad0f96cb4517d98b03ad8a0d3ef96a6c27132ae25a40f",
+      "bytes": 62709
+    },
+    {
+      "source": "charpor/char_002_amiya_1.png",
+      "url": "/assets/char/portrait/char_002_amiya_1.png",
+      "gitBlob": "9d2dea79cdde770611aa12b361dd3cdfe9297d54",
+      "sha256": "953c7961caa7943d715e8653726665205e14a51c0f55de16d9cb7e99df3cf794",
+      "bytes": 122212
+    },
+    {
+      "source": "charpor/char_002_amiya_2.png",
+      "url": "/assets/char/portrait/char_002_amiya_2.png",
+      "gitBlob": "a3ddaae35be920fd01c4bffee4a831692b8ace92",
+      "sha256": "2bd08ab6985589b97a944ac3e70723ad4a2e9fd4b9c90fd1674e7b651e78a01e",
+      "bytes": 117917
+    },
+    {
+      "source": "spine/char_002_amiya/char_002_amiya/Front/char_002_amiya.atlas",
+      "url": "/assets/spine/op/char_002_amiya/front/char_002_amiya.atlas",
+      "gitBlob": "fc109ac4b9099d431b23eb3dfdc857d94065e763",
+      "sha256": "85c7b44351306fb0e14da849db84f31f0a566519be3390a6e143ff0a8590b2a9",
+      "bytes": 5595
+    },
+    {
+      "source": "spine/char_002_amiya/char_002_amiya/Front/char_002_amiya.png",
+      "url": "/assets/spine/op/char_002_amiya/front/char_002_amiya.png",
+      "gitBlob": "309df8078062f3dc76138c07aef98d82192168d7",
+      "sha256": "90a971ac4bec2e1360668c7a32c2262f9342ddcea6663e5755b47a2a6255d22f",
+      "bytes": 84155
+    },
+    {
+      "source": "spine/char_002_amiya/char_002_amiya/Front/char_002_amiya.skel",
+      "url": "/assets/spine/op/char_002_amiya/front/char_002_amiya.skel",
+      "gitBlob": "4212a744731114b624fa5c4e6447e868638f1d82",
+      "sha256": "db049b479a3812517419c60d29751a6d7193c174fd128718bcaecc67fe064284",
+      "bytes": 179880
+    },
+    {
+      "source": "spine/char_002_amiya/char_002_amiya/Back/char_002_amiya.atlas",
+      "url": "/assets/spine/op/char_002_amiya/back/char_002_amiya.atlas",
+      "gitBlob": "e345af1884439339f8801c1ff26a2ca42f34a1ac",
+      "sha256": "63c0b2a652f48e6467df65e0af5df25a18b7999f6cefea1f94e4026411095a45",
+      "bytes": 3052
+    },
+    {
+      "source": "spine/char_002_amiya/char_002_amiya/Back/char_002_amiya.png",
+      "url": "/assets/spine/op/char_002_amiya/back/char_002_amiya.png",
+      "gitBlob": "2f5e48f68b7d8dac2cb0ba390a963b2bcff71b34",
+      "sha256": "cbb7160dc3464d3348af5794756ff254b5f1ad69ad205a62547c6c21da80741c",
+      "bytes": 52368
+    },
+    {
+      "source": "spine/char_002_amiya/char_002_amiya/Back/char_002_amiya.skel",
+      "url": "/assets/spine/op/char_002_amiya/back/char_002_amiya.skel",
+      "gitBlob": "0d7cbc0747c22159c0f56d292fa8c311529a83f4",
+      "sha256": "b77967d964f2d7a3f363dddeef2d1d1b92ed55f985ff6fc3e5305fd6b470b40c",
+      "bytes": 115804
+    },
+    {
+      "source": "skills/skill_icon_skcom_magic_rage[3].png",
+      "url": "/assets/skill/skcom_magic_rage[3].png",
+      "gitBlob": "94370948eabd6f48f5a80742d03075957a94a933",
+      "sha256": "d27ae10f8d1130a2d0abebc5cc2e8b5a0c3e70e4dd0fe6be9f71bd549196f89c",
+      "bytes": 13836
+    },
+    {
+      "source": "skills/skill_icon_skchr_amiya_2.png",
+      "url": "/assets/skill/skchr_amiya_2.png",
+      "gitBlob": "34b60e221c1ecc9e31a52703d382244149890d29",
+      "sha256": "cb11d869a675662abd45ed0a63ea02057879b2ffcd752b25d069c08281ee949b",
+      "bytes": 16797
+    },
+    {
+      "source": "skills/skill_icon_skchr_amiya_3.png",
+      "url": "/assets/skill/skchr_amiya_3.png",
+      "gitBlob": "4ef2698079c648a6c1fa2b7e7027fa42ead38277",
+      "sha256": "79710223bc98adcd3555ae0f87f9745bb1d415808239705323e7be0d25d8f6b9",
+      "bytes": 12697
+    },
+    {
+      "source": "equip/uniequip_002_amiya.png",
+      "url": "/assets/module/uniequip_002_amiya.png",
+      "gitBlob": "924d4da098236df4526b98364fdcdb7bb9e6765f",
+      "sha256": "fc2f1db2df992e09be8f9e5bac3a2a427c7cfc44363985cf6b59f19af10a6b31",
+      "bytes": 206434
+    },
+    {
+      "source": "avatar/ASSISTANT/char_4184_dolris.png",
+      "url": "/assets/char/avatar/char_4184_dolris.png",
+      "gitBlob": "75cbaf999cabc71f4977762f8609d217843e9250",
+      "sha256": "5a7d7b7e301f3f98732e74ec3c7fea23b4f56a1565989cd9fb35aff184364cc3",
+      "bytes": 51174
+    },
+    {
+      "source": "avatar/ASSISTANT/char_4184_dolris_2.png",
+      "url": "/assets/char/avatar/char_4184_dolris_2.png",
+      "gitBlob": "9e1122c9900a2e0d9a026e1760e109be411c36b9",
+      "sha256": "7cca0929b3d59fe5c135e2cbc35e897783be997bb8effc36f3694e68a02189c1",
+      "bytes": 61342
+    },
+    {
+      "source": "charpor/char_4184_dolris_1.png",
+      "url": "/assets/char/portrait/char_4184_dolris_1.png",
+      "gitBlob": "35793a089fadec7c647a322eb078a818262e3e6f",
+      "sha256": "adedaace645a94f7f983120cf2476bea888c6772ff71c187947525ff5df9ce98",
+      "bytes": 128014
+    },
+    {
+      "source": "charpor/char_4184_dolris_2.png",
+      "url": "/assets/char/portrait/char_4184_dolris_2.png",
+      "gitBlob": "0a4011b850173d2d9b55100087fcea3a1e8c2c96",
+      "sha256": "3d7f0703d26225b4a8d38666d0e149e7f3c4faa571a7637cda8b1e8ac2b08a95",
+      "bytes": 131503
+    },
+    {
+      "source": "spine/char_4184_dolris/char_4184_dolris/Front/char_4184_dolris.atlas",
+      "url": "/assets/spine/op/char_4184_dolris/front/char_4184_dolris.atlas",
+      "gitBlob": "5ddfa6e4f02527805a58e299de5af6a18cc9a632",
+      "sha256": "bb5a85d492ec085babcb355dc6be7f9fe47a20efb31e27e290cd6addd2fe4291",
+      "bytes": 11001
+    },
+    {
+      "source": "spine/char_4184_dolris/char_4184_dolris/Front/char_4184_dolris.png",
+      "url": "/assets/spine/op/char_4184_dolris/front/char_4184_dolris.png",
+      "gitBlob": "b7b9f2aaf6dec5e417868289450a8e1ca02996cf",
+      "sha256": "cd31b1f258403ba7ebfcf857ac9d9fcf4d28c2a6393ec757b462dd83d9508ad5",
+      "bytes": 129587
+    },
+    {
+      "source": "spine/char_4184_dolris/char_4184_dolris/Front/char_4184_dolris.skel",
+      "url": "/assets/spine/op/char_4184_dolris/front/char_4184_dolris.skel",
+      "gitBlob": "35a8d70d1aabcdf3b48ef18c59aa2dbd485bf73c",
+      "sha256": "802f881d6de4c2b3b4a93d15e390ccd19fcf0ea103d776dfcf27f76b78c1fd2c",
+      "bytes": 228694
+    },
+    {
+      "source": "skills/skill_icon_skchr_dolris_1.png",
+      "url": "/assets/skill/skchr_dolris_1.png",
+      "gitBlob": "102a316d02ad82dd9fe62a39f91cedde134e68f6",
+      "sha256": "69596f5bcedfa44c4fa9567cc1abd922efbb4ffeca79383ed04571ba45d88c8f",
+      "bytes": 29827
+    },
+    {
+      "source": "skills/skill_icon_skchr_dolris_2.png",
+      "url": "/assets/skill/skchr_dolris_2.png",
+      "gitBlob": "5f5fd5453559a40b4b7ed95e759d01fa236a606e",
+      "sha256": "8be6bd6c3c63e1e216306460ea4f7a47ee43d514d84f6308238612d790ca494f",
+      "bytes": 32288
+    },
+    {
+      "source": "equip/uniequip_002_dolris.png",
+      "url": "/assets/module/uniequip_002_dolris.png",
+      "gitBlob": "c688f4737997ebf7a676a9c9e3c88f12c8608857",
+      "sha256": "3ef0c86a58219972963f3476321667614ddb60041ba7d362218eaeda8ad751a8",
+      "bytes": 409907
+    },
+    {
+      "source": "avatar/ASSISTANT/char_4185_amoris.png",
+      "url": "/assets/char/avatar/char_4185_amoris.png",
+      "gitBlob": "d7adf5e4d56cd37b89761e7272640957a4eed947",
+      "sha256": "181504ec7743d87935739d5b480dc49c5dc2ba58f773e897b686aac96ab0fdde",
+      "bytes": 57355
+    },
+    {
+      "source": "avatar/ASSISTANT/char_4185_amoris_2.png",
+      "url": "/assets/char/avatar/char_4185_amoris_2.png",
+      "gitBlob": "441e5673d6eb16ed23d0fd798328617c2d9855ae",
+      "sha256": "5ca4af81b1f4266c07fd74ea39e2b60b972b37fcfaa613b38c5073ac158902f5",
+      "bytes": 59010
+    },
+    {
+      "source": "charpor/char_4185_amoris_1.png",
+      "url": "/assets/char/portrait/char_4185_amoris_1.png",
+      "gitBlob": "49a656d1366df29a542b29338588a8b82e52f59b",
+      "sha256": "e400d79d3a1022b10544fe4891026acb4841458f83908750b272e0acb9f09f77",
+      "bytes": 131939
+    },
+    {
+      "source": "charpor/char_4185_amoris_2.png",
+      "url": "/assets/char/portrait/char_4185_amoris_2.png",
+      "gitBlob": "8308d78b34bc2a88ef39015ff300f03c61bbe1a7",
+      "sha256": "c3029e6670b699bec9d996a4c37a07b21f40ae7e2b956d16b4e0b9ef9a4dba5e",
+      "bytes": 138599
+    },
+    {
+      "source": "spine/char_4185_amoris/char_4185_amoris/Front/char_4185_amoris.atlas",
+      "url": "/assets/spine/op/char_4185_amoris/front/char_4185_amoris.atlas",
+      "gitBlob": "87f2e70d09b4c9be5b7f912592f117b1e4a67933",
+      "sha256": "b3d0bf6d88519c4aceae60ef8961acfa8d1730eeedcd8327a481e6f6b58f765d",
+      "bytes": 16846
+    },
+    {
+      "source": "spine/char_4185_amoris/char_4185_amoris/Front/char_4185_amoris.png",
+      "url": "/assets/spine/op/char_4185_amoris/front/char_4185_amoris.png",
+      "gitBlob": "1455fae64ffb7751d1af1db9f6503f4f463edb0c",
+      "sha256": "53a2b834222a4a17bc8ce030a8cdae2222746e1b8c3b7973a842be3b6b29422f",
+      "bytes": 557729
+    },
+    {
+      "source": "spine/char_4185_amoris/char_4185_amoris/Front/char_4185_amoris.skel",
+      "url": "/assets/spine/op/char_4185_amoris/front/char_4185_amoris.skel",
+      "gitBlob": "7ae3b87fd4514f2846371663326034489269ff4c",
+      "sha256": "b5d7a75ab219cbf9830fb2c4784bbed2fc22af90c873e1e273a161cd0b653cbe",
+      "bytes": 308759
+    },
+    {
+      "source": "spine/char_4185_amoris/char_4185_amoris/Back/char_4185_amoris.atlas",
+      "url": "/assets/spine/op/char_4185_amoris/back/char_4185_amoris.atlas",
+      "gitBlob": "75a8f5b970542075578b4d14d1956d806f4a12a7",
+      "sha256": "5672da8aaac7792146749afa9881eb89f3f471cb53f1219da0c1d289beb48db4",
+      "bytes": 12589
+    },
+    {
+      "source": "spine/char_4185_amoris/char_4185_amoris/Back/char_4185_amoris.png",
+      "url": "/assets/spine/op/char_4185_amoris/back/char_4185_amoris.png",
+      "gitBlob": "da5ac555eb5bcde4128697cfc32e9bd90b6ae584",
+      "sha256": "b6fc24fd571b7717b18de959a6a96daeaf1e33bdb2f200e69f16e25ee500674c",
+      "bytes": 542356
+    },
+    {
+      "source": "spine/char_4185_amoris/char_4185_amoris/Back/char_4185_amoris.skel",
+      "url": "/assets/spine/op/char_4185_amoris/back/char_4185_amoris.skel",
+      "gitBlob": "fb8a3a5d06e4521b552623cf0cd815ff88d61afd",
+      "sha256": "77fad82a3f33a24d9be72b40004def3a84d43b316edd0d849b764da5b1d231e4",
+      "bytes": 260691
+    },
+    {
+      "source": "skills/skill_icon_skchr_amoris_1.png",
+      "url": "/assets/skill/skchr_amoris_1.png",
+      "gitBlob": "02205fad0304000d7438301904ce531c4495a685",
+      "sha256": "c59d585e32db0d3ddf69af089a69d18cf3d7a6e884ec842e927d4ed96453f22b",
+      "bytes": 30394
+    },
+    {
+      "source": "skills/skill_icon_skchr_amoris_2.png",
+      "url": "/assets/skill/skchr_amoris_2.png",
+      "gitBlob": "dadd465a5b28555ccc7d05c0853eb25b977cb0af",
+      "sha256": "435ee2afb9f7f5b495b71851d5aec0365b2a3739f29d5494d13112811558e1d4",
+      "bytes": 31107
+    },
+    {
+      "source": "equip/uniequip_002_amoris.png",
+      "url": "/assets/module/uniequip_002_amoris.png",
+      "gitBlob": "c7617bfc60f8515d2dc280fda13143cbdb45cca7",
+      "sha256": "7e33dfca64eecbaffd7ff8cf515cd6e591444fcdd92a3ddab55a24a3456fdec9",
+      "bytes": 390952
+    },
+    {
+      "source": "avatar/ASSISTANT/char_4183_mortis.png",
+      "url": "/assets/char/avatar/char_4183_mortis.png",
+      "gitBlob": "645b989bba6d6aac8d38d39c9d5467caa93f1595",
+      "sha256": "c1d1e49c68877f1e74834ba0dd291cc77b13cd9f5b690353a468ef34880e6e34",
+      "bytes": 46526
+    },
+    {
+      "source": "avatar/ASSISTANT/char_4183_mortis_2.png",
+      "url": "/assets/char/avatar/char_4183_mortis_2.png",
+      "gitBlob": "bcf8a06aa270f9b6451c6c43199fc2d7f62bc12c",
+      "sha256": "fa2b813f8cda4b4ae8c097c5ef6e4b217638fe4fba7bd9a617903ef62fd0428e",
+      "bytes": 62259
+    },
+    {
+      "source": "charpor/char_4183_mortis_1.png",
+      "url": "/assets/char/portrait/char_4183_mortis_1.png",
+      "gitBlob": "2381c1f7c56c19baad62c9041bbba390ab1bc4ea",
+      "sha256": "87819fd83d3b7947fedf349c647def26c8090e031489e55c2bacdb83b1e5f6ee",
+      "bytes": 126543
+    },
+    {
+      "source": "charpor/char_4183_mortis_2.png",
+      "url": "/assets/char/portrait/char_4183_mortis_2.png",
+      "gitBlob": "42ccffba024dcb2fe59fd1c007843ff9d16437c1",
+      "sha256": "8a7c2634117db36910fcd648c6444954aa9f703b22664a69a6da386c549bf763",
+      "bytes": 148224
+    },
+    {
+      "source": "spine/char_4183_mortis/char_4183_mortis/Front/char_4183_mortis.atlas",
+      "url": "/assets/spine/op/char_4183_mortis/front/char_4183_mortis.atlas",
+      "gitBlob": "93b84fa72836a7adc6b31907346c25bcdb6ed8b7",
+      "sha256": "5e69bea32044bfab4610f2e49403426a15966a611c021e371cafcec772355173",
+      "bytes": 14648
+    },
+    {
+      "source": "spine/char_4183_mortis/char_4183_mortis/Front/char_4183_mortis.png",
+      "url": "/assets/spine/op/char_4183_mortis/front/char_4183_mortis.png",
+      "gitBlob": "ea7240d881e0b384d329cfee431e7c736afc7876",
+      "sha256": "e44459b8858fb8560b9f9672712bf3bf340a872c52ba4bda5770a86ae1192bf3",
+      "bytes": 229162
+    },
+    {
+      "source": "spine/char_4183_mortis/char_4183_mortis/Front/char_4183_mortis.skel",
+      "url": "/assets/spine/op/char_4183_mortis/front/char_4183_mortis.skel",
+      "gitBlob": "023610a836c7239539ba64bd199fc3b0545eebdf",
+      "sha256": "6cd512fb51f9828f678d92a88af9f0467f2ceb6ce210204cd90e9af2a7df4e27",
+      "bytes": 399993
+    },
+    {
+      "source": "spine/char_4183_mortis/char_4183_mortis/Back/char_4183_mortis.atlas",
+      "url": "/assets/spine/op/char_4183_mortis/back/char_4183_mortis.atlas",
+      "gitBlob": "93b84fa72836a7adc6b31907346c25bcdb6ed8b7",
+      "sha256": "5e69bea32044bfab4610f2e49403426a15966a611c021e371cafcec772355173",
+      "bytes": 14648
+    },
+    {
+      "source": "spine/char_4183_mortis/char_4183_mortis/Back/char_4183_mortis.png",
+      "url": "/assets/spine/op/char_4183_mortis/back/char_4183_mortis.png",
+      "gitBlob": "ea7240d881e0b384d329cfee431e7c736afc7876",
+      "sha256": "e44459b8858fb8560b9f9672712bf3bf340a872c52ba4bda5770a86ae1192bf3",
+      "bytes": 229162
+    },
+    {
+      "source": "spine/char_4183_mortis/char_4183_mortis/Back/char_4183_mortis.skel",
+      "url": "/assets/spine/op/char_4183_mortis/back/char_4183_mortis.skel",
+      "gitBlob": "e102a9cf66c0d35e291226b60589fdbecf62e80d",
+      "sha256": "972fb5a075dcd3df1f83941af06fb5ffa3ff151dd24d897bf7158c24335340fa",
+      "bytes": 319847
+    },
+    {
+      "source": "skills/skill_icon_skchr_mortis_1.png",
+      "url": "/assets/skill/skchr_mortis_1.png",
+      "gitBlob": "01db99c37054d6894ce25becc20b4517f0033146",
+      "sha256": "fbff0dbbe559db3351f2e24d683e9d51b3ad8309fd3e9ff944628c5e9fbe392c",
+      "bytes": 26861
+    },
+    {
+      "source": "skills/skill_icon_skchr_mortis_2.png",
+      "url": "/assets/skill/skchr_mortis_2.png",
+      "gitBlob": "146150e7411080c199990ca28dc8b4a18a3cc29e",
+      "sha256": "faaefea98e8e8dbf6f5b646f43737de9d23e1cb5d0c3712e4b0b3879fe51b1c8",
+      "bytes": 29748
+    },
+    {
+      "source": "equip/uniequip_002_mortis.png",
+      "url": "/assets/module/uniequip_002_mortis.png",
+      "gitBlob": "509f0c4d1210a46fc1afbe8ea396ce5fcbc5a9db",
+      "sha256": "1ad4b2252a29b670248bb6df2169680347a040c52aab60b801999430e7620473",
+      "bytes": 361519
+    },
+    {
+      "source": "avatar/ASSISTANT/char_4186_tmoris.png",
+      "url": "/assets/char/avatar/char_4186_tmoris.png",
+      "gitBlob": "615581c4b9ddc1c3dcd1139a6abba15e0c14e7cb",
+      "sha256": "64ce66fd3af8d228a70ede46fb9b3fc6f18f7e7e84e923d9ab27772560d286e2",
+      "bytes": 52144
+    },
+    {
+      "source": "avatar/ASSISTANT/char_4186_tmoris_2.png",
+      "url": "/assets/char/avatar/char_4186_tmoris_2.png",
+      "gitBlob": "bc43d779875e9e7fed51fff984474d9d913a4086",
+      "sha256": "b7e189f932da79d02123a6d24f9ad0b1f90bab38231dfbc78be0f93d45841ad5",
+      "bytes": 62057
+    },
+    {
+      "source": "charpor/char_4186_tmoris_1.png",
+      "url": "/assets/char/portrait/char_4186_tmoris_1.png",
+      "gitBlob": "deb14b973c1def7107d45e38b722b787a0ebecff",
+      "sha256": "d53c2f8512ddcb9d5a40d16b3c0f7ceddad4fed68f65ea40e0439653012e42a7",
+      "bytes": 124729
+    },
+    {
+      "source": "charpor/char_4186_tmoris_2.png",
+      "url": "/assets/char/portrait/char_4186_tmoris_2.png",
+      "gitBlob": "dcad9e69fb05099390eac4f29fcf21e1d817f383",
+      "sha256": "6529d27a814c2d0308353e5b7a7e8c7c261375bc50ab2930881b15ac203970b8",
+      "bytes": 154836
+    },
+    {
+      "source": "spine/char_4186_tmoris/char_4186_tmoris/Front/char_4186_tmoris.atlas",
+      "url": "/assets/spine/op/char_4186_tmoris/front/char_4186_tmoris.atlas",
+      "gitBlob": "8184eedaba3a45a78104dbcc773cbb7b1e8d56f4",
+      "sha256": "506901b07fb49bdededce463a502f5b6b0a18c745a526d76f2a93f18fa62c2bd",
+      "bytes": 7816
+    },
+    {
+      "source": "spine/char_4186_tmoris/char_4186_tmoris/Front/char_4186_tmoris.png",
+      "url": "/assets/spine/op/char_4186_tmoris/front/char_4186_tmoris.png",
+      "gitBlob": "fadbd051b17f1174b8878690ba0b35fbe9631a0f",
+      "sha256": "ab2f1e7304768d8e0d896bb70a4d30cfe747cfa015d07fb8316c1c86b5a873b0",
+      "bytes": 105026
+    },
+    {
+      "source": "spine/char_4186_tmoris/char_4186_tmoris/Front/char_4186_tmoris.skel",
+      "url": "/assets/spine/op/char_4186_tmoris/front/char_4186_tmoris.skel",
+      "gitBlob": "cf5053fdb719272ece1143b390d9e22535e17770",
+      "sha256": "40dbd12bda928b6ee014e3a356abb1a64dda3b25839d1f1d65655f13cde861fa",
+      "bytes": 208277
+    },
+    {
+      "source": "spine/char_4186_tmoris/char_4186_tmoris/Back/char_4186_tmoris.atlas",
+      "url": "/assets/spine/op/char_4186_tmoris/back/char_4186_tmoris.atlas",
+      "gitBlob": "87afc4ae95804956110ce3def8844b5345eb8eb2",
+      "sha256": "c0b1c5bc0811375761cb7f0f16d08a054a465b578b19ed6ed6ecfaa34ee121f3",
+      "bytes": 4683
+    },
+    {
+      "source": "spine/char_4186_tmoris/char_4186_tmoris/Back/char_4186_tmoris.png",
+      "url": "/assets/spine/op/char_4186_tmoris/back/char_4186_tmoris.png",
+      "gitBlob": "f2ff6378415b396c0ec9f37294fd805f0fddc82b",
+      "sha256": "8d128063ba4a9f8b1b06d65959e132649e74e56d34f2ff2c0222f140ea057307",
+      "bytes": 82165
+    },
+    {
+      "source": "spine/char_4186_tmoris/char_4186_tmoris/Back/char_4186_tmoris.skel",
+      "url": "/assets/spine/op/char_4186_tmoris/back/char_4186_tmoris.skel",
+      "gitBlob": "7f3ff3b06acaec68ebf0d6640ef3be0ce47da8b8",
+      "sha256": "3d8634d27f3ed65771b6ea00bfd2c251f5fe2655239e290eef47ccb084b343ea",
+      "bytes": 138257
+    },
+    {
+      "source": "skills/skill_icon_skchr_tmoris_1.png",
+      "url": "/assets/skill/skchr_tmoris_1.png",
+      "gitBlob": "8d31cc220a8990fdf7fbfef108c95eee44df942c",
+      "sha256": "a2af2ed927ea93d66152634cf2d6c24918b0e34ec06e58ff5aa972a262a995c8",
+      "bytes": 29903
+    },
+    {
+      "source": "skills/skill_icon_skchr_tmoris_2.png",
+      "url": "/assets/skill/skchr_tmoris_2.png",
+      "gitBlob": "be7e531685b543dbc0256bd71fea7c5c02a130a3",
+      "sha256": "f1eaf49b5c5d77297eafc2e1a30aeaa43fb8afeaf69db8477c1cc24780699106",
+      "bytes": 31683
+    },
+    {
+      "source": "equip/uniequip_002_tmoris.png",
+      "url": "/assets/module/uniequip_002_tmoris.png",
+      "gitBlob": "8777395f199a3d0e7f1e5524bb8ca07ea8726f8f",
+      "sha256": "1768fae33a4296637c2b890b50cd3a0e25d9ba326f04b38800ec1bcbe1930f26",
+      "bytes": 375724
+    },
+    {
+      "source": "avatar/ASSISTANT/char_4182_oblvns.png",
+      "url": "/assets/char/avatar/char_4182_oblvns.png",
+      "gitBlob": "c5c757acde5d8b7d4b1caec002864c8b0849114c",
+      "sha256": "313bc54f699d2a7fe8571f5d285f2c16e45361552a65bc697babccc8a095a468",
+      "bytes": 60818
+    },
+    {
+      "source": "avatar/ASSISTANT/char_4182_oblvns_2.png",
+      "url": "/assets/char/avatar/char_4182_oblvns_2.png",
+      "gitBlob": "3559bc9565d53c9963f3b6aaaf71c87df6d8e791",
+      "sha256": "c76585393e6e01ff11928f354d14e43a45dd87337d9b3d24bed82be9e79f161b",
+      "bytes": 66729
+    },
+    {
+      "source": "charpor/char_4182_oblvns_1.png",
+      "url": "/assets/char/portrait/char_4182_oblvns_1.png",
+      "gitBlob": "715fe0e4d291d51c62f41524aa4128224d1dd284",
+      "sha256": "418bc5dc0a24ef76f0e1cf67eb0e1bec21a7f683446ce04e120bf80b0340ae0d",
+      "bytes": 145506
+    },
+    {
+      "source": "charpor/char_4182_oblvns_2.png",
+      "url": "/assets/char/portrait/char_4182_oblvns_2.png",
+      "gitBlob": "fee0ade764b0fe9acfd12b94f2f2a34b12f2ed82",
+      "sha256": "cbdff3c5bdfb83b6e2ddce47515beed135a367692dc888f3996bf779d5ca6014",
+      "bytes": 137815
+    },
+    {
+      "source": "spine/char_4182_oblvns/char_4182_oblvns/Front/char_4182_oblvns.atlas",
+      "url": "/assets/spine/op/char_4182_oblvns/front/char_4182_oblvns.atlas",
+      "gitBlob": "37d157bcfb302a50fe32f0e60f8d0e34f958bcca",
+      "sha256": "cd04e5781f00c4a3975fb28080199809a67755ce7ec901a280c74fe0bc906c0d",
+      "bytes": 19831
+    },
+    {
+      "source": "spine/char_4182_oblvns/char_4182_oblvns/Front/char_4182_oblvns.png",
+      "url": "/assets/spine/op/char_4182_oblvns/front/char_4182_oblvns.png",
+      "gitBlob": "01e4882e93eb4208464998b8d65dd85b0b4a6779",
+      "sha256": "b0e6f16fd24c15a68d48d5f15d7d409dfc43b3caa983843dfb2f35b0effab94e",
+      "bytes": 332918
+    },
+    {
+      "source": "spine/char_4182_oblvns/char_4182_oblvns/Front/char_4182_oblvns.skel",
+      "url": "/assets/spine/op/char_4182_oblvns/front/char_4182_oblvns.skel",
+      "gitBlob": "be9004c7fd51a1db5b4fb0987dac4a7c1b02f283",
+      "sha256": "42bd0999dceb3157cdeab8d896163519cd8fafd93d702d10b83014934bafa3d8",
+      "bytes": 1071707
+    },
+    {
+      "source": "spine/char_4182_oblvns/char_4182_oblvns/Back/char_4182_oblvns.atlas",
+      "url": "/assets/spine/op/char_4182_oblvns/back/char_4182_oblvns.atlas",
+      "gitBlob": "37d157bcfb302a50fe32f0e60f8d0e34f958bcca",
+      "sha256": "cd04e5781f00c4a3975fb28080199809a67755ce7ec901a280c74fe0bc906c0d",
+      "bytes": 19831
+    },
+    {
+      "source": "spine/char_4182_oblvns/char_4182_oblvns/Back/char_4182_oblvns.png",
+      "url": "/assets/spine/op/char_4182_oblvns/back/char_4182_oblvns.png",
+      "gitBlob": "01e4882e93eb4208464998b8d65dd85b0b4a6779",
+      "sha256": "b0e6f16fd24c15a68d48d5f15d7d409dfc43b3caa983843dfb2f35b0effab94e",
+      "bytes": 332918
+    },
+    {
+      "source": "spine/char_4182_oblvns/char_4182_oblvns/Back/char_4182_oblvns.skel",
+      "url": "/assets/spine/op/char_4182_oblvns/back/char_4182_oblvns.skel",
+      "gitBlob": "57182db5bfa8b03404da064b25b22230ebebab35",
+      "sha256": "27670b2ef314387f4d4b51896e1f67b3d07b32fc858b6ada8bdadecd7169160d",
+      "bytes": 1002567
+    },
+    {
+      "source": "skills/skill_icon_skchr_oblvns_1.png",
+      "url": "/assets/skill/skchr_oblvns_1.png",
+      "gitBlob": "500d917724aacc96a834ce2656af696bf38dc0d0",
+      "sha256": "aab7edf707d0936e2cdfb3d1b7703bc1937290359ad64d9be2ffb98270b468fb",
+      "bytes": 32469
+    },
+    {
+      "source": "skills/skill_icon_skchr_oblvns_2.png",
+      "url": "/assets/skill/skchr_oblvns_2.png",
+      "gitBlob": "0f3e940a4ab8fffd53e6e3eb9bfcb43057bece66",
+      "sha256": "6483f9e26f53470b8952574a3d0f0a89df377e3865e8b44f333d1ae30bf6bb5d",
+      "bytes": 32503
+    },
+    {
+      "source": "skills/skill_icon_skchr_oblvns_3.png",
+      "url": "/assets/skill/skchr_oblvns_3.png",
+      "gitBlob": "77661794d1a016f1dc9df892cdd780cd0cb09da6",
+      "sha256": "dd0ccbd760bdb672fe2b4378d3df9f747ffd5273783205e10bd26501de79166e",
+      "bytes": 34110
+    },
+    {
+      "source": "equip/uniequip_002_oblvns.png",
+      "url": "/assets/module/uniequip_002_oblvns.png",
+      "gitBlob": "64a2a8d2a7b47ed157c593a594bf98c7d0fb9522",
+      "sha256": "f4eb431da580a189f9ea86a2887e2c009ebb7a52bb566165085d10b59cd38d3a",
+      "bytes": 405986
+    },
+    {
+      "source": "camplogo/logo_rhodes.png",
+      "url": "/assets/bond/icon_rhodesShip.png",
+      "gitBlob": "fca17cc168cf4903480275e7b52a2bd8d90e287a",
+      "sha256": "052c6d38828738921d7b2f0b8a8fee1469094f0ec29ff407e3e35a094fdddb27",
+      "bytes": 40913
+    },
+    {
+      "source": "camplogo/logo_mujica.png",
+      "url": "/assets/bond/icon_girlbandShip.png",
+      "gitBlob": "172469195a18302ba9a1ee9658eb10e7c910edf1",
+      "sha256": "07805b9a4e299889f0b8760ea5671f829804b74fa39f9b78ea874198da5e7e6e",
+      "bytes": 66680
+    },
+    {
+      "source": "avatar/ASSISTANT/char_003_kalts.png",
+      "url": "/assets/band/band_rm_kaltsit.png",
+      "gitBlob": "e8b3b7556085b58b9672b9488edccf5263e37e24",
+      "sha256": "398f32e2ff78d9e6fcee8cb9b49979aca2457f47f8d7ce5e15c589ff317c17c0",
+      "bytes": 56617
+    },
+    {
+      "source": "avatar/ASSISTANT/npc_007_closure.png",
+      "url": "/assets/band/band_rm_closure.png",
+      "gitBlob": "903f06c3b89291eca8423fb4d628e2a633d20738",
+      "sha256": "81fc99486e0b08934bd73c42d3ccc25962345896810d4f82e9d5203524b9fb79",
+      "bytes": 53891
+    }
+  ]
+}

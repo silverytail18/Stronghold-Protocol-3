@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>账号管理 · 卫戍协议：盟约</title>
+  <link rel="stylesheet" href="/css/account.css">
+  <script type="module" src="/js/account.js"></script>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div><div class="eyebrow">STRONGHOLD PROTOCOL · COVENANT</div><h1 id="page-title">账号管理</h1></div>
+      <nav aria-label="账号导航"><span id="account-name"></span><a href="/downloads">下载客户端</a><button id="logout" class="secondary" type="button">退出登录</button></nav>
+    </header>
+    <p id="initial-notice" class="notice" role="status" hidden>首次登录或密码已被重置。请先修改初始密码，再使用账号管理和游戏功能。</p>
+    <p class="notice" role="status">浏览器用于登录、修改密码和管理账号。开始或继续对局请使用 Windows 客户端或安卓 App。此页面不会下载游戏素材。</p>
+    <p id="page-status" class="message" role="status" aria-live="polite">正在读取账号信息…</p>
+    <main class="layout">
+      <section class="card password-card">
+        <div class="eyebrow">ACCOUNT SECURITY</div>
+        <h2>修改我的密码</h2>
+        <p class="muted">修改后，当前账号的所有登录会话都会退出。请使用新密码重新登录。</p>
+        <form id="change-password">
+          <label for="current-password">当前密码</label>
+          <input id="current-password" name="currentPassword" type="password" autocomplete="current-password" required>
+          <label for="new-password">新密码</label>
+          <input id="new-password" name="newPassword" type="password" autocomplete="new-password" minlength="6" maxlength="256" required>
+          <label for="confirm-password">确认新密码</label>
+          <input id="confirm-password" name="confirmPassword" type="password" autocomplete="new-password" minlength="6" maxlength="256" required>
+          <p class="muted small">至少 6 个字符，且不超过 256 字节。</p>
+          <p id="password-status" class="message" role="alert"></p>
+          <button type="submit">保存新密码</button>
+        </form>
+      </section>
+      <section id="users-section" class="card" hidden>
+        <div class="section-header"><div><div class="eyebrow">ACCESS CONTROL</div><h2>用户账号 <span id="user-count" class="count"></span></h2></div><button id="refresh-users" class="secondary" type="button">刷新列表</button></div>
+        <p class="muted">账号修改立即生效。重置密码、禁用或删除账号，会撤销该账号已有的登录会话。</p>
+        <details id="create-panel">
+          <summary>创建账号</summary>
+          <form id="create-user" class="create-form">
+            <div><label for="create-username">新账号</label><input id="create-username" name="username" type="text" autocomplete="off" maxlength="64" pattern="[A-Za-z0-9_.\-]{1,64}" required spellcheck="false" autocapitalize="none"></div>
+            <div><label for="create-role">角色</label><select id="create-role" name="role"><option value="user">普通用户</option><option value="admin">管理员</option></select></div>
+            <div class="wide"><label for="create-password">初始密码</label><input id="create-password" name="password" type="password" autocomplete="new-password" minlength="6" maxlength="256" required></div>
+            <p class="muted small wide">账号使用字母、数字、下划线、点或短横线；初始密码至少 6 个字符，首次登录后需要修改。</p>
+            <p id="create-status" class="message wide" role="alert"></p><button class="wide" type="submit">创建账号</button>
+          </form>
+        </details>
+        <p class="table-hint muted small">左右滑动用户列表，可查看全部操作。</p>
+        <div class="table-scroll"><table><thead><tr><th scope="col">账号</th><th scope="col">角色</th><th scope="col">状态</th><th scope="col">操作</th></tr></thead><tbody id="user-list"></tbody></table></div>
+      </section>
+      <section id="test-access-section" class="card test-access-card" hidden>
+        <div class="section-header"><div><div class="eyebrow">TEST CONTENT</div><h2>测试内容开放设置</h2></div><button id="refresh-test-access" class="secondary" type="button">刷新设置</button></div>
+        <p class="muted">勾选后普通用户可在游戏准备界面选择该测试项目。管理员可使用所有已实现项目；标准难度、单人／多人和互斥限制仍然有效。</p>
+        <form id="test-access-form">
+          <div id="test-access-list" class="test-access-list"></div>
+          <p class="muted small">保存后立即更新准备中的房间，只影响后续开局；已经开始的对局保持原规则。新测试项目默认不开放。</p>
+          <h3>管理员测试工具</h3>
+          <div id="admin-test-controls-list" class="test-access-list"></div>
+          <p class="muted small">此处仅控制管理员局内工具，不向普通用户开放权限。保存立即生效，不撤销已领取的干员。</p>
+          <p id="test-access-status" class="message" role="status" aria-live="polite"></p>
+          <button type="submit">保存开放设置</button>
+        </form>
+      </section>
+      <section id="seasons-section" class="card season-card" hidden>
+        <div class="section-header"><div><div class="eyebrow">RANKED SEASONS</div><h2>赛季管理</h2></div><button id="refresh-seasons" class="secondary" type="button">刷新赛季</button></div>
+        <h3 id="season-current">正在读取赛季…</h3><p id="season-summary" class="muted"></p><p id="season-rules" class="muted small"></p>
+        <p id="season-status" class="message" role="status" aria-live="polite"></p><button id="pause-ranked" class="secondary" type="button">暂停新排位</button>
+        <details><summary>当前赛季名称与结束计划</summary><form id="season-settings" class="season-form"><label for="current-season-name">当前赛季名称</label><input id="current-season-name" maxlength="80" required><label for="current-season-end">结束时间（留空手动结束）</label><input id="current-season-end" type="datetime-local"><label for="scheduled-season">到期后开启的赛季</label><select id="scheduled-season"><option value="">到期后等待新赛季</option></select><p class="muted small">修改名称和结束时间不会重置积分；计分规则始终冻结。到期后使用同样的收尾和归档流程。</p><button id="settings-submit" type="submit">保存赛季计划</button></form></details>
+        <details><summary>创建下一赛季</summary><form id="create-season" class="season-form">
+          <label for="season-name">赛季名称</label><input id="season-name" maxlength="80" required placeholder="例如：S2 盟约新征程">
+          <label for="season-end">结束时间（留空由管理员手动结束）</label><input id="season-end" type="datetime-local">
+          <p class="muted small">全员从青铜 III、0 分开始。胜利与核心奖励须为偶数；同盟自动取一半。赛季开始后计分规则冻结。</p>
+          <div id="create-season-rules" class="season-rule-grid"></div><button type="submit">创建赛季草稿</button>
+        </form></details>
+        <form id="rollover-season" class="season-form"><label for="next-season">结束当前赛季后开启</label><select id="next-season"><option value="">请先创建下一赛季</option></select><p class="muted small">停止新排位后最多收尾 10 分钟。未结束对局不计分，旧赛季归档后再发布新赛季。</p><button id="rollover-submit" type="submit">更新赛季</button></form>
+        <details><summary>赛季历史</summary><div class="table-scroll"><table><thead><tr><th>赛季</th><th>状态</th><th>开始</th><th>结束</th><th>榜单版本</th></tr></thead><tbody id="season-list"></tbody></table></div></details>
+        <details><summary>最近对局与异常修正</summary><p class="muted small">撤销已结算对局后，按其余有效战绩重算成绩并记录审计。相关账号有正在进行的排位时不能撤销。</p><div class="table-scroll"><table><thead><tr><th>对局</th><th>状态</th><th>时间 / 原因</th><th>操作</th></tr></thead><tbody id="season-matches"></tbody></table></div></details>
+        <details><summary>赛季操作日志</summary><ul id="season-audit" class="season-audit"></ul></details>
+      </section>
+    </main>
+  </div>
+  <dialog id="reset-dialog" aria-labelledby="reset-title"><form id="reset-password"><h2 id="reset-title">重置密码</h2><p id="reset-target" class="muted"></p><label for="reset-new-password">新的初始密码</label><input id="reset-new-password" name="password" type="password" autocomplete="new-password" minlength="6" maxlength="256" required><label for="reset-confirm-password">确认密码</label><input id="reset-confirm-password" name="confirmPassword" type="password" autocomplete="new-password" minlength="6" maxlength="256" required><p class="muted small">该账号会立即退出，下一次登录时需要修改初始密码。</p><p id="reset-status" class="message" role="alert"></p><div class="dialog-actions"><button class="secondary" data-close="reset-dialog" type="button">取消</button><button type="submit">确认重置密码</button></div></form></dialog>
+  <dialog id="delete-dialog" aria-labelledby="delete-title"><form id="delete-user"><h2 id="delete-title">删除账号</h2><p id="delete-target"></p><p class="muted">该账号会立即退出，删除后无法再登录。</p><p id="delete-status" class="message" role="alert"></p><div class="dialog-actions"><button class="secondary" data-close="delete-dialog" type="button">取消</button><button class="danger" type="submit">确认删除账号</button></div></form></dialog>
+  <noscript>请启用 JavaScript 后管理账号。</noscript>
+</body>
+</html>

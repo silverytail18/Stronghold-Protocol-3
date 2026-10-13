@@ -1,0 +1,108 @@
+{
+  "id": "rhine-lab-v1",
+  "version": "rhine-test-4",
+  "sourcePin": "e8588a82074bf695aa3849959037dd2de7e6e5cf",
+  "operators": [
+    {
+      "key": "otter",
+      "charId": "char_242_otter",
+      "tier": 1,
+      "bonds": [
+        "rhineShip",
+        "skillfulShip"
+      ],
+      "modules": [
+        "uniequip_002_otter"
+      ],
+      "defaultSkill": 0,
+      "dmgType": "arts",
+      "attackKind": "ranged"
+    },
+    {
+      "key": "halo",
+      "charId": "char_135_halo",
+      "tier": 2,
+      "bonds": [
+        "rhineShip",
+        "arcaneShip"
+      ],
+      "modules": [
+        "uniequip_002_halo"
+      ],
+      "defaultSkill": 1,
+      "dmgType": "arts",
+      "attackKind": "ranged"
+    },
+    {
+      "key": "mgllan",
+      "charId": "char_248_mgllan",
+      "tier": 3,
+      "bonds": [
+        "rhineShip",
+        "visiShip"
+      ],
+      "modules": [
+        "uniequip_002_mgllan",
+        "uniequip_003_mgllan"
+      ],
+      "defaultSkill": 2,
+      "dmgType": "arts",
+      "attackKind": "ranged"
+    },
+    {
+      "key": "astesi",
+      "charId": "char_274_astesi",
+      "tier": 3,
+      "bonds": [
+        "rhineShip",
+        "arcaneShip",
+        "steadShip"
+      ],
+      "modules": [
+        "uniequip_002_astesi"
+      ],
+      "defaultSkill": 1,
+      "dmgType": "arts",
+      "attackKind": "melee"
+    },
+    {
+      "key": "slent2",
+      "charId": "char_1031_slent2",
+      "tier": 5,
+      "bonds": [
+        "rhineShip",
+        "deputShip"
+      ],
+      "modules": [
+        "uniequip_002_slent2",
+        "uniequip_003_slent2"
+      ],
+      "defaultSkill": 1,
+      "dmgType": "arts",
+      "attackKind": "ranged"
+    },
+    {
+      "key": "ifrit",
+      "charId": "char_134_ifrit",
+      "tier": 5,
+      "bonds": [
+        "rhineShip",
+        "arcaneShip"
+      ],
+      "modules": [
+        "uniequip_002_ifrit",
+        "uniequip_003_ifrit"
+      ],
+      "defaultSkill": 1,
+      "dmgType": "arts",
+      "attackKind": "ranged"
+    }
+  ],
+  "oldMembers": [
+    "chess_char_2_02_a",
+    "chess_char_4_21_a",
+    "chess_char_5_11_a",
+    "chess_char_6_11_a",
+    "chess_char_6_16_a"
+  ]
+}

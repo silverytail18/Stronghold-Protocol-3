@@ -1,0 +1,1491 @@
+{
+  "repository": "https://github.com/fexli/ArknightsResource",
+  "commit": "d0b5af0b004b044d322397ce5ae79632b6d9fcdd",
+  "batch": "rhodes-mujica-v1",
+  "arkModels": {
+    "repository": "https://github.com/isHarryh/Ark-Models",
+    "commit": "8a3857c250a5c271429aefa82c660ff35803166e",
+    "modelIndexSha": "8ec42b4199574e3c10d47cea73fbd2d080b82f02",
+    "types": {
+      "Operator": 950,
+      "Enemy": 2151,
+      "DynIllust": 96
+    }
+  },
+  "operators": [
+    {
+      "charId": "char_123_fang",
+      "skins": [
+        "char_123_fang_winter_1"
+      ],
+      "officialSkins": 1
+    },
+    {
+      "charId": "char_122_beagle",
+      "skins": [
+        "char_122_beagle_boc_1"
+      ],
+      "officialSkins": 1
+    },
+    {
+      "charId": "char_002_amiya",
+      "skins": [
+        "char_002_amiya_winter_1",
+        "char_002_amiya_epoque_4",
+        "char_002_amiya_test_1"
+      ],
+      "officialSkins": 3
+    },
+    {
+      "charId": "char_4184_dolris",
+      "skins": [
+        "char_4184_dolris_avemujica_1"
+      ],
+      "officialSkins": 1
+    },
+    {
+      "charId": "char_4185_amoris",
+      "skins": [
+        "char_4185_amoris_avemujica_1"
+      ],
+      "officialSkins": 1
+    },
+    {
+      "charId": "char_4183_mortis",
+      "skins": [
+        "char_4183_mortis_avemujica_1"
+      ],
+      "officialSkins": 1
+    },
+    {
+      "charId": "char_4186_tmoris",
+      "skins": [
+        "char_4186_tmoris_avemujica_1"
+      ],
+      "officialSkins": 1
+    },
+    {
+      "charId": "char_4182_oblvns",
+      "skins": [
+        "char_4182_oblvns_avemujica_1"
+      ],
+      "officialSkins": 1
+    },
+    {
+      "charId": "char_2013_cerber",
+      "skins": [
+        "char_2013_cerber_whirlwind_2",
+        "char_2013_cerber_summer_4"
+      ],
+      "officialSkins": 2
+    },
+    {
+      "charId": "char_201_moeshd",
+      "skins": [
+        "char_201_moeshd_summer_4",
+        "char_201_moeshd_kfc_1"
+      ],
+      "officialSkins": 2
+    },
+    {
+      "charId": "char_101_sora",
+      "skins": [
+        "char_101_sora_epoque_17"
+      ],
+      "officialSkins": 2
+    },
+    {
+      "charId": "char_2014_nian",
+      "skins": [
+        "char_2014_nian_nian_4",
+        "char_2014_nian_cfa_1"
+      ],
+      "officialSkins": 2
+    },
+    {
+      "charId": "char_2023_ling",
+      "skins": [
+        "char_2023_ling_nian_9",
+        "char_2023_ling_nian_12",
+        "char_2023_ling_ncg_1"
+      ],
+      "officialSkins": 3
+    },
+    {
+      "charId": "char_2025_shu",
+      "skins": [
+        "char_2025_shu_nian_11"
+      ],
+      "officialSkins": 1
+    },
+    {
+      "charId": "char_1015_aglna2",
+      "skins": [],
+      "officialSkins": 0
+    },
+    {
+      "charId": "char_148_nearl",
+      "skins": [
+        "char_148_nearl_summer_2"
+      ],
+      "officialSkins": 1
+    }
+  ],
+  "added": [
+    {
+      "id": "char_002_amiya_winter_1",
+      "charId": "char_002_amiya",
+      "sourceId": "char_002_amiya@winter#1",
+      "name": "报童",
+      "brand": "忒斯特收藏/I",
+      "sort": 2,
+      "avatar": "avatar/ASSISTANT/char_002_amiya_winter_1.png",
+      "portrait": "charpor/char_002_amiya_winter_1.png",
+      "spine": {
+        "front": [
+          "spine/char_002_amiya/char_002_amiya_winter_1/Front/char_002_amiya_winter_1.atlas",
+          "spine/char_002_amiya/char_002_amiya_winter_1/Front/char_002_amiya_winter_1.png",
+          "spine/char_002_amiya/char_002_amiya_winter_1/Front/char_002_amiya_winter_1.skel"
+        ],
+        "back": [
+          "spine/char_002_amiya/char_002_amiya_winter_1/Back/char_002_amiya_winter_1.atlas",
+          "spine/char_002_amiya/char_002_amiya_winter_1/Back/char_002_amiya_winter_1.png",
+          "spine/char_002_amiya/char_002_amiya_winter_1/Back/char_002_amiya_winter_1.skel"
+        ]
+      },
+      "tokens": []
+    },
+    {
+      "id": "char_002_amiya_epoque_4",
+      "charId": "char_002_amiya",
+      "sourceId": "char_002_amiya@epoque#4",
+      "name": "见习联结者",
+      "brand": "忒斯特收藏/II",
+      "sort": 4,
+      "avatar": "avatar/ASSISTANT/char_002_amiya_epoque_4.png",
+      "portrait": "charpor/char_002_amiya_epoque_4.png",
+      "spine": {
+        "front": [
+          "spine/char_002_amiya/char_002_amiya_epoque_4/Front/char_002_amiya_epoque_4.atlas",
+          "spine/char_002_amiya/char_002_amiya_epoque_4/Front/char_002_amiya_epoque_4.png",
+          "spine/char_002_amiya/char_002_amiya_epoque_4/Front/char_002_amiya_epoque_4.skel"
+        ],
+        "back": [
+          "spine/char_002_amiya/char_002_amiya_epoque_4/Back/char_002_amiya_epoque_4.atlas",
+          "spine/char_002_amiya/char_002_amiya_epoque_4/Back/char_002_amiya_epoque_4.png",
+          "spine/char_002_amiya/char_002_amiya_epoque_4/Back/char_002_amiya_epoque_4.skel"
+        ]
+      },
+      "tokens": []
+    },
+    {
+      "id": "char_002_amiya_test_1",
+      "charId": "char_002_amiya",
+      "sourceId": "char_002_amiya@test#1",
+      "name": "播种者",
+      "brand": "忒斯特收藏/IV",
+      "sort": 6,
+      "avatar": "avatar/ASSISTANT/char_002_amiya_test_1.png",
+      "portrait": "charpor/char_002_amiya_test_1.png",
+      "spine": {
+        "front": [
+          "spine/char_002_amiya/char_002_amiya_test_1/Front/char_002_amiya_test_1.atlas",
+          "spine/char_002_amiya/char_002_amiya_test_1/Front/char_002_amiya_test_1.png",
+          "spine/char_002_amiya/char_002_amiya_test_1/Front/char_002_amiya_test_1.skel"
+        ],
+        "back": [
+          "spine/char_002_amiya/char_002_amiya_test_1/Back/char_002_amiya_test_1.atlas",
+          "spine/char_002_amiya/char_002_amiya_test_1/Back/char_002_amiya_test_1.png",
+          "spine/char_002_amiya/char_002_amiya_test_1/Back/char_002_amiya_test_1.skel"
+        ]
+      },
+      "tokens": []
+    },
+    {
+      "id": "char_2013_cerber_whirlwind_2",
+      "charId": "char_2013_cerber",
+      "sourceId": "char_2013_cerber@whirlwind#2",
+      "name": "无拘无束",
+      "brand": "0011/飙系列/II",
+      "sort": 171,
+      "avatar": "avatar/ASSISTANT/char_2013_cerber_whirlwind_2.png",
+      "portrait": "charpor/char_2013_cerber_whirlwind_2.png",
+      "spine": {
+        "front": [
+          "spine/char_2013_cerber/char_2013_cerber_whirlwind_2/Front/char_2013_cerber_whirlwind_2.atlas",
+          "spine/char_2013_cerber/char_2013_cerber_whirlwind_2/Front/char_2013_cerber_whirlwind_2.png",
+          "spine/char_2013_cerber/char_2013_cerber_whirlwind_2/Front/char_2013_cerber_whirlwind_2.skel"
+        ],
+        "back": [
+          "spine/char_2013_cerber/char_2013_cerber_whirlwind_2/Back/char_2013_cerber_whirlwind_2.atlas",
+          "spine/char_2013_cerber/char_2013_cerber_whirlwind_2/Back/char_2013_cerber_whirlwind_2.png",
+          "spine/char_2013_cerber/char_2013_cerber_whirlwind_2/Back/char_2013_cerber_whirlwind_2.skel"
+        ]
+      },
+      "tokens": []
+    },
+    {
+      "id": "char_2013_cerber_summer_4",
+      "charId": "char_2013_cerber",
+      "sourceId": "char_2013_cerber@summer#4",
+      "name": "夏卉 FA333",
+      "brand": "珊瑚海岸/IV",
+      "sort": 200,
+      "avatar": "avatar/ASSISTANT/char_2013_cerber_summer_4.png",
+      "portrait": "charpor/char_2013_cerber_summer_4.png",
+      "spine": {
+        "front": [
+          "spine/char_2013_cerber/char_2013_cerber_summer_4/Front/char_2013_cerber_summer_4.atlas",
+          "spine/char_2013_cerber/char_2013_cerber_summer_4/Front/char_2013_cerber_summer_4.png",
+          "spine/char_2013_cerber/char_2013_cerber_summer_4/Front/char_2013_cerber_summer_4.skel"
+        ],
+        "back": [
+          "spine/char_2013_cerber/char_2013_cerber_summer_4/Back/char_2013_cerber_summer_4.atlas",
+          "spine/char_2013_cerber/char_2013_cerber_summer_4/Back/char_2013_cerber_summer_4.png",
+          "spine/char_2013_cerber/char_2013_cerber_summer_4/Back/char_2013_cerber_summer_4.skel"
+        ]
+      },
+      "tokens": []
+    },
+    {
+      "id": "char_123_fang_winter_1",
+      "charId": "char_123_fang",
+      "sourceId": "char_123_fang@winter#1",
+      "name": "十字郡",
+      "brand": "寒武纪/I",
+      "sort": 283,
+      "avatar": "avatar/ASSISTANT/char_123_fang_winter_1.png",
+      "portrait": "charpor/char_123_fang_winter_1.png",
+      "spine": {
+        "front": [
+          "spine/char_123_fang/char_123_fang_winter_1/Front/char_123_fang_winter_1.atlas",
+          "spine/char_123_fang/char_123_fang_winter_1/Front/char_123_fang_winter_1.png",
+          "spine/char_123_fang/char_123_fang_winter_1/Front/char_123_fang_winter_1.skel"
+        ],
+        "back": [
+          "spine/char_123_fang/char_123_fang_winter_1/Back/char_123_fang_winter_1.atlas",
+          "spine/char_123_fang/char_123_fang_winter_1/Back/char_123_fang_winter_1.png",
+          "spine/char_123_fang/char_123_fang_winter_1/Back/char_123_fang_winter_1.skel"
+        ]
+      },
+      "tokens": []
+    },
+    {
+      "id": "char_122_beagle_boc_1",
+      "charId": "char_122_beagle",
+      "sourceId": "char_122_beagle@boc#1",
+      "name": "无畏",
+      "brand": "斗争血脉/I",
+      "sort": 349,
+      "avatar": "avatar/ASSISTANT/char_122_beagle_boc_1.png",
+      "portrait": "charpor/char_122_beagle_boc_1.png",
+      "spine": {
+        "front": [
+          "spine/char_122_beagle/char_122_beagle_boc_1/Front/char_122_beagle_boc_1.atlas",
+          "spine/char_122_beagle/char_122_beagle_boc_1/Front/char_122_beagle_boc_1.png",
+          "spine/char_122_beagle/char_122_beagle_boc_1/Front/char_122_beagle_boc_1.skel"
+        ],
+        "back": [
+          "spine/char_122_beagle/char_122_beagle_boc_1/Back/char_122_beagle_boc_1.atlas",
+          "spine/char_122_beagle/char_122_beagle_boc_1/Back/char_122_beagle_boc_1.png",
+          "spine/char_122_beagle/char_122_beagle_boc_1/Back/char_122_beagle_boc_1.skel"
+        ]
+      },
+      "tokens": []
+    },
+    {
+      "id": "char_4182_oblvns_avemujica_1",
+      "charId": "char_4182_oblvns",
+      "sourceId": "char_4182_oblvns@avemujica#1",
+      "name": "旋律的主人",
+      "brand": "Ave Mujica",
+      "sort": 505,
+      "avatar": "avatar/ASSISTANT/char_4182_oblvns_avemujica_1.png",
+      "portrait": "charpor/char_4182_oblvns_avemujica_1.png",
+      "spine": {
+        "front": [
+          "spine/char_4182_oblvns/char_4182_oblvns_avemujica_1/Front/char_4182_oblvns_avemujica_1.atlas",
+          "spine/char_4182_oblvns/char_4182_oblvns_avemujica_1/Front/char_4182_oblvns_avemujica_1.png",
+          "spine/char_4182_oblvns/char_4182_oblvns_avemujica_1/Front/char_4182_oblvns_avemujica_1.skel"
+        ],
+        "back": [
+          "spine/char_4182_oblvns/char_4182_oblvns_avemujica_1/Back/char_4182_oblvns_avemujica_1.atlas",
+          "spine/char_4182_oblvns/char_4182_oblvns_avemujica_1/Back/char_4182_oblvns_avemujica_1.png",
+          "spine/char_4182_oblvns/char_4182_oblvns_avemujica_1/Back/char_4182_oblvns_avemujica_1.skel"
+        ]
+      },
+      "tokens": []
+    },
+    {
+      "id": "char_4186_tmoris_avemujica_1",
+      "charId": "char_4186_tmoris",
+      "sourceId": "char_4186_tmoris@avemujica#1",
+      "name": "月下执行者",
+      "brand": "Ave Mujica",
+      "sort": 506,
+      "avatar": "avatar/ASSISTANT/char_4186_tmoris_avemujica_1.png",
+      "portrait": "charpor/char_4186_tmoris_avemujica_1.png",
+      "spine": {
+        "front": [
+          "spine/char_4186_tmoris/char_4186_tmoris_avemujica_1/Front/char_4186_tmoris_avemujica_1.atlas",
+          "spine/char_4186_tmoris/char_4186_tmoris_avemujica_1/Front/char_4186_tmoris_avemujica_1.png",
+          "spine/char_4186_tmoris/char_4186_tmoris_avemujica_1/Front/char_4186_tmoris_avemujica_1.skel"
+        ],
+        "back": [
+          "spine/char_4186_tmoris/char_4186_tmoris_avemujica_1/Back/char_4186_tmoris_avemujica_1.atlas",
+          "spine/char_4186_tmoris/char_4186_tmoris_avemujica_1/Back/char_4186_tmoris_avemujica_1.png",
+          "spine/char_4186_tmoris/char_4186_tmoris_avemujica_1/Back/char_4186_tmoris_avemujica_1.skel"
+        ]
+      },
+      "tokens": []
+    },
+    {
+      "id": "char_4184_dolris_avemujica_1",
+      "charId": "char_4184_dolris",
+      "sourceId": "char_4184_dolris@avemujica#1",
+      "name": "笼中歌者",
+      "brand": "Ave Mujica",
+      "sort": 507,
+      "avatar": "avatar/ASSISTANT/char_4184_dolris_avemujica_1.png",
+      "portrait": "charpor/char_4184_dolris_avemujica_1.png",
+      "frontOnly": true,
+      "spine": {
+        "front": [
+          "spine/char_4184_dolris/char_4184_dolris_avemujica_1/Front/char_4184_dolris_avemujica_1.atlas",
+          "spine/char_4184_dolris/char_4184_dolris_avemujica_1/Front/char_4184_dolris_avemujica_1.png",
+          "spine/char_4184_dolris/char_4184_dolris_avemujica_1/Front/char_4184_dolris_avemujica_1.skel"
+        ]
+      },
+      "tokens": []
+    },
+    {
+      "id": "char_4185_amoris_avemujica_1",
+      "charId": "char_4185_amoris",
+      "sourceId": "char_4185_amoris@avemujica#1",
+      "name": "情热魔术师",
+      "brand": "Ave Mujica",
+      "sort": 508,
+      "avatar": "avatar/ASSISTANT/char_4185_amoris_avemujica_1.png",
+      "portrait": "charpor/char_4185_amoris_avemujica_1.png",
+      "spine": {
+        "front": [
+          "spine/char_4185_amoris/char_4185_amoris_avemujica_1/Front/char_4185_amoris_avemujica_1.atlas",
+          "spine/char_4185_amoris/char_4185_amoris_avemujica_1/Front/char_4185_amoris_avemujica_1.png",
+          "spine/char_4185_amoris/char_4185_amoris_avemujica_1/Front/char_4185_amoris_avemujica_1.skel"
+        ],
+        "back": [
+          "spine/char_4185_amoris/char_4185_amoris_avemujica_1/Back/char_4185_amoris_avemujica_1.atlas",
+          "spine/char_4185_amoris/char_4185_amoris_avemujica_1/Back/char_4185_amoris_avemujica_1.png",
+          "spine/char_4185_amoris/char_4185_amoris_avemujica_1/Back/char_4185_amoris_avemujica_1.skel"
+        ]
+      },
+      "tokens": []
+    },
+    {
+      "id": "char_4183_mortis_avemujica_1",
+      "charId": "char_4183_mortis",
+      "sourceId": "char_4183_mortis@avemujica#1",
+      "name": "提线的本我",
+      "brand": "Ave Mujica",
+      "sort": 509,
+      "avatar": "avatar/ASSISTANT/char_4183_mortis_avemujica_1.png",
+      "portrait": "charpor/char_4183_mortis_avemujica_1.png",
+      "spine": {
+        "front": [
+          "spine/char_4183_mortis/char_4183_mortis_avemujica_1/Front/char_4183_mortis_avemujica_1.atlas",
+          "spine/char_4183_mortis/char_4183_mortis_avemujica_1/Front/char_4183_mortis_avemujica_1.png",
+          "spine/char_4183_mortis/char_4183_mortis_avemujica_1/Front/char_4183_mortis_avemujica_1.skel"
+        ],
+        "back": [
+          "spine/char_4183_mortis/char_4183_mortis_avemujica_1/Back/char_4183_mortis_avemujica_1.atlas",
+          "spine/char_4183_mortis/char_4183_mortis_avemujica_1/Back/char_4183_mortis_avemujica_1.png",
+          "spine/char_4183_mortis/char_4183_mortis_avemujica_1/Back/char_4183_mortis_avemujica_1.skel"
+        ]
+      },
+      "tokens": []
+    },
+    "char_148_nearl_summer_2"
+  ],
+  "unavailable": [
+    {
+      "sourceId": "char_101_sora@summer#1",
+      "charId": "char_101_sora",
+      "name": "夏卉 FA361",
+      "missing": [
+        "front",
+        "back"
+      ]
+    }
+  ],
+  "audit": [
+    {
+      "sourceId": "char_002_amiya@winter#1",
+      "name": "报童",
+      "arkModels": [
+        {
+          "id": "002_amiya_winter#1",
+          "style": "BuildingSkin",
+          "type": "Operator",
+          "assetId": "build_char_002_amiya_winter#1"
+        }
+      ],
+      "missing": [],
+      "frontOnly": false
+    },
+    {
+      "sourceId": "char_002_amiya@epoque#4",
+      "name": "见习联结者",
+      "arkModels": [
+        {
+          "id": "002_amiya_epoque#4",
+          "style": "BuildingSkin",
+          "type": "Operator",
+          "assetId": "build_char_002_amiya_epoque#4"
+        }
+      ],
+      "missing": [],
+      "frontOnly": false
+    },
+    {
+      "sourceId": "char_002_amiya@test#1",
+      "name": "播种者",
+      "arkModels": [
+        {
+          "id": "002_amiya_test#1",
+          "style": "BuildingSkin",
+          "type": "Operator",
+          "assetId": "build_char_002_amiya_test#1"
+        }
+      ],
+      "missing": [],
+      "frontOnly": false
+    },
+    {
+      "sourceId": "char_101_sora@epoque#17",
+      "name": "如歌",
+      "arkModels": [
+        {
+          "id": "101_sora_epoque#17",
+          "style": "BuildingSkin",
+          "type": "Operator",
+          "assetId": "build_char_101_sora_epoque#17"
+        }
+      ],
+      "missing": [],
+      "frontOnly": false
+    },
+    {
+      "sourceId": "char_2014_nian@nian#4",
+      "name": "乐逍遥",
+      "arkModels": [
+        {
+          "id": "2014_nian_nian#4",
+          "style": "BuildingSkin",
+          "type": "Operator",
+          "assetId": "build_char_2014_nian_nian#4"
+        }
+      ],
+      "missing": [],
+      "frontOnly": false
+    },
+    {
+      "sourceId": "char_2023_ling@nian#9",
+      "name": "濯缨",
+      "arkModels": [
+        {
+          "id": "2023_ling_nian#9",
+          "style": "BuildingSkin",
+          "type": "Operator",
+          "assetId": "build_char_2023_ling_nian#9"
+        }
+      ],
+      "missing": [],
+      "frontOnly": false
+    },
+    {
+      "sourceId": "char_2025_shu@nian#11",
+      "name": "春日宴",
+      "arkModels": [
+        {
+          "id": "2025_shu_nian#11",
+          "style": "BuildingSkin",
+          "type": "Operator",
+          "assetId": "build_char_2025_shu_nian#11"
+        }
+      ],
+      "missing": [],
+      "frontOnly": false
+    },
+    {
+      "sourceId": "char_2023_ling@nian#12",
+      "name": "方遒卷",
+      "arkModels": [
+        {
+          "id": "2023_ling_nian#12",
+          "style": "BuildingSkin",
+          "type": "Operator",
+          "assetId": "build_char_2023_ling_nian#12"
+        }
+      ],
+      "missing": [],
+      "frontOnly": false
+    },
+    {
+      "sourceId": "char_2013_cerber@whirlwind#2",
+      "name": "无拘无束",
+      "arkModels": [
+        {
+          "id": "2013_cerber_whirlwind#2",
+          "style": "BuildingSkin",
+          "type": "Operator",
+          "assetId": "build_char_2013_cerber_whirlwind#2"
+        }
+      ],
+      "missing": [],
+      "frontOnly": false
+    },
+    {
+      "sourceId": "char_101_sora@summer#1",
+      "name": "夏卉 FA361",
+      "arkModels": [
+        {
+          "id": "101_sora_summer#1",
+          "style": "BuildingSkin",
+          "type": "Operator",
+          "assetId": "build_char_101_sora_summer#1"
+        }
+      ],
+      "missing": [
+        "front",
+        "back"
+      ],
+      "frontOnly": false
+    },
+    {
+      "sourceId": "char_2013_cerber@summer#4",
+      "name": "夏卉 FA333",
+      "arkModels": [
+        {
+          "id": "2013_cerber_summer#4",
+          "style": "BuildingSkin",
+          "type": "Operator",
+          "assetId": "build_char_2013_cerber_summer#4"
+        }
+      ],
+      "missing": [],
+      "frontOnly": false
+    },
+    {
+      "sourceId": "char_201_moeshd@summer#4",
+      "name": "探寻者 SK03",
+      "arkModels": [
+        {
+          "id": "201_moeshd_summer#4",
+          "style": "BuildingSkin",
+          "type": "Operator",
+          "assetId": "build_char_201_moeshd_summer#4"
+        }
+      ],
+      "missing": [],
+      "frontOnly": false
+    },
+    {
+      "sourceId": "char_123_fang@winter#1",
+      "name": "十字郡",
+      "arkModels": [
+        {
+          "id": "123_fang_winter#1",
+          "style": "BuildingSkin",
+          "type": "Operator",
+          "assetId": "build_char_123_fang_winter#1"
+        }
+      ],
+      "missing": [],
+      "frontOnly": false
+    },
+    {
+      "sourceId": "char_201_moeshd@kfc#1",
+      "name": "清晨七点",
+      "arkModels": [
+        {
+          "id": "201_moeshd_kfc#1",
+          "style": "BuildingSkin",
+          "type": "Operator",
+          "assetId": "build_char_201_moeshd_kfc#1"
+        }
+      ],
+      "missing": [],
+      "frontOnly": false
+    },
+    {
+      "sourceId": "char_122_beagle@boc#1",
+      "name": "无畏",
+      "arkModels": [
+        {
+          "id": "122_beagle_boc#1",
+          "style": "BuildingSkin",
+          "type": "Operator",
+          "assetId": "build_char_122_beagle_boc#1"
+        }
+      ],
+      "missing": [],
+      "frontOnly": false
+    },
+    {
+      "sourceId": "char_2023_ling@ncg#1",
+      "name": "崖高梦远",
+      "arkModels": [
+        {
+          "id": "2023_ling_ncg#1",
+          "style": "BuildingSkin",
+          "type": "Operator",
+          "assetId": "build_char_2023_ling_ncg#1"
+        }
+      ],
+      "missing": [],
+      "frontOnly": false
+    },
+    {
+      "sourceId": "char_2014_nian@cfa#1",
+      "name": "霹雳导演",
+      "arkModels": [
+        {
+          "id": "2014_nian_cfa#1",
+          "style": "BuildingSkin",
+          "type": "Operator",
+          "assetId": "build_char_2014_nian_cfa#1"
+        }
+      ],
+      "missing": [],
+      "frontOnly": false
+    },
+    {
+      "sourceId": "char_4182_oblvns@avemujica#1",
+      "name": "旋律的主人",
+      "arkModels": [
+        {
+          "id": "4182_oblvns_avemujica#1",
+          "style": "BuildingSkin",
+          "type": "Operator",
+          "assetId": "build_char_4182_oblvns_avemujica#1"
+        }
+      ],
+      "missing": [],
+      "frontOnly": false
+    },
+    {
+      "sourceId": "char_4186_tmoris@avemujica#1",
+      "name": "月下执行者",
+      "arkModels": [
+        {
+          "id": "4186_tmoris_avemujica#1",
+          "style": "BuildingSkin",
+          "type": "Operator",
+          "assetId": "build_char_4186_tmoris_avemujica#1"
+        }
+      ],
+      "missing": [],
+      "frontOnly": false
+    },
+    {
+      "sourceId": "char_4184_dolris@avemujica#1",
+      "name": "笼中歌者",
+      "arkModels": [
+        {
+          "id": "4184_dolris_avemujica#1",
+          "style": "BuildingSkin",
+          "type": "Operator",
+          "assetId": "build_char_4184_dolris_avemujica#1"
+        }
+      ],
+      "missing": [],
+      "frontOnly": true
+    },
+    {
+      "sourceId": "char_4185_amoris@avemujica#1",
+      "name": "情热魔术师",
+      "arkModels": [
+        {
+          "id": "4185_amoris_avemujica#1",
+          "style": "BuildingSkin",
+          "type": "Operator",
+          "assetId": "build_char_4185_amoris_avemujica#1"
+        }
+      ],
+      "missing": [],
+      "frontOnly": false
+    },
+    {
+      "sourceId": "char_4183_mortis@avemujica#1",
+      "name": "提线的本我",
+      "arkModels": [
+        {
+          "id": "4183_mortis_avemujica#1",
+          "style": "BuildingSkin",
+          "type": "Operator",
+          "assetId": "build_char_4183_mortis_avemujica#1"
+        }
+      ],
+      "missing": [],
+      "frontOnly": false
+    }
+  ],
+  "proof": [
+    {
+      "source": "avatar/ASSISTANT/char_2013_cerber.png",
+      "url": "/assets/char/avatar/char_2013_cerber.png",
+      "gitBlob": "5c5eec199f9cad90efe0fd88e552cf4fe2a78f28",
+      "sha256": "0ada25039ca45324681102b19c14423cbd835c653d33e36bd18d3dffd9da434b",
+      "bytes": 66106
+    },
+    {
+      "source": "avatar/ASSISTANT/char_2013_cerber_2.png",
+      "url": "/assets/char/avatar/char_2013_cerber_2.png",
+      "gitBlob": "4bf249ad813a675d259c6be510cf797de8d7143d",
+      "sha256": "2325bd4db98e918048a3da0231d43b68d30b6fc92bd59518f185d7388b7f27cc",
+      "bytes": 79727
+    },
+    {
+      "source": "charpor/char_2013_cerber_1.png",
+      "url": "/assets/char/portrait/char_2013_cerber_1.png",
+      "gitBlob": "13541962e8268b418e1042d15b6cf3e80a1f65ac",
+      "sha256": "1774f0af5d616491f03faf5e737ad9258b000a074750f6ca8b3e0bae41611c38",
+      "bytes": 131664
+    },
+    {
+      "source": "charpor/char_2013_cerber_2.png",
+      "url": "/assets/char/portrait/char_2013_cerber_2.png",
+      "gitBlob": "b9c165418b5ed2d1473b013117b20969a20f397c",
+      "sha256": "5fb217134dd314fa9965e0b456a4e44374922c5a0458fb23688cf6f0bc30af09",
+      "bytes": 145061
+    },
+    {
+      "source": "spine/char_2013_cerber/char_2013_cerber/Front/char_2013_cerber.atlas",
+      "url": "/assets/spine/op/char_2013_cerber/front/char_2013_cerber.atlas",
+      "gitBlob": "a5a4d8d7e9dbfadf2257014890f681f9d2d795b1",
+      "sha256": "3ad85a91fcdf87105356f3ba5ac9377b064ed2402b81332aba6fdca759d5cc16",
+      "bytes": 9235
+    },
+    {
+      "source": "spine/char_2013_cerber/char_2013_cerber/Front/char_2013_cerber.png",
+      "url": "/assets/spine/op/char_2013_cerber/front/char_2013_cerber.png",
+      "gitBlob": "e381a8cdea4ba18ca57cd48cbc2500af9090dd88",
+      "sha256": "ec74e9144d7298253165db8b1568371905dfab3a395c1a53daf935c8982e2127",
+      "bytes": 128085
+    },
+    {
+      "source": "spine/char_2013_cerber/char_2013_cerber/Front/char_2013_cerber.skel",
+      "url": "/assets/spine/op/char_2013_cerber/front/char_2013_cerber.skel",
+      "gitBlob": "1370b0db4f3d7e321fac73b5b38054f21ff2f7ab",
+      "sha256": "bfc38924e0c779b8c23a14f060f88f2c8a51d46a8d1625a0c2db8fdbe343b6cd",
+      "bytes": 201005
+    },
+    {
+      "source": "spine/char_2013_cerber/char_2013_cerber/Back/char_2013_cerber.atlas",
+      "url": "/assets/spine/op/char_2013_cerber/back/char_2013_cerber.atlas",
+      "gitBlob": "9b05edbe0263231be3ed7fde2aff67ef693e7a09",
+      "sha256": "17836e618565a4c127fdd3badc64b421f24aee698ef19b1fb8ff5d8ae3d6caad",
+      "bytes": 5475
+    },
+    {
+      "source": "spine/char_2013_cerber/char_2013_cerber/Back/char_2013_cerber.png",
+      "url": "/assets/spine/op/char_2013_cerber/back/char_2013_cerber.png",
+      "gitBlob": "76b3a5aa9ad3a82af4641e0e341e05cb76a7c0a8",
+      "sha256": "4d10b7af858cd5b623117d69224e13093dc3a02247d7f0445aaf7132cbe8ed77",
+      "bytes": 100622
+    },
+    {
+      "source": "spine/char_2013_cerber/char_2013_cerber/Back/char_2013_cerber.skel",
+      "url": "/assets/spine/op/char_2013_cerber/back/char_2013_cerber.skel",
+      "gitBlob": "f06e11975816cf2a0c693e56167d2358ee44963b",
+      "sha256": "9f668f9532e00677822b1f6d7463ac6f2e73043a90b9db816354d3117d9e335e",
+      "bytes": 132320
+    },
+    {
+      "source": "skills/skill_icon_skchr_cerber_1.png",
+      "url": "/assets/skill/skchr_cerber_1.png",
+      "gitBlob": "cec8555e72d4fb3dd983d11b84282fd8474d7c21",
+      "sha256": "f5af13ccaa67e5ef2dcdd4c555a0baa4ba33457bf529ca56a780aee8c7af6142",
+      "bytes": 16559
+    },
+    {
+      "source": "skills/skill_icon_skchr_cerber_2.png",
+      "url": "/assets/skill/skchr_cerber_2.png",
+      "gitBlob": "111482e82c9abd8b305b492588f2bb8693e32655",
+      "sha256": "46aabb0461e940c510729b0c6f6efc72e2579086a05569be752fae1e5f70cf07",
+      "bytes": 18061
+    },
+    {
+      "source": "skills/skill_icon_skchr_cerber_3.png",
+      "url": "/assets/skill/skchr_cerber_3.png",
+      "gitBlob": "a0824868f95570d7129e082714526912abd5f24c",
+      "sha256": "bcaadc860908389c6a556f4248ba80bc230508685cda87d75c98bda96a29c3a2",
+      "bytes": 17848
+    },
+    {
+      "source": "equip/uniequip_002_cerber.png",
+      "url": "/assets/module/uniequip_002_cerber.png",
+      "gitBlob": "982bcd0d3b2c862114eb79eff1f21a5024aae3ea",
+      "sha256": "8f84dee3280d32210d1a34887b2f839f6806fbe91a31420e6422e52708341864",
+      "bytes": 176282
+    },
+    {
+      "source": "equip/uniequip_003_cerber.png",
+      "url": "/assets/module/uniequip_003_cerber.png",
+      "gitBlob": "d886bd948f5cdc34b512996287342041fd75a57c",
+      "sha256": "c6cdd51edd2ef99b7c21cbdf89905c0b42851baf0a55bf20c4eaee1d43ba769d",
+      "bytes": 228892
+    },
+    {
+      "source": "charpor/char_002_amiya_winter_1.png",
+      "url": "/assets/skins/charpor/char_002_amiya_winter_1.png",
+      "gitBlob": "b700aba7eb34e82ddbc583cc70ff1ccf626fb594",
+      "sha256": "e6952c4b55892d692182fff37461be5ba7d28992c6c1cd099bc3de06068f918d",
+      "bytes": 131995
+    },
+    {
+      "source": "avatar/ASSISTANT/char_002_amiya_winter_1.png",
+      "url": "/assets/skins/avatar/ASSISTANT/char_002_amiya_winter_1.png",
+      "gitBlob": "1eee03bcd8877d8e155648a6cbbdb75105fb3f72",
+      "sha256": "287f33f38532adbe3a29a6e937ca8ca0254cfbfd57c9894e55b0ebb264a0a153",
+      "bytes": 62521
+    },
+    {
+      "source": "spine/char_002_amiya/char_002_amiya_winter_1/Back/char_002_amiya_winter_1.atlas",
+      "url": "/assets/skins/spine/char_002_amiya/char_002_amiya_winter_1/Back/char_002_amiya_winter_1.atlas",
+      "gitBlob": "52330d3a659148ab8bffc3544164768ef28f38d1",
+      "sha256": "cb276bae13061be1407db4ab8ac8a623811707918f1371815e64f911acc1c8b1",
+      "bytes": 3054
+    },
+    {
+      "source": "spine/char_002_amiya/char_002_amiya_winter_1/Front/char_002_amiya_winter_1.png",
+      "url": "/assets/skins/spine/char_002_amiya/char_002_amiya_winter_1/Front/char_002_amiya_winter_1.png",
+      "gitBlob": "caf5723aea92984fc8e345e071f7cd6d63aef52b",
+      "sha256": "4aa03da9c843023ea6145eaf2baf1e5e846de6fcc341deb960242cc767e2757e",
+      "bytes": 99691
+    },
+    {
+      "source": "spine/char_002_amiya/char_002_amiya_winter_1/Front/char_002_amiya_winter_1.atlas",
+      "url": "/assets/skins/spine/char_002_amiya/char_002_amiya_winter_1/Front/char_002_amiya_winter_1.atlas",
+      "gitBlob": "6946a0baaf6fe02d7a920622f6d1518369e99e8d",
+      "sha256": "b6fd27acfcedbcf12791c1791408023cbc3c7affe1ccd1fae5293dfef3c0e350",
+      "bytes": 5648
+    },
+    {
+      "source": "spine/char_002_amiya/char_002_amiya_winter_1/Front/char_002_amiya_winter_1.skel",
+      "url": "/assets/skins/spine/char_002_amiya/char_002_amiya_winter_1/Front/char_002_amiya_winter_1.skel",
+      "gitBlob": "ef6da752ab386b96e51599e9dc26fbf711aaa954",
+      "sha256": "f1a11cf54f9c3663db60a58582a7f38666c255b1d8be1fe99da4c05d7906e5bb",
+      "bytes": 172304
+    },
+    {
+      "source": "avatar/ASSISTANT/char_002_amiya_epoque_4.png",
+      "url": "/assets/skins/avatar/ASSISTANT/char_002_amiya_epoque_4.png",
+      "gitBlob": "02d354e8a830a4c7220a4ff2d9a10be103e6ab89",
+      "sha256": "ee50d2d60fc158c5c2ac6c83a0492ac23274be2414e40560360c3b3aef192d11",
+      "bytes": 55816
+    },
+    {
+      "source": "spine/char_002_amiya/char_002_amiya_winter_1/Back/char_002_amiya_winter_1.png",
+      "url": "/assets/skins/spine/char_002_amiya/char_002_amiya_winter_1/Back/char_002_amiya_winter_1.png",
+      "gitBlob": "86499640f2b9fdee397e6974a955951066e4ae82",
+      "sha256": "b0c173090e1a753ac5140aea8a0f259c83bd77ade26eec434c507e23a8d44f28",
+      "bytes": 64700
+    },
+    {
+      "source": "charpor/char_002_amiya_epoque_4.png",
+      "url": "/assets/skins/charpor/char_002_amiya_epoque_4.png",
+      "gitBlob": "c193668ebdc7cc05244258d30156b46212f17fcb",
+      "sha256": "6f966605eae469302507016092e409ddd325398900efb941d2585c1d8bdaf70c",
+      "bytes": 121666
+    },
+    {
+      "source": "spine/char_002_amiya/char_002_amiya_winter_1/Back/char_002_amiya_winter_1.skel",
+      "url": "/assets/skins/spine/char_002_amiya/char_002_amiya_winter_1/Back/char_002_amiya_winter_1.skel",
+      "gitBlob": "d4c8415ff47ab9a4b20eb50bc5fd618a46749af0",
+      "sha256": "e3b870f281e3ae8e897549a42569ca34e446b0008cf45c0e11fa1fc4194563d1",
+      "bytes": 114480
+    },
+    {
+      "source": "spine/char_002_amiya/char_002_amiya_epoque_4/Front/char_002_amiya_epoque_4.atlas",
+      "url": "/assets/skins/spine/char_002_amiya/char_002_amiya_epoque_4/Front/char_002_amiya_epoque_4.atlas",
+      "gitBlob": "a7e373201f89633a9a3c81d6f0ee371acf6d97a3",
+      "sha256": "93c859ccc31aee41380cb90d02d522c8a7eebbf151ae525dd07fc9aee2297974",
+      "bytes": 7895
+    },
+    {
+      "source": "spine/char_002_amiya/char_002_amiya_epoque_4/Front/char_002_amiya_epoque_4.png",
+      "url": "/assets/skins/spine/char_002_amiya/char_002_amiya_epoque_4/Front/char_002_amiya_epoque_4.png",
+      "gitBlob": "efcc253809b33ce3ba6a108509b8ea40dc1083c0",
+      "sha256": "6e4d271cfa5c46ec329ab2e330014b298cf604d0273739e0ebc378bb4c309bb8",
+      "bytes": 117953
+    },
+    {
+      "source": "spine/char_002_amiya/char_002_amiya_epoque_4/Front/char_002_amiya_epoque_4.skel",
+      "url": "/assets/skins/spine/char_002_amiya/char_002_amiya_epoque_4/Front/char_002_amiya_epoque_4.skel",
+      "gitBlob": "4ef5edd606a3b82ab92b81b339f0575eb0910ab9",
+      "sha256": "5fc65526534c257611bee3e975a20c1977b300b3d1dbc4e4df1224ee7a5f890a",
+      "bytes": 216182
+    },
+    {
+      "source": "spine/char_002_amiya/char_002_amiya_epoque_4/Back/char_002_amiya_epoque_4.atlas",
+      "url": "/assets/skins/spine/char_002_amiya/char_002_amiya_epoque_4/Back/char_002_amiya_epoque_4.atlas",
+      "gitBlob": "c53dbb1ca52e11ae7cb9f5a82a195b5abf970ddf",
+      "sha256": "77b2af07d7a2c63011fb9c04a1779dfdf40403438d64bc574e6bb3166e9a343c",
+      "bytes": 2864
+    },
+    {
+      "source": "avatar/ASSISTANT/char_002_amiya_test_1.png",
+      "url": "/assets/skins/avatar/ASSISTANT/char_002_amiya_test_1.png",
+      "gitBlob": "4697b14f22c99eb389e5d96e7cf6f914625ee05c",
+      "sha256": "e2ed6c48418a40ba7887bc17370feca4a3ca75fab914173cc4227b37c483a9e7",
+      "bytes": 63036
+    },
+    {
+      "source": "spine/char_002_amiya/char_002_amiya_epoque_4/Back/char_002_amiya_epoque_4.png",
+      "url": "/assets/skins/spine/char_002_amiya/char_002_amiya_epoque_4/Back/char_002_amiya_epoque_4.png",
+      "gitBlob": "9fc64045618374c448e9392afde76872c68fa72b",
+      "sha256": "7a88120f635453d22740b419a1b6de0a7306800f42fd81e67f26004890d85182",
+      "bytes": 61869
+    },
+    {
+      "source": "spine/char_002_amiya/char_002_amiya_epoque_4/Back/char_002_amiya_epoque_4.skel",
+      "url": "/assets/skins/spine/char_002_amiya/char_002_amiya_epoque_4/Back/char_002_amiya_epoque_4.skel",
+      "gitBlob": "0215533dbeb9800603754ddbd0e8680f0f813b2d",
+      "sha256": "820fcfcca62b5c9b00ef61df4b303dc6d720f96d55e8e2ffca18ef3fc34bb436",
+      "bytes": 85005
+    },
+    {
+      "source": "charpor/char_002_amiya_test_1.png",
+      "url": "/assets/skins/charpor/char_002_amiya_test_1.png",
+      "gitBlob": "024e00843318c6b3d41ab7d6c0f48d4022d30a7e",
+      "sha256": "a0ac99414f04ebb9733c3378d203edbd9bcdfe2416703dda3d8d0eaec1b0371e",
+      "bytes": 131278
+    },
+    {
+      "source": "spine/char_002_amiya/char_002_amiya_test_1/Front/char_002_amiya_test_1.atlas",
+      "url": "/assets/skins/spine/char_002_amiya/char_002_amiya_test_1/Front/char_002_amiya_test_1.atlas",
+      "gitBlob": "d5d197cdeec2f7da4c83ab0b7ef6b6b8e1186f59",
+      "sha256": "5b6d27ed3014797e8168ce55484813430fcd5db74cab3ed66f97c214133c65a4",
+      "bytes": 7354
+    },
+    {
+      "source": "spine/char_002_amiya/char_002_amiya_test_1/Front/char_002_amiya_test_1.png",
+      "url": "/assets/skins/spine/char_002_amiya/char_002_amiya_test_1/Front/char_002_amiya_test_1.png",
+      "gitBlob": "0cfa2765bd229a9fe940b9c248e79674f98cf105",
+      "sha256": "8fcce2afb1a7acc5fa589aed783e90189606d2a10aa20f635a97ca802c5d5ecd",
+      "bytes": 111836
+    },
+    {
+      "source": "spine/char_002_amiya/char_002_amiya_test_1/Back/char_002_amiya_test_1.atlas",
+      "url": "/assets/skins/spine/char_002_amiya/char_002_amiya_test_1/Back/char_002_amiya_test_1.atlas",
+      "gitBlob": "868388b8a60a49855af6fc5b161fc42cdc2a18b1",
+      "sha256": "3af763ed9d0e74f3a97b780dec441cc3eb4109ad84b09ae2436f8a7a4238266a",
+      "bytes": 4366
+    },
+    {
+      "source": "spine/char_002_amiya/char_002_amiya_test_1/Front/char_002_amiya_test_1.skel",
+      "url": "/assets/skins/spine/char_002_amiya/char_002_amiya_test_1/Front/char_002_amiya_test_1.skel",
+      "gitBlob": "906e19141bd36e4d3279efb97922864839a13579",
+      "sha256": "afe6138337c694ca22d566e04afd592189030961aeec90d4ab68bc7a14ac82af",
+      "bytes": 250546
+    },
+    {
+      "source": "spine/char_002_amiya/char_002_amiya_test_1/Back/char_002_amiya_test_1.skel",
+      "url": "/assets/skins/spine/char_002_amiya/char_002_amiya_test_1/Back/char_002_amiya_test_1.skel",
+      "gitBlob": "51a8dd00b6bcb19d9902efde5423942137c68afa",
+      "sha256": "39bcc6b4129b5f0c2a862b64969c2c30947c244d80f189ef2aa6fe47634280a7",
+      "bytes": 145151
+    },
+    {
+      "source": "spine/char_002_amiya/char_002_amiya_test_1/Back/char_002_amiya_test_1.png",
+      "url": "/assets/skins/spine/char_002_amiya/char_002_amiya_test_1/Back/char_002_amiya_test_1.png",
+      "gitBlob": "564d80b2853dce79a17d1d2ef5a74de42d11ff6d",
+      "sha256": "3e27f4d713bc966ba0400e96c93d35361a817a2f1ed38349b204ed0ed692fcbf",
+      "bytes": 87425
+    },
+    {
+      "source": "avatar/ASSISTANT/char_2013_cerber_whirlwind_2.png",
+      "url": "/assets/skins/avatar/ASSISTANT/char_2013_cerber_whirlwind_2.png",
+      "gitBlob": "7af27f9f1b499845125054f306b59213cf1a4846",
+      "sha256": "436f280f403e2c431a00b3ce835504689a5c54dad0426c4b198322c258324063",
+      "bytes": 59190
+    },
+    {
+      "source": "charpor/char_2013_cerber_whirlwind_2.png",
+      "url": "/assets/skins/charpor/char_2013_cerber_whirlwind_2.png",
+      "gitBlob": "d0f3ec87fb8088b0418021cb6d639045cb7709c7",
+      "sha256": "653719a4168be70995547e44d1ad83d9994f1af3cf57d98cf9c27e0f4ea18bd9",
+      "bytes": 119030
+    },
+    {
+      "source": "spine/char_2013_cerber/char_2013_cerber_whirlwind_2/Front/char_2013_cerber_whirlwind_2.atlas",
+      "url": "/assets/skins/spine/char_2013_cerber/char_2013_cerber_whirlwind_2/Front/char_2013_cerber_whirlwind_2.atlas",
+      "gitBlob": "07239e1c415d022f74df93776bfdf1ffa1119432",
+      "sha256": "4b1b4f5d68028e44c0feff1af99ebefff08e46178deff6abe8e7a306ffcfcf34",
+      "bytes": 11537
+    },
+    {
+      "source": "spine/char_2013_cerber/char_2013_cerber_whirlwind_2/Front/char_2013_cerber_whirlwind_2.png",
+      "url": "/assets/skins/spine/char_2013_cerber/char_2013_cerber_whirlwind_2/Front/char_2013_cerber_whirlwind_2.png",
+      "gitBlob": "17e6f19bf8352e828b55170a246bd0057960ac0d",
+      "sha256": "183c9dfd073b4612ab0a7a8a510a1e9d0725f83480ffa37212919688b88065fe",
+      "bytes": 143746
+    },
+    {
+      "source": "spine/char_2013_cerber/char_2013_cerber_whirlwind_2/Back/char_2013_cerber_whirlwind_2.atlas",
+      "url": "/assets/skins/spine/char_2013_cerber/char_2013_cerber_whirlwind_2/Back/char_2013_cerber_whirlwind_2.atlas",
+      "gitBlob": "c4502d7bd80676f363f083e5fa19db603f68411e",
+      "sha256": "8d6e888452a88cf4936a85a8a5e92a35237557554a22707757359a20c2534d40",
+      "bytes": 5589
+    },
+    {
+      "source": "spine/char_2013_cerber/char_2013_cerber_whirlwind_2/Front/char_2013_cerber_whirlwind_2.skel",
+      "url": "/assets/skins/spine/char_2013_cerber/char_2013_cerber_whirlwind_2/Front/char_2013_cerber_whirlwind_2.skel",
+      "gitBlob": "a8342a23793463e735c921cea737d675767eede2",
+      "sha256": "eb453ef499a0aeae1fc83d355e2bafce21a361e72f80b669206600245dc070da",
+      "bytes": 269589
+    },
+    {
+      "source": "spine/char_2013_cerber/char_2013_cerber_whirlwind_2/Back/char_2013_cerber_whirlwind_2.png",
+      "url": "/assets/skins/spine/char_2013_cerber/char_2013_cerber_whirlwind_2/Back/char_2013_cerber_whirlwind_2.png",
+      "gitBlob": "83604ece28f4485ff156f57ab19bd3353b2c6b54",
+      "sha256": "c7fa0635ec0f2384585fd0f034172120137e5a045f640f57d66e3e0804f00b20",
+      "bytes": 108395
+    },
+    {
+      "source": "spine/char_2013_cerber/char_2013_cerber_whirlwind_2/Back/char_2013_cerber_whirlwind_2.skel",
+      "url": "/assets/skins/spine/char_2013_cerber/char_2013_cerber_whirlwind_2/Back/char_2013_cerber_whirlwind_2.skel",
+      "gitBlob": "e4cad2acd8002da6cb5bb39c4055b92e14859bb3",
+      "sha256": "cd939dd9617f18f279609b1bf719290e525ec3b9a111f192d0c1c6543563f33f",
+      "bytes": 134312
+    },
+    {
+      "source": "avatar/ASSISTANT/char_2013_cerber_summer_4.png",
+      "url": "/assets/skins/avatar/ASSISTANT/char_2013_cerber_summer_4.png",
+      "gitBlob": "f064d6b8450c6f49eaa6515e245ecc2b0d350257",
+      "sha256": "254cc4828325e86cf2a7bdb683acce9f53698975b0e1874860e112bcec14835b",
+      "bytes": 56739
+    },
+    {
+      "source": "charpor/char_2013_cerber_summer_4.png",
+      "url": "/assets/skins/charpor/char_2013_cerber_summer_4.png",
+      "gitBlob": "cbb5099d7e18cce67242da6f0dc25868a9ff73e2",
+      "sha256": "e3efea637e3a397d9576b5c2acf21dbe86d62cc471333a4ac6bbc18fb942b5e1",
+      "bytes": 112940
+    },
+    {
+      "source": "spine/char_2013_cerber/char_2013_cerber_summer_4/Front/char_2013_cerber_summer_4.atlas",
+      "url": "/assets/skins/spine/char_2013_cerber/char_2013_cerber_summer_4/Front/char_2013_cerber_summer_4.atlas",
+      "gitBlob": "223cb6ff9c9412e049e180ff5e8ef1bf13993b8b",
+      "sha256": "a72eefba9802208604ea9287cfda2bc3e05ab1c5c55eea32aa90dcebc5353201",
+      "bytes": 10293
+    },
+    {
+      "source": "spine/char_2013_cerber/char_2013_cerber_summer_4/Front/char_2013_cerber_summer_4.png",
+      "url": "/assets/skins/spine/char_2013_cerber/char_2013_cerber_summer_4/Front/char_2013_cerber_summer_4.png",
+      "gitBlob": "4766861a7677a7c0026217fa12faa2ca0149a157",
+      "sha256": "d0791d2dcd44e0eef7ef7ebb6ad5c6975b247925b528bef5e0b844ed28ed69bb",
+      "bytes": 195524
+    },
+    {
+      "source": "spine/char_2013_cerber/char_2013_cerber_summer_4/Front/char_2013_cerber_summer_4.skel",
+      "url": "/assets/skins/spine/char_2013_cerber/char_2013_cerber_summer_4/Front/char_2013_cerber_summer_4.skel",
+      "gitBlob": "9e375cdd2239c2a74cb30c2bc7dd011573b715d0",
+      "sha256": "46ed99fecabefd774f1ae65749f14cf8616955915821f38775dce34a1a60afc8",
+      "bytes": 278964
+    },
+    {
+      "source": "spine/char_2013_cerber/char_2013_cerber_summer_4/Back/char_2013_cerber_summer_4.atlas",
+      "url": "/assets/skins/spine/char_2013_cerber/char_2013_cerber_summer_4/Back/char_2013_cerber_summer_4.atlas",
+      "gitBlob": "60ad83b50224bf321970753eb57736411019ff84",
+      "sha256": "63e1cedee26ad00bfbbc60719274789ce363ba420079d1a3d32a77d0328d794a",
+      "bytes": 6132
+    },
+    {
+      "source": "spine/char_2013_cerber/char_2013_cerber_summer_4/Back/char_2013_cerber_summer_4.png",
+      "url": "/assets/skins/spine/char_2013_cerber/char_2013_cerber_summer_4/Back/char_2013_cerber_summer_4.png",
+      "gitBlob": "57a303113f6dde3146147ea7e71c0e73830e0b1d",
+      "sha256": "a357e374f962741b5fec8d293925d95fc83bbeb8af1924ffee8391485b2272a0",
+      "bytes": 161699
+    },
+    {
+      "source": "spine/char_2013_cerber/char_2013_cerber_summer_4/Back/char_2013_cerber_summer_4.skel",
+      "url": "/assets/skins/spine/char_2013_cerber/char_2013_cerber_summer_4/Back/char_2013_cerber_summer_4.skel",
+      "gitBlob": "1b544995f9d36419ec92cb5d1e3cf0457873ed99",
+      "sha256": "d53b91259ff59b9a27f970ad04a319406ef014b1e9891c7b840694960ba01c1f",
+      "bytes": 148302
+    },
+    {
+      "source": "avatar/ASSISTANT/char_123_fang_winter_1.png",
+      "url": "/assets/skins/avatar/ASSISTANT/char_123_fang_winter_1.png",
+      "gitBlob": "9debba2ec705561e1a50b2808ce1b53b03e6ccc8",
+      "sha256": "49e738e58379544f73dea361a05423606fdd81c19c8969bbf0a3232ab010df2b",
+      "bytes": 55355
+    },
+    {
+      "source": "charpor/char_123_fang_winter_1.png",
+      "url": "/assets/skins/charpor/char_123_fang_winter_1.png",
+      "gitBlob": "e0f273f02df8770781b1852c04340a8434826b35",
+      "sha256": "2a9b945d7bcca75b23aca19ee104875a7fbec37867d4a673543f5b46a33a90ce",
+      "bytes": 118545
+    },
+    {
+      "source": "spine/char_123_fang/char_123_fang_winter_1/Front/char_123_fang_winter_1.atlas",
+      "url": "/assets/skins/spine/char_123_fang/char_123_fang_winter_1/Front/char_123_fang_winter_1.atlas",
+      "gitBlob": "6bdc951c4dfef4d7ba78a94f581954016095485a",
+      "sha256": "37aab1e16d83fd5630db50e6b605ac3ea15cf83157d5262fd3655f3f40d887d9",
+      "bytes": 9166
+    },
+    {
+      "source": "spine/char_123_fang/char_123_fang_winter_1/Front/char_123_fang_winter_1.png",
+      "url": "/assets/skins/spine/char_123_fang/char_123_fang_winter_1/Front/char_123_fang_winter_1.png",
+      "gitBlob": "12b591330371bba4a6082568c640974562a5edc0",
+      "sha256": "1442154cabbb344565084712d9f80bf4212e52ebf2e97c9dd8f6910723a68ff4",
+      "bytes": 92134
+    },
+    {
+      "source": "spine/char_123_fang/char_123_fang_winter_1/Back/char_123_fang_winter_1.atlas",
+      "url": "/assets/skins/spine/char_123_fang/char_123_fang_winter_1/Back/char_123_fang_winter_1.atlas",
+      "gitBlob": "1473262011c3d8811346660d4a0c15c67cb2a119",
+      "sha256": "4e4084c15a3fe58b66acd2965039b1cce27d039d528b9abcc646914f39227527",
+      "bytes": 4501
+    },
+    {
+      "source": "spine/char_123_fang/char_123_fang_winter_1/Front/char_123_fang_winter_1.skel",
+      "url": "/assets/skins/spine/char_123_fang/char_123_fang_winter_1/Front/char_123_fang_winter_1.skel",
+      "gitBlob": "ca515fdcfd37cad155688a4602132bf101d90878",
+      "sha256": "ae0a76ca02b6b194406022e1e7c0ecf110561af6126822c8d3c14fa5e68fa453",
+      "bytes": 115478
+    },
+    {
+      "source": "spine/char_123_fang/char_123_fang_winter_1/Back/char_123_fang_winter_1.png",
+      "url": "/assets/skins/spine/char_123_fang/char_123_fang_winter_1/Back/char_123_fang_winter_1.png",
+      "gitBlob": "84f4cbefddf44a528b6b41c4d2b2773c25b0c3cd",
+      "sha256": "0b4f78093b312babc2e5c4680aaf3535a660da4a799950bc4999c31c7b5ee648",
+      "bytes": 66336
+    },
+    {
+      "source": "spine/char_123_fang/char_123_fang_winter_1/Back/char_123_fang_winter_1.skel",
+      "url": "/assets/skins/spine/char_123_fang/char_123_fang_winter_1/Back/char_123_fang_winter_1.skel",
+      "gitBlob": "01fe55e5382fd1d8c4dd9fbf3c22beae0eb4ef01",
+      "sha256": "2139e61243359e24476baa1c79b5cfac47f4450fcba04b6fba123444a7b79f55",
+      "bytes": 73894
+    },
+    {
+      "source": "avatar/ASSISTANT/char_122_beagle_boc_1.png",
+      "url": "/assets/skins/avatar/ASSISTANT/char_122_beagle_boc_1.png",
+      "gitBlob": "ac57031dc79e15efcffbd3a44422025f3c17234d",
+      "sha256": "6386dace21b6ebc23f0d6ff6806d74a2d1698d0fb768a6028b6c67f017b49cd6",
+      "bytes": 61272
+    },
+    {
+      "source": "charpor/char_122_beagle_boc_1.png",
+      "url": "/assets/skins/charpor/char_122_beagle_boc_1.png",
+      "gitBlob": "0de993862648a3f909e0e58fdf553d0ca481db89",
+      "sha256": "581d01122b2a270c43230309ebaa3900042e05ed88159b2faa1bdb92e2af04fa",
+      "bytes": 133910
+    },
+    {
+      "source": "spine/char_122_beagle/char_122_beagle_boc_1/Front/char_122_beagle_boc_1.atlas",
+      "url": "/assets/skins/spine/char_122_beagle/char_122_beagle_boc_1/Front/char_122_beagle_boc_1.atlas",
+      "gitBlob": "ba5df87a7840259698042bafe61f0050893b6015",
+      "sha256": "964201416847e4b27f2011e6dd303aa8d5748b180b6fdc1cd4280e707051ad8a",
+      "bytes": 8078
+    },
+    {
+      "source": "spine/char_122_beagle/char_122_beagle_boc_1/Front/char_122_beagle_boc_1.png",
+      "url": "/assets/skins/spine/char_122_beagle/char_122_beagle_boc_1/Front/char_122_beagle_boc_1.png",
+      "gitBlob": "7ae3e5b296fa3692daf6de3d324926eff116d512",
+      "sha256": "d4bb67ef5a6b5c3b20abac9e8f0703c29bf4e1f048a958b844307fef09028222",
+      "bytes": 96030
+    },
+    {
+      "source": "spine/char_122_beagle/char_122_beagle_boc_1/Front/char_122_beagle_boc_1.skel",
+      "url": "/assets/skins/spine/char_122_beagle/char_122_beagle_boc_1/Front/char_122_beagle_boc_1.skel",
+      "gitBlob": "2d65650ca45f8d41812b48e23108579f0ff58edd",
+      "sha256": "fd9299f1e4e2da178c83000604c632f5ab21413c7e2f4ecaa29f8113439f246d",
+      "bytes": 84081
+    },
+    {
+      "source": "spine/char_122_beagle/char_122_beagle_boc_1/Back/char_122_beagle_boc_1.atlas",
+      "url": "/assets/skins/spine/char_122_beagle/char_122_beagle_boc_1/Back/char_122_beagle_boc_1.atlas",
+      "gitBlob": "a16c907969f732c54522d8f2021093c903fb7214",
+      "sha256": "2c6e305fb773adb415873e728aa3615e5fd5dda0a44c0a43977f1859b7543f0d",
+      "bytes": 4245
+    },
+    {
+      "source": "spine/char_122_beagle/char_122_beagle_boc_1/Back/char_122_beagle_boc_1.png",
+      "url": "/assets/skins/spine/char_122_beagle/char_122_beagle_boc_1/Back/char_122_beagle_boc_1.png",
+      "gitBlob": "09520617a8dd383398d8995b5700e28afefad859",
+      "sha256": "6bed1d2cef2c67109fd74b613254c3450a26dc4780b514cd8c2949fefa862a35",
+      "bytes": 64098
+    },
+    {
+      "source": "spine/char_122_beagle/char_122_beagle_boc_1/Back/char_122_beagle_boc_1.skel",
+      "url": "/assets/skins/spine/char_122_beagle/char_122_beagle_boc_1/Back/char_122_beagle_boc_1.skel",
+      "gitBlob": "203741bedcd30b90103a1da781083668d70293e8",
+      "sha256": "1fe112322c25fc02cb2b7aaf3948105318c4f976dad0ff2f2da38ae380461999",
+      "bytes": 55222
+    },
+    {
+      "source": "avatar/ASSISTANT/char_4182_oblvns_avemujica_1.png",
+      "url": "/assets/skins/avatar/ASSISTANT/char_4182_oblvns_avemujica_1.png",
+      "gitBlob": "a0909c45cd455dd2ecfee1ae10a202cda08a49b3",
+      "sha256": "9e4d73b3962499c328e47006e588072c06a19a2cd88d3d71d9c452ee030a8f99",
+      "bytes": 66414
+    },
+    {
+      "source": "charpor/char_4182_oblvns_avemujica_1.png",
+      "url": "/assets/skins/charpor/char_4182_oblvns_avemujica_1.png",
+      "gitBlob": "bb62fd27948a908f46a2d149e8f0e30701470061",
+      "sha256": "00b1f922b8c5cbeb9d4b8c778bf5005428e88cc4a627a35e62b0fb4268dc2db7",
+      "bytes": 141732
+    },
+    {
+      "source": "spine/char_4182_oblvns/char_4182_oblvns_avemujica_1/Front/char_4182_oblvns_avemujica_1.atlas",
+      "url": "/assets/skins/spine/char_4182_oblvns/char_4182_oblvns_avemujica_1/Front/char_4182_oblvns_avemujica_1.atlas",
+      "gitBlob": "eae9f8aed82822d9008eecceb127f77b1937c251",
+      "sha256": "cda0d40f786391bb6de9a4f67551618c60854d9daee47bd26f28c497a2405728",
+      "bytes": 11349
+    },
+    {
+      "source": "spine/char_4182_oblvns/char_4182_oblvns_avemujica_1/Front/char_4182_oblvns_avemujica_1.png",
+      "url": "/assets/skins/spine/char_4182_oblvns/char_4182_oblvns_avemujica_1/Front/char_4182_oblvns_avemujica_1.png",
+      "gitBlob": "af09de2e3fd7716f0d31af64fc1cffa4fcff3791",
+      "sha256": "8dfb13852b2fa2e9ebab56d2eb7b3e8f133b608c64f8836c49ab37e123b4a14f",
+      "bytes": 267744
+    },
+    {
+      "source": "spine/char_4182_oblvns/char_4182_oblvns_avemujica_1/Back/char_4182_oblvns_avemujica_1.atlas",
+      "url": "/assets/skins/spine/char_4182_oblvns/char_4182_oblvns_avemujica_1/Back/char_4182_oblvns_avemujica_1.atlas",
+      "gitBlob": "654a80e82e246a28e72cf88d02d4875746620870",
+      "sha256": "e29963b17773bd40641dbf338f0ff695b49698899f3ad671d864e1c6b4c14e0d",
+      "bytes": 8425
+    },
+    {
+      "source": "spine/char_4182_oblvns/char_4182_oblvns_avemujica_1/Back/char_4182_oblvns_avemujica_1.png",
+      "url": "/assets/skins/spine/char_4182_oblvns/char_4182_oblvns_avemujica_1/Back/char_4182_oblvns_avemujica_1.png",
+      "gitBlob": "49367195f761ca131df54d22b783bf724dc643d6",
+      "sha256": "948d9a7224ae655763e1b4a523eb9dcdff4414119e44d8d49e70d421958e4521",
+      "bytes": 228117
+    },
+    {
+      "source": "avatar/ASSISTANT/char_4186_tmoris_avemujica_1.png",
+      "url": "/assets/skins/avatar/ASSISTANT/char_4186_tmoris_avemujica_1.png",
+      "gitBlob": "4018fb57c611cf13745eda9ad7f3ae66a5e4c13b",
+      "sha256": "b091fc9816ef6fa6fb84ed8096d24a0b70cd4e2016a856b15db8c61e33124143",
+      "bytes": 58681
+    },
+    {
+      "source": "charpor/char_4186_tmoris_avemujica_1.png",
+      "url": "/assets/skins/charpor/char_4186_tmoris_avemujica_1.png",
+      "gitBlob": "6b9a20deed2ede85d784d85077b37965ddda1633",
+      "sha256": "5d974858472a07aca13ef920b8a9412d3b4bd67d2acdbafeb2cfb830bd1506f5",
+      "bytes": 141883
+    },
+    {
+      "source": "spine/char_4186_tmoris/char_4186_tmoris_avemujica_1/Front/char_4186_tmoris_avemujica_1.atlas",
+      "url": "/assets/skins/spine/char_4186_tmoris/char_4186_tmoris_avemujica_1/Front/char_4186_tmoris_avemujica_1.atlas",
+      "gitBlob": "33664f7c6bee828104ff26d287414a3af4bd80ed",
+      "sha256": "bc3c90b036d125a8f20eda23cb6d8b83fecfc2e787bb5a07b876ce0f172cc23c",
+      "bytes": 8828
+    },
+    {
+      "source": "spine/char_4182_oblvns/char_4182_oblvns_avemujica_1/Back/char_4182_oblvns_avemujica_1.skel",
+      "url": "/assets/skins/spine/char_4182_oblvns/char_4182_oblvns_avemujica_1/Back/char_4182_oblvns_avemujica_1.skel",
+      "gitBlob": "d465a4c62d77e926d33150412769a2f0903d2940",
+      "sha256": "478b54b4b3463f4f09c16223bf6e0d163569095e55cab4b29e09d23916bce41d",
+      "bytes": 712199
+    },
+    {
+      "source": "spine/char_4186_tmoris/char_4186_tmoris_avemujica_1/Front/char_4186_tmoris_avemujica_1.png",
+      "url": "/assets/skins/spine/char_4186_tmoris/char_4186_tmoris_avemujica_1/Front/char_4186_tmoris_avemujica_1.png",
+      "gitBlob": "ef14c5db8c3ea3100f2b67082a2c25b46d9528c5",
+      "sha256": "36bfcfb65693475fb83fffb259e9852d520fb54408a022577e2b594299147767",
+      "bytes": 153877
+    },
+    {
+      "source": "spine/char_4186_tmoris/char_4186_tmoris_avemujica_1/Back/char_4186_tmoris_avemujica_1.atlas",
+      "url": "/assets/skins/spine/char_4186_tmoris/char_4186_tmoris_avemujica_1/Back/char_4186_tmoris_avemujica_1.atlas",
+      "gitBlob": "ffbc953bc52bbfe7b28ea1b8e203cd7a578aeb2b",
+      "sha256": "bdbbc4d892b19ca6320fbb0131d3856bbe8e5b8055bd62652d62bd9bb4131e90",
+      "bytes": 5722
+    },
+    {
+      "source": "spine/char_4186_tmoris/char_4186_tmoris_avemujica_1/Front/char_4186_tmoris_avemujica_1.skel",
+      "url": "/assets/skins/spine/char_4186_tmoris/char_4186_tmoris_avemujica_1/Front/char_4186_tmoris_avemujica_1.skel",
+      "gitBlob": "4b045459f37f8ae78dc2d68d1301aa3e247ebd95",
+      "sha256": "155c47ef5ec310d534b4cb3bde9c9687d06476211841d6501590e8a8c58528df",
+      "bytes": 334107
+    },
+    {
+      "source": "spine/char_4186_tmoris/char_4186_tmoris_avemujica_1/Back/char_4186_tmoris_avemujica_1.png",
+      "url": "/assets/skins/spine/char_4186_tmoris/char_4186_tmoris_avemujica_1/Back/char_4186_tmoris_avemujica_1.png",
+      "gitBlob": "d64db64df64d199de7026480e40cfcceeda1ea59",
+      "sha256": "1548544de8d60c306e6f6fb814aaed056d08d63e31590f6fe5ccd58770706f9f",
+      "bytes": 140987
+    },
+    {
+      "source": "spine/char_4186_tmoris/char_4186_tmoris_avemujica_1/Back/char_4186_tmoris_avemujica_1.skel",
+      "url": "/assets/skins/spine/char_4186_tmoris/char_4186_tmoris_avemujica_1/Back/char_4186_tmoris_avemujica_1.skel",
+      "gitBlob": "88fa9f920607432a77c5edcc7daa616ec453812e",
+      "sha256": "eacbc1df48345217b3ed544c811ab17a891830972df2e3378745b28ccb208753",
+      "bytes": 260790
+    },
+    {
+      "source": "avatar/ASSISTANT/char_4184_dolris_avemujica_1.png",
+      "url": "/assets/skins/avatar/ASSISTANT/char_4184_dolris_avemujica_1.png",
+      "gitBlob": "21416d46dc162fa7c42b248f1774b324686612df",
+      "sha256": "17cf0fd47108fbe6f7e14fbda38215b7fe2a4547492b9bdc620c25baf1339f34",
+      "bytes": 61555
+    },
+    {
+      "source": "charpor/char_4184_dolris_avemujica_1.png",
+      "url": "/assets/skins/charpor/char_4184_dolris_avemujica_1.png",
+      "gitBlob": "faa33aa1c7d37581ce9deed14c2d6296dae181ab",
+      "sha256": "fff02a38f08ce84f3e3c1ebbdb7ee0a097eec03741cb2b421d5abb4d1a4f29fc",
+      "bytes": 130299
+    },
+    {
+      "source": "spine/char_4184_dolris/char_4184_dolris_avemujica_1/Front/char_4184_dolris_avemujica_1.atlas",
+      "url": "/assets/skins/spine/char_4184_dolris/char_4184_dolris_avemujica_1/Front/char_4184_dolris_avemujica_1.atlas",
+      "gitBlob": "58f11dff8085c6efd97453fa0939a0b900adead3",
+      "sha256": "bdf2e3619149c92117277f40cb9c8adfe823ceddcf37245832c06d1ae814f42c",
+      "bytes": 11939
+    },
+    {
+      "source": "spine/char_4184_dolris/char_4184_dolris_avemujica_1/Front/char_4184_dolris_avemujica_1.png",
+      "url": "/assets/skins/spine/char_4184_dolris/char_4184_dolris_avemujica_1/Front/char_4184_dolris_avemujica_1.png",
+      "gitBlob": "f5c88ca06c99b1dff65ada66f5f8d7fd7a673667",
+      "sha256": "43b9dcd3226cfc09046faa61cb538235c79cef92f51fd8b3ac4bb2bac9686ddb",
+      "bytes": 186268
+    },
+    {
+      "source": "spine/char_4184_dolris/char_4184_dolris_avemujica_1/Front/char_4184_dolris_avemujica_1.skel",
+      "url": "/assets/skins/spine/char_4184_dolris/char_4184_dolris_avemujica_1/Front/char_4184_dolris_avemujica_1.skel",
+      "gitBlob": "06a908c0c72934fef1215bb1d876797b71c620c1",
+      "sha256": "6fbd6b38084e727aee6231a3c6284484e4775c8b6617ab5e8324231b6b72af7c",
+      "bytes": 279258
+    },
+    {
+      "source": "avatar/ASSISTANT/char_4185_amoris_avemujica_1.png",
+      "url": "/assets/skins/avatar/ASSISTANT/char_4185_amoris_avemujica_1.png",
+      "gitBlob": "136f286fd633e5a9824850c0d5160e37ed1ff34f",
+      "sha256": "3fc2667b6f6ac48bfe7b37d424ea29ce4e6280742922d63d15c281d8ef935e34",
+      "bytes": 67279
+    },
+    {
+      "source": "charpor/char_4185_amoris_avemujica_1.png",
+      "url": "/assets/skins/charpor/char_4185_amoris_avemujica_1.png",
+      "gitBlob": "9454619cadaad70167a2dcd2641876a2691f4284",
+      "sha256": "048c4ed081c7d5f410475863b234b68a82fa621d67794e65edbf090ffbfc4c82",
+      "bytes": 145785
+    },
+    {
+      "source": "spine/char_4185_amoris/char_4185_amoris_avemujica_1/Front/char_4185_amoris_avemujica_1.atlas",
+      "url": "/assets/skins/spine/char_4185_amoris/char_4185_amoris_avemujica_1/Front/char_4185_amoris_avemujica_1.atlas",
+      "gitBlob": "9f3042cc10a6a396b9ea2000e7238625b205ba0b",
+      "sha256": "105691ebfa51d17c53a3b83c45149a86f84b00839654f339d4b9bd257ea7ffd5",
+      "bytes": 13299
+    },
+    {
+      "source": "spine/char_4185_amoris/char_4185_amoris_avemujica_1/Back/char_4185_amoris_avemujica_1.atlas",
+      "url": "/assets/skins/spine/char_4185_amoris/char_4185_amoris_avemujica_1/Back/char_4185_amoris_avemujica_1.atlas",
+      "gitBlob": "04921b0358707ac187fb6d625cad91a25841a6a5",
+      "sha256": "16fe13a2131833ef722d0d3d96eb36c172b64d0f9d37fe48a4ac204c6d22c987",
+      "bytes": 8334
+    },
+    {
+      "source": "spine/char_4185_amoris/char_4185_amoris_avemujica_1/Front/char_4185_amoris_avemujica_1.png",
+      "url": "/assets/skins/spine/char_4185_amoris/char_4185_amoris_avemujica_1/Front/char_4185_amoris_avemujica_1.png",
+      "gitBlob": "5e896267c4f47642a0b9610845a99e6315fa16a7",
+      "sha256": "aa05c2b52d6c741d0277c078ce0a18f3da63d7aeac020e16147a94c6d0f118c9",
+      "bytes": 385888
+    },
+    {
+      "source": "spine/char_4185_amoris/char_4185_amoris_avemujica_1/Front/char_4185_amoris_avemujica_1.skel",
+      "url": "/assets/skins/spine/char_4185_amoris/char_4185_amoris_avemujica_1/Front/char_4185_amoris_avemujica_1.skel",
+      "gitBlob": "0722e835fe62623acdd8ddf8ce692124749a5bca",
+      "sha256": "949e7140fe1403ec972cbd9cc1e394a39a3a5a9f343ea209afac881da94d4368",
+      "bytes": 532298
+    },
+    {
+      "source": "spine/char_4185_amoris/char_4185_amoris_avemujica_1/Back/char_4185_amoris_avemujica_1.png",
+      "url": "/assets/skins/spine/char_4185_amoris/char_4185_amoris_avemujica_1/Back/char_4185_amoris_avemujica_1.png",
+      "gitBlob": "474d60ddd0bd2ad0d4b8ec87a9e8c3d14f44f71c",
+      "sha256": "9107a0ac3c54a99393bafa967237babf30b0c3dddc2572259f49c1bd65690a2d",
+      "bytes": 360734
+    },
+    {
+      "source": "spine/char_4185_amoris/char_4185_amoris_avemujica_1/Back/char_4185_amoris_avemujica_1.skel",
+      "url": "/assets/skins/spine/char_4185_amoris/char_4185_amoris_avemujica_1/Back/char_4185_amoris_avemujica_1.skel",
+      "gitBlob": "3fd6ef49b60b75132394ab7a8f6630cdcc57282b",
+      "sha256": "3539313ea2dac1b15c610dc7bfdb487e7f82424c8efc83c58ff087dfc58577dc",
+      "bytes": 415126
+    },
+    {
+      "source": "charpor/char_4183_mortis_avemujica_1.png",
+      "url": "/assets/skins/charpor/char_4183_mortis_avemujica_1.png",
+      "gitBlob": "e6300b06d86c7078243dfbe206b1cdf7b640b6ed",
+      "sha256": "2e3ce1c65a4ea05e4a16f2a9214f8c9233f07c8c7a6b94b1533920bfbb3d795d",
+      "bytes": 143305
+    },
+    {
+      "source": "avatar/ASSISTANT/char_4183_mortis_avemujica_1.png",
+      "url": "/assets/skins/avatar/ASSISTANT/char_4183_mortis_avemujica_1.png",
+      "gitBlob": "f4b2efb10289cc490483836ff93d93b95f35a9e0",
+      "sha256": "09ee972c0a3ecb9d37941619c0bf23d781886f3718c961302f6b40c2966146ab",
+      "bytes": 69081
+    },
+    {
+      "source": "spine/char_4183_mortis/char_4183_mortis_avemujica_1/Front/char_4183_mortis_avemujica_1.atlas",
+      "url": "/assets/skins/spine/char_4183_mortis/char_4183_mortis_avemujica_1/Front/char_4183_mortis_avemujica_1.atlas",
+      "gitBlob": "9c83339e325fee952aadcaede47c35c4036ff7a2",
+      "sha256": "c782022289a18345f0b24be09cbe96b3b7f8f89789b24794afc9d149abfe5721",
+      "bytes": 21918
+    },
+    {
+      "source": "spine/char_4183_mortis/char_4183_mortis_avemujica_1/Front/char_4183_mortis_avemujica_1.png",
+      "url": "/assets/skins/spine/char_4183_mortis/char_4183_mortis_avemujica_1/Front/char_4183_mortis_avemujica_1.png",
+      "gitBlob": "6a9019e779e6443633d39c1f6f4363ec2c357625",
+      "sha256": "c90ed26b9bfe5641ec1088729defb166fa9291ea01e89e33687c269601398df6",
+      "bytes": 402444
+    },
+    {
+      "source": "spine/char_4183_mortis/char_4183_mortis_avemujica_1/Front/char_4183_mortis_avemujica_1.skel",
+      "url": "/assets/skins/spine/char_4183_mortis/char_4183_mortis_avemujica_1/Front/char_4183_mortis_avemujica_1.skel",
+      "gitBlob": "3492b8eef5902960a9d574debdc77cde7b674f60",
+      "sha256": "725dc77d31fafdfe5a83018c63dc95973df24e52f6519dd5f62385c68ce867b4",
+      "bytes": 736831
+    },
+    {
+      "source": "spine/char_4183_mortis/char_4183_mortis_avemujica_1/Back/char_4183_mortis_avemujica_1.atlas",
+      "url": "/assets/skins/spine/char_4183_mortis/char_4183_mortis_avemujica_1/Back/char_4183_mortis_avemujica_1.atlas",
+      "gitBlob": "e1029d9bfac4f70d680e158bed8d47fe6958c703",
+      "sha256": "c7659eb11ee35945521255f7b393b160594d74ab611a46be754a4bd6930687f9",
+      "bytes": 21916
+    },
+    {
+      "source": "spine/char_4183_mortis/char_4183_mortis_avemujica_1/Back/char_4183_mortis_avemujica_1.png",
+      "url": "/assets/skins/spine/char_4183_mortis/char_4183_mortis_avemujica_1/Back/char_4183_mortis_avemujica_1.png",
+      "gitBlob": "4be762829318edf1049739c938aad013801ed0e9",
+      "sha256": "73c7c934d3f5b6821b3b604de3047a7244f453471367cb626329956334249450",
+      "bytes": 424769
+    },
+    {
+      "source": "spine/char_4183_mortis/char_4183_mortis_avemujica_1/Back/char_4183_mortis_avemujica_1.skel",
+      "url": "/assets/skins/spine/char_4183_mortis/char_4183_mortis_avemujica_1/Back/char_4183_mortis_avemujica_1.skel",
+      "gitBlob": "fc056601fefc12976727c7b954304b7a9e437dfb",
+      "sha256": "af795bbaec66b6a61eb7d683ae5e1fc8da11d39c3ea732ae210d36bfdf1001b1",
+      "bytes": 590230
+    },
+    {
+      "source": "spine/char_4182_oblvns/char_4182_oblvns_avemujica_1/Front/char_4182_oblvns_avemujica_1.skel",
+      "url": "/assets/skins/spine/char_4182_oblvns/char_4182_oblvns_avemujica_1/Front/char_4182_oblvns_avemujica_1.skel",
+      "gitBlob": "71b1daba366b33ffb8ed61c2cb8957d8ed2e439b",
+      "sha256": "277efc237e29b944ace1ebdab5214ba0368bce4ec47b18cebf2457727f3d6093",
+      "bytes": 935689
+    }
+  ]
+}

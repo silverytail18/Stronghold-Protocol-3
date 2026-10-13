@@ -1,0 +1,97 @@
+{
+  "repository": "fexli/ArknightsResource",
+  "commit": "02b29938b43611fec5bb1e8372ee2ca3ef8fdc48",
+  "files": [
+    {
+      "source": "avatar/ASSISTANT/char_4231_clemnt.png",
+      "url": "/assets/char/avatar/char_4231_clemnt.png",
+      "gitBlob": "af3b960f75b98a7b6e6f2caf9ee5ffebdbfb7949",
+      "sha256": "5514aa5354d52728c000e1c5eb06dcbc8da03b0e5414823e6f0f532b68d371fd",
+      "bytes": 58365
+    },
+    {
+      "source": "avatar/ASSISTANT/char_4231_clemnt_2.png",
+      "url": "/assets/char/avatar/char_4231_clemnt_2.png",
+      "gitBlob": "8d9f9d1b7265cc35afc4ed9efcadebf1c56ddec3",
+      "sha256": "39208ac2cf3ae9b9e9e83f57c22a6e314ec1119e9980ed2e9f24fb9a4488e0bc",
+      "bytes": 64966
+    },
+    {
+      "source": "charpack/char_4231_clemnt_1b.png",
+      "url": "/assets/char/portrait/char_4231_clemnt_1.png",
+      "gitBlob": "e392afe50f79d7aa552c5fc7c8a0ba41b19603e9",
+      "sha256": "4acf8f28817b6c8965603c65cb1e90c1c6b8771c3727af07fb4df781fa07ac5d",
+      "bytes": 1058738
+    },
+    {
+      "source": "charpack/char_4231_clemnt_2b.png",
+      "url": "/assets/char/portrait/char_4231_clemnt_2.png",
+      "gitBlob": "9327b95abb33ebfb2d1cbca9d9645549e468ce64",
+      "sha256": "fd01e4bc04634faf5d83cc799edd2cf5adf4c673b27c6abc30fcba276b1b2fd5",
+      "bytes": 1613384
+    },
+    {
+      "source": "spine/char_4231_clemnt/char_4231_clemnt/Front/char_4231_clemnt.atlas",
+      "url": "/assets/spine/op/char_4231_clemnt/front/char_4231_clemnt.atlas",
+      "gitBlob": "7470e2173de34a91940a93dfdcc022508126a8d5",
+      "sha256": "4676e74bcb5f9f12ef28cfe1395cc2833a2b8935beb175c85670923ff117aece",
+      "bytes": 11719
+    },
+    {
+      "source": "spine/char_4231_clemnt/char_4231_clemnt/Front/char_4231_clemnt.png",
+      "url": "/assets/spine/op/char_4231_clemnt/front/char_4231_clemnt.png",
+      "gitBlob": "c2a53a43ee1aa123bd01f82c5237a73dc97c0e9d",
+      "sha256": "8097a2dcd8ed38725d7d4baec4356d18879f98cc1aef3d59e053b2dd48e53995",
+      "bytes": 217471
+    },
+    {
+      "source": "spine/char_4231_clemnt/char_4231_clemnt/Front/char_4231_clemnt.skel",
+      "url": "/assets/spine/op/char_4231_clemnt/front/char_4231_clemnt.skel",
+      "gitBlob": "a97e131527d90dc38b2c4b4866995bea1d313226",
+      "sha256": "c4a72d5785a8c7f381e60512be2d2cdc7e8d5a0fa728b545ead4426a9121fcce",
+      "bytes": 1014317
+    },
+    {
+      "source": "spine/char_4231_clemnt/char_4231_clemnt/Back/char_4231_clemnt.atlas",
+      "url": "/assets/spine/op/char_4231_clemnt/back/char_4231_clemnt.atlas",
+      "gitBlob": "26f92946af52fb2909c34b13648f97c156694cfb",
+      "sha256": "ecacab828c0c34fa33972258b0bd782b6c98b97caf1a2dd06bf3b82b5fbd69c2",
+      "bytes": 7356
+    },
+    {
+      "source": "spine/char_4231_clemnt/char_4231_clemnt/Back/char_4231_clemnt.png",
+      "url": "/assets/spine/op/char_4231_clemnt/back/char_4231_clemnt.png",
+      "gitBlob": "83d7b0388c92995e41655632b728fecf5aa24058",
+      "sha256": "e6a10c48d2047ef493ab2ae9c8583eb1207ca8c2cbee766a544ccca68f5694b3",
+      "bytes": 185892
+    },
+    {
+      "source": "spine/char_4231_clemnt/char_4231_clemnt/Back/char_4231_clemnt.skel",
+      "url": "/assets/spine/op/char_4231_clemnt/back/char_4231_clemnt.skel",
+      "gitBlob": "a90ed2d2aa3f6ea910e15a7af7d9f4946e00631d",
+      "sha256": "5ce8042593c4ed7882a47e5d1d94b204f8dfd6c59a447f8b5899de827194f89b",
+      "bytes": 510522
+    },
+    {
+      "source": "skills/skill_icon_skchr_clemnt_1.png",
+      "url": "/assets/skill/skchr_clemnt_1.png",
+      "gitBlob": "a8b32725584da27bba5514e08ee12895a6406279",
+      "sha256": "a3c57a2a73c448ad914bd0edd1682d8f4433ede9a3bf101db48a3884015c818a",
+      "bytes": 19509
+    },
+    {
+      "source": "skills/skill_icon_skchr_clemnt_2.png",
+      "url": "/assets/skill/skchr_clemnt_2.png",
+      "gitBlob": "0f166c7328367d8ef7b6b960dcb337c9e17c1c64",
+      "sha256": "5279d270b6419fa29065d452b5cd8597438498c04a8fc220d784d7894245c377",
+      "bytes": 24860
+    },
+    {
+      "source": "skills/skill_icon_skchr_clemnt_3.png",
+      "url": "/assets/skill/skchr_clemnt_3.png",
+      "gitBlob": "f018d4f6fb89d2aec9c0f0f56fd3f57e67a66cb6",
+      "sha256": "59c3e5ec2ddb6d4a1947f4f3a6932f4679f45f81b354916e44ccabf1095cebd3",
+      "bytes": 25949
+    }
+  ]
+}
