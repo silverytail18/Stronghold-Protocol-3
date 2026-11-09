@@ -1,7 +1,7 @@
 // Generated from pinned original tables and expansion-spec.json.
 export const EXPANSION_OVERLAY = {
   "id": "arknights-expansion-v1",
-  "version": "expansion-test-1",
+  "version": "expansion-test-16",
   "chess": {
     "chess_exp_nian_a": {
       "chessId": "chess_exp_nian_a",

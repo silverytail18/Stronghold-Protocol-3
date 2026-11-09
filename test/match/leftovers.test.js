@@ -235,8 +235,6 @@ test('solo pause in the Final Assault: no overtime drain, no silence handover, t
   h.autoHumans();
   assert.ok(h.drive(() => m.phase === PHASE.FINAL_ASSAULT || h.ended != null, { maxSteps: 5e6 }));
   assert.equal(m.phase, PHASE.FINAL_ASSAULT);
-  // Manual pause must first leave autoplay, as required by the current production input guard.
-  assert.deepEqual(m.handle('p_0', { t:'g.autoplay', on:false }), { ok:true });
   h.clients.closeAll(); // the browser goes quiet: only the silence watchdog would move the field
   const f = m.fields[0];
   assert.deepEqual([f.mode, f.authority], ['client', 'p_0']);

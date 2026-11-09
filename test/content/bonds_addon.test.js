@@ -2,7 +2,7 @@
 // 绝技 and the prep side of 助力 远见 奇迹 投资人 调和 (numbers from data/bonds.json, research 02 §3.9–§3.23).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { makeBattle, chessRec, enemyRec, checkInvariants } from '../helpers/battleHarness.js';
+import { makeBattle, chessRec, enemyRec, checkInvariants, flatStage } from '../helpers/battleHarness.js';
 import { gainLayers, inRange } from '../../server/sim/content/support/index.js';
 import { bondBb, procChance } from '../../server/sim/content/bonds/addon/battle.js';
 import { registerMeta } from '../../server/sim/content/bonds/addon.js';
@@ -71,6 +71,59 @@ test('迅捷: member skill end +12 SP (p=1 at high L), ≥40 layers every operat
   assert.equal(off.s_x, 0);
 });
 
+test('迅捷 refills 引星棘刺 S1 at once: it is cast at most once per attack interval, and her attacks go on untouched (GitHub #298)', () => {
+  // S1 度算浪波: AUTO, no duration, no attack of its own, SP_FULL, cost 6; 迅捷 refunds 12 + 15 SP at ≥ 40 layers
+  const run = ({ aspd = 0, enemy = true, silence = false } = {}) => {
+    const h = makeBattle({
+      seed: 1, bonds: { swiftShip: bond(2, 229, 3) }, autoFinish: false, timeLimit: 30,
+      units: [{ chessId: 'chess_char_5_15_b', skillIndex: 0, row: 10, col: 4 }],
+      enemies: enemy ? [{ key: 'enemy_still', route: { motion: 'WALK', start: [10, 6], end: [10, 6], checkpoints: [] } }] : [],
+      defs: { enemies: { enemy_still: enemyRec({ key: 'enemy_still', hp: 1e9, atk: 0, speed: 0, blockCnt: 0 }) } },
+    });
+    h.step();
+    const u = h.unit('chess_char_5_15_b');
+    if (aspd) h.b.addBuff(u, { key: 'test:aspd', mods: { aspd } });
+    if (silence) h.b.addBuff(u, { key: 'test:mute', flags: { silence: true } });
+    if (enemy) assert.ok(h.b.enemiesInKeys(u.rangeKeys, u, u.profile).length, 'an enemy stays in range');
+    u.skill.gainSp(u.skill.spCost, 'test');
+    const n0 = u.skill.activations, a0 = u.stats.attacks;
+    h.run(6);
+    checkInvariants(h.b);
+    return { n: u.skill.activations - n0, attacks: u.stats.attacks - a0, interval: u.s.interval };
+  };
+  const base = run(), muted = run({ silence: true });
+  // the first at once, then one per interval (1.36 s): 5 in 6 s — every tick before (180)
+  assert.ok(base.n >= 4 && base.n <= 5, `one cast per attack interval (${base.interval.toFixed(2)} s): ${base.n} in 6 s`);
+  assert.ok(base.attacks > 0 && base.attacks === muted.attacks, `the casts take no attack (${base.attacks} vs ${muted.attacks} silenced)`);
+  const fast = run({ aspd: 500 }), fastMuted = run({ aspd: 500, silence: true });
+  assert.ok(fast.n >= 23 && fast.n <= 25, `ASPD +500 (interval ${fast.interval.toFixed(2)} s): ${fast.n} casts`);
+  assert.equal(fast.attacks, fastMuted.attacks, 'still no attack taken');
+  const alone = run({ enemy: false });
+  assert.ok(alone.n >= 4 && alone.n <= 5 && alone.attacks === 0, `no enemy: still fires at full SP (#124), one per interval — ${alone.n}`);
+});
+
+test('迅捷 / 突袭: SP gifts after end do not recharge a zero-SP deployment skill or trigger a ready raid', () => {
+  const h = makeBattle({
+    defs: { chess: { t_deploy: chessRec({ id: 't_deploy', bonds: ['swiftShip', 'raidShip'], skill: { spCost: 0 } }) } },
+    units: [{ chessId: 't_deploy', row: 10, col: 4 }],
+    bonds: { swiftShip: bond(1, 1000), raidShip: bond(1) }, captureNoisy: true,
+    kits: { t_deploy: () => ({ skill: {
+      kind: 'duration', activateOnDeploy: true, duration: 2, spCost: 0, spType: 'none', trigger: 'NEVER',
+    } }) },
+  });
+  h.b.start();
+  const u = h.unit('t_deploy'), seq = u.deploySeq;
+  h.run(5);
+  assert.deepEqual(h.hooksOf('skillEnd').map((c) => c.reason), ['duration']);
+  assert.ok(h.hooksOf('spGain').some((c) => c.unit === u), 'swift end handler attempted SP gain');
+  assert.equal(u.skill.sp, 0);
+  assert.equal(u.skill.charges, 0);
+  assert.equal(u.skill.ready, false);
+  assert.equal(u.skill.activations, 1);
+  assert.equal(u.deploySeq, seq, 'skill end alone does not meet raid readiness');
+  checkInvariants(h.b);
+});
+
 test('迅捷 / 不屈 proc chances: p = min(1, base + per·L) at each layer count', () => {
   const sw = bondBb('swiftShip'), ind = bondBb('indomShip');
   close(procChance(sw, 0), 0.20);
@@ -83,7 +136,7 @@ test('迅捷 / 不屈 proc chances: p = min(1, base + per·L) at each layer coun
   close(procChance(ind, 1000), 1, 'capped');
 });
 
-test('灵巧: aura on members + 4 neighbours (once), 8 tiles at ≥40 layers, follows death and relocation', () => {
+test('灵巧: aura on members + 4 neighbours (once), 8 tiles at ≥40 layers, survives death and follows relocation', () => {
   const defs = { chess: { k_1: op('k_1', ['skillfulShip']), k_2: op('k_2', ['skillfulShip']), k_n: op('k_n', []), k_d: op('k_d', []), k_f: op('k_f', []) } };
   const h = makeBattle({
     defs, bonds: { skillfulShip: bond(1, 5) },
@@ -107,7 +160,117 @@ test('灵巧: aura on members + 4 neighbours (once), 8 tiles at ≥40 layers, fo
   assert.equal(a('k_n'), 100, 'relocated out of the aura');
   h.b.dealDamage(null, h.unit('k_1'), { amount: 1e9, type: 'true' });
   h.step(2);
-  assert.equal(a('k_d'), 100, 'aura source died');
+  assert.equal(a('k_d'), 150, 'downed aura source still buffs neighbours');
+  checkInvariants(h.b);
+});
+
+for (const layers of [5, 40]) {
+  test(`灵巧: downed sources keep one aura at ${layers} layers, update live layers and restore it on redeploy`, () => {
+    const defs = { chess: {
+      k_1: op('k_1', ['skillfulShip']), k_2: op('k_2', ['skillfulShip']),
+      k_n: op('k_n', []), k_d: op('k_d', []),
+    } };
+    const h = makeBattle({
+      defs, bonds: { skillfulShip: bond(1, layers) },
+      units: [
+        { chessId: 'k_1', row: 10, col: 4 }, { chessId: 'k_2', row: 10, col: 6 },
+        { chessId: 'k_n', row: 10, col: 5 }, { chessId: 'k_d', row: 11, col: 5 },
+      ],
+    });
+    h.step();
+    const first = h.unit('k_1'), second = h.unit('k_2'), neighbour = h.unit('k_n'), diagonal = h.unit('k_d');
+    assert.equal(neighbour.s.aspd, 110 + layers, 'overlapping sources buff once');
+    h.b.kill(first);
+    assert.ok(h.b.isDown(first));
+    assert.equal(neighbour.s.aspd, 110 + layers, 'no attack speed drop on death');
+    h.b.kill(second);
+    assert.ok(h.b.isDown(second));
+    h.run(1);
+    assert.equal(neighbour.s.aspd, 110 + layers, 'all sources down: polling keeps the aura');
+    assert.equal(diagonal.s.aspd, layers >= 40 ? 110 + layers : 100, '4 / 8 tile range still applies');
+    assert.equal(neighbour.buffs.filter((b) => b.key === 'bond:skillfulShip').length, 1);
+
+    gainLayers(h.b, { playerId: 'p1', bonds: 'skillfulShip', n: 40 - layers + 2 });
+    h.step(2);
+    assert.equal(neighbour.s.aspd, 152, 'downed sources use live layer values');
+    assert.equal(diagonal.s.aspd, 152, 'downed sources widen their aura at 40 layers');
+    h.b.kill(neighbour);
+    assert.ok(h.b.redeploy(neighbour, { free: true }));
+    assert.equal(neighbour.s.aspd, 152, 'recipient redeployed next to a downed source');
+    assert.ok(h.b.redeploy(first, { free: true }));
+    assert.equal(first.s.aspd, 152, 'source regains its own bonus on redeploy');
+    assert.equal(neighbour.s.aspd, 152, 'redeploy does not stack the aura');
+    h.b.retreat(first);
+    assert.equal(neighbour.s.aspd, 152, 'remaining downed source still covers the recipient');
+    assert.ok(h.b.redeploy(second, { free: true }));
+    h.b.retreat(second);
+    assert.equal(neighbour.s.aspd, 100, 'withdrawn sources no longer provide an aura');
+    checkInvariants(h.b);
+  });
+}
+
+test('灵巧: a downed source provides its aura around the body tile when it returns home after death', () => {
+  const defs = { chess: {
+    k_1: op('k_1', ['skillfulShip']), k_2: op('k_2', ['skillfulShip']),
+    k_home: op('k_home', []), k_away: op('k_away', []), k_tile: op('k_tile', []),
+  } };
+  const h = makeBattle({
+    defs, bonds: { skillfulShip: bond(1, 5) },
+    units: [
+      { chessId: 'k_1', row: 10, col: 4 }, { chessId: 'k_2', row: 12, col: 3 },
+      { chessId: 'k_home', row: 10, col: 5 }, { chessId: 'k_away', row: 10, col: 8 },
+      { chessId: 'k_tile', row: 10, col: 7 },
+    ],
+  });
+  h.step();
+  h.b.retreat(h.unit('k_tile'), { permanent: true });
+  assert.ok(h.b.relocate(h.unit('k_1'), 10, 7));
+  h.run(0.4);
+  assert.equal(h.unit('k_home').s.aspd, 100);
+  assert.equal(h.unit('k_away').s.aspd, 115);
+  h.b.kill(h.unit('k_1'));
+  assert.deepEqual(h.unit('k_1').body, [10, 4]);
+  assert.equal(h.unit('k_home').s.aspd, 115, 'aura follows the downed body back home');
+  assert.equal(h.unit('k_away').s.aspd, 100, 'last living tile no longer provides an aura');
+  checkInvariants(h.b);
+});
+
+for (const reason of ['retreat', 'forcedExit', 'merchant']) {
+  test(`灵巧: ${reason} leaves a down model without preserving the killed-source aura`, () => {
+    const h = makeBattle({
+      defs: { chess: { k_1: op('k_1', ['skillfulShip']), k_n: op('k_n', []) } },
+      bonds: { skillfulShip: bond(1, 5) },
+      units: [{ chessId: 'k_1', row: 10, col: 4 }, { chessId: 'k_n', row: 10, col: 5 }],
+    });
+    h.step();
+    const source = h.unit('k_1'), recipient = h.unit('k_n');
+    assert.equal(recipient.s.aspd, 115);
+    h.b.retreat(source, { reason });
+    assert.ok(h.b.isDown(source), 'a down model is not proof of being killed');
+    assert.equal(source.removeReason, reason);
+    assert.equal(recipient.s.aspd, 100, 'aura stops immediately on retreat');
+    assert.ok(h.b.redeploy(source, { free: true }));
+    assert.equal(recipient.s.aspd, 115, 'the living source restores its aura');
+    h.b.kill(source);
+    assert.equal(recipient.s.aspd, 115, 'a subsequent real kill keeps the aura');
+    checkInvariants(h.b);
+  });
+}
+
+test('灵巧: unite carry-down forcedExit starts without an aura and restores it on redeploy', () => {
+  const h = makeBattle({
+    kind: 'unite',
+    defs: { chess: { k_1: op('k_1', ['skillfulShip']), k_n: op('k_n', []) } },
+    bonds: { skillfulShip: bond(1, 40) },
+    units: [{ chessId: 'k_1', row: 10, col: 4, carryState: { down: true } }, { chessId: 'k_n', row: 11, col: 5 }],
+  });
+  h.step();
+  const source = h.unit('k_1'), recipient = h.unit('k_n');
+  assert.equal(source.removeReason, 'forcedExit');
+  assert.ok(h.b.isDown(source));
+  assert.equal(recipient.s.aspd, 100, 'forcedExit is not a kill in this battle');
+  assert.ok(h.b.redeploy(source, { free: true }));
+  assert.equal(recipient.s.aspd, 150, 'the redeployed source covers all eight neighbours');
   checkInvariants(h.b);
 });
 
@@ -219,6 +382,29 @@ test('坚守: all operators HP ×(1.25+0.012·L); tier 2 redirect 40% to members
   h.b.dealDamage(null, d1, { amount: 50, type: 'true' });
   close(e.hp, e2, 'sourceless damage: no thorns');
   checkInvariants(h.b);
+});
+
+test('坚守 [ASSUMED post-barrier policy]: only remaining damage is shared; full absorption creates no receiver hit', () => {
+  for (const shield of [75, 200]) {
+    const defs = { chess: { d_1: op('d_1', ['steadShip']), d_2: op('d_2', ['steadShip']), d_n: op('d_n', []) }, enemies: DUMMY };
+    const h = makeBattle({ defs, autoFinish: false,
+      units: [{ chessId: 'd_1', row: 10, col: 3 }, { chessId: 'd_2', row: 10, col: 5 }, { chessId: 'd_n', row: 12, col: 3 }],
+      bonds: { steadShip: bond(2, 0, 3) }, enemies: [{ key: 'enemy_addon_dummy', pos: [9, 9] }] });
+    h.step();
+    const b = h.b, dn = h.unit('d_n'), receivers = [h.unit('d_1'), h.unit('d_2')], seen = [];
+    b.addBuff(dn, { key: 'test:barrier', shield });
+    b.on('damageApplied', c => { if (receivers.includes(c.target)) seen.push(c); });
+    const before = dn.hp, memberHp = receivers.map(u => u.hp);
+    const remaining = Math.max(0, 100 - shield);
+    close(b.dealDamage({ source: h.enemy('enemy_addon_dummy'), target: dn, amount: 100, type: 'true' }), remaining * 0.6);
+    close(before - dn.hp, remaining * 0.6);
+    for (let i = 0; i < receivers.length; i++) close(memberHp[i] - receivers[i].hp, remaining * 0.2);
+    close(dn.findBuff('test:barrier')?.shield ?? 0, Math.max(0, shield - 100));
+    assert.equal(seen.length, remaining > 0 ? 2 : 0);
+    for (const c of seen) { assert.equal(c.source, null); assert.equal(c.dmg.type, 'true'); }
+    assert.deepEqual(b.errors, []);
+    checkInvariants(b);
+  }
 });
 
 test('坚守 thorns: 无来源 (no attacker bonus, hooks see no source) but credited to the member — its stats and the shared-pool tally', async () => {
@@ -342,7 +528,146 @@ test('突袭: the jump is a redeployment — deploy fires (部署时 effects), f
   checkInvariants(h.b);
 });
 
-test('不屈: knocked-out ground operator redeploys (p=1 at high L); tier 2 every operator +5 SP; inactive / elevated → no', () => {
+// GitHub issue #51 (reported on 0.1.0, still so in 0.1.1): the 10 s idle jump landed where no enemy was in range and
+// then hopped between such tiles every 10 s, and it ignored a second enemy it could have reached. Either trigger now jumps only to a landing tile
+// with its target in range — the first candidate that has one — else the member stays and the next poll looks again
+// [ASSUMED: the text says only "再部署至一名地面敌人周围"]. Row 9 here: cols 8–9 plain floor (not deployable); a
+// RIGHT-facing melee member (its own tile + the tile in front) reaches a speed-0 enemy on (9,9) only from (9,9) or
+// (9,8) — neither deployable.
+const RAID51_STAGE = flatStage({ rows: { 9: '##Errrrrff' + 'S' + 'rrrrrrr' + 'S##' } });
+const RAID51_ENEMY = { enemy_raid51: enemyRec({ key: 'enemy_raid51', hp: 1e7, speed: 0 }) };
+const raidJumps = (h) => h.hooksOf('deploy').filter((c) => c.unit.kind === 'op' && !c.initial); // (an enemy spawn is a deploy too)
+
+test('突袭 #51: no landing tile reaches the enemy → neither trigger jumps (no hopping); once one can, the jump comes at once', () => {
+  const defs = {
+    chess: { r_m: op('r_m', ['raidShip']), r_s: chessRec({ id: 'r_s', bonds: ['raidShip'], skill: { spCost: 10, initSp: 10 } }) },
+    enemies: RAID51_ENEMY,
+  };
+  const h = makeBattle({
+    stage: RAID51_STAGE, defs, bonds: { raidShip: bond(1, 10) }, enemies: [{ key: 'enemy_raid51', pos: [9, 9] }],
+    units: [{ chessId: 'r_m', row: 12, col: 3 }, { chessId: 'r_s', row: 11, col: 3 }], hooks: ['deploy', 'death'],
+    autoFinish: false, timeLimit: 120,
+  });
+  const m = h.unit('r_m'), s = h.unit('r_s');
+  h.run(45);
+  assert.equal(m.lastAttackAt, -Infinity, 'r_m idle the whole time (the 10 s trigger, four times over)');
+  assert.ok(s.skill.ready, 'r_s: its skill stays ready the whole time (the 技能就绪 trigger)');
+  assert.deepEqual(raidJumps(h), [], 'no jump: no landing tile has the enemy in range');
+  assert.deepEqual(h.hooksOf('death').filter((c) => c.reason === 'raid'), [], 'no 突袭 retreat');
+  assert.deepEqual([m.tileR, m.tileC, s.tileR, s.tileC], [12, 3, 11, 3], 'both stay where they are');
+  // a ground enemy that can be reached: both jump at the next poll (the idle time kept counting) and land with it in range
+  const t0 = h.b.time;
+  const e2 = h.spawn('enemy_raid51', { pos: [12, 7] });
+  h.run(0.3);
+  assert.equal(raidJumps(h).length, 2, 'both members jumped');
+  for (const c of raidJumps(h)) assert.ok(c.t - t0 <= 0.25 + 1e-6, `within one poll (${(c.t - t0).toFixed(2)} s)`);
+  for (const u of [m, s]) {
+    assert.ok(inRange(u, e2), `${u.defId}: the new enemy in range after the jump (${u.tileR},${u.tileC})`);
+    assert.ok(Math.max(Math.abs(u.tileR - 12), Math.abs(u.tileC - 7)) <= 2, `${u.defId}: next to it`);
+  }
+  checkInvariants(h.b);
+});
+
+test('突袭 #51: the most advanced enemy out of reach → the jump goes to the next one it can reach and fights there; idle time restarts', () => {
+  const defs = { chess: { r_m: op('r_m', ['raidShip']) }, enemies: RAID51_ENEMY };
+  const idle = bondBb('raidShip').no_attack_duration;
+  const h = makeBattle({
+    stage: RAID51_STAGE, defs, bonds: { raidShip: bond(1, 10) }, hooks: ['deploy', 'death'], autoFinish: false, timeLimit: 120,
+    enemies: [{ key: 'enemy_raid51', pos: [9, 9] }, { key: 'enemy_raid51', pos: [12, 9] }], units: [{ chessId: 'r_m', row: 12, col: 3 }],
+  });
+  h.step();
+  const [e1, e2] = h.enemies();
+  assert.deepEqual([e1.y, e1.x, e2.y, e2.x], [9, 9, 12, 9]);
+  assert.ok(h.b.remainingDistance(e1) < h.b.remainingDistance(e2), 'the one out of reach is the more advanced (first candidate)');
+  const u = h.unit('r_m');
+  assert.ok(h.runUntil(() => raidJumps(h).length > 0, idle + 1), 'jumped after the idle time');
+  const t1 = h.b.time;
+  assert.ok(inRange(u, e2) && !inRange(u, e1), `landed on ${u.tileR},${u.tileC} with the second enemy in range`);
+  h.run(5);
+  assert.ok(u.lastAttackAt > t1 && e2.hp < e2.s.maxHp, 'it attacks the enemy it jumped to');
+  assert.equal(raidJumps(h).length, 1, 'busy there: no further jump');
+  // its enemy gone, a reachable one elsewhere: the next jump comes the idle time after its last attack, not at once
+  h.b.dealDamage(null, e2, { amount: 1e9, type: 'true' });
+  const last = u.lastAttackAt;
+  const e3 = h.spawn('enemy_raid51', { pos: [10, 5] });
+  assert.ok(!inRange(u, e3));
+  assert.ok(h.runUntil(() => raidJumps(h).length === 2, idle + 1), 'jumped again');
+  const dt = h.b.time - last;
+  assert.ok(dt >= idle - 1e-6 && dt <= idle + 0.25 + 1e-6, `${dt.toFixed(2)} s after its last attack`);
+  assert.ok(inRange(u, e3), 'the new enemy in range');
+  checkInvariants(h.b);
+});
+
+// GitHub #49: skills.js `ready` is false for every passive skill, so a passive 突袭 member (缄默德克萨斯, 宴 …) only jumped on
+// the 10 s idle trigger; the reporter's footage of the official game shows 缄默德克萨斯 jumping within her passive's 10 s.
+// raidPoll (only there) counts a passive skill that is on as 技能就绪, and — since #109 made her skills deploy-timed
+// duration skills — a deploy-timed skill while its window runs; the landing rule (#51) still keeps it from hopping.
+test('突袭 #49: a passive skill that is on, or a deploy-timed skill while it runs (#109), counts as 技能就绪 — 缄默德克萨斯 jumps within a few seconds, then stays while her enemy is in range', () => {
+  const tex = 'chess_char_4_16_a';
+  const h = makeBattle({
+    defs: { enemies: DUMMY }, bonds: { raidShip: bond(1, 10) }, enemies: [{ key: 'enemy_addon_dummy', pos: [9, 8] }],
+    units: [{ chessId: tex, row: 12, col: 3 }], hooks: ['deploy', 'death'], autoFinish: false, timeLimit: 60,
+  });
+  h.step();
+  const u = h.unit(tex), e = h.enemy('enemy_addon_dummy');
+  assert.deepEqual([u.skill.kind, !!u.skill.spec.activateOnDeploy, u.skill.ready, u.skill.active], ['duration', true, false, true], 'her deploy-timed skill (#109): on, and the global `ready` false');
+  assert.ok(!inRange(u, e), 'nothing in her range');
+  assert.ok(h.runUntil(() => raidJumps(h).length > 0, 3), 'jumped within 3 s (no 10 s idle wait)');
+  assert.ok(h.b.time < bondBb('raidShip').no_attack_duration - 5, `at ${h.b.time.toFixed(2)} s`);
+  assert.ok(inRange(u, e), `landed (${u.tileR},${u.tileC}) with the enemy in range`);
+  h.run(8);
+  assert.equal(raidJumps(h).length, 1, 'busy there: no further jump (no hopping)');
+  checkInvariants(h.b);
+});
+
+test('突袭 #49 with #109: a deploy-timed skill counts only while its window runs — once it has ended, only the idle trigger is left', () => {
+  const tex = 'chess_char_4_16_a';
+  const idle = bondBb('raidShip').no_attack_duration;
+  const h = makeBattle({
+    defs: { enemies: DUMMY }, bonds: { raidShip: bond(1, 10) }, enemies: [{ key: 'enemy_addon_dummy', pos: [9, 8] }],
+    units: [{ chessId: tex, row: 12, col: 3 }], hooks: ['deploy', 'death'], autoFinish: false, timeLimit: 60,
+  });
+  h.step();
+  const u = h.unit(tex);
+  u.skill.end('duration'); // her window over before the first poll, as after its duration
+  assert.deepEqual([u.skill.active, u.skill.ready], [false, false], 'ended: no charge until the next deployment');
+  h.run(3);
+  assert.equal(raidJumps(h).length, 0, 'no 技能就绪 jump once the window has ended');
+  assert.ok(h.runUntil(() => raidJumps(h).length > 0, idle + 1), 'the idle trigger');
+  assert.ok(h.b.time >= idle - 1e-6, `at ${h.b.time.toFixed(2)} s`);
+  assert.ok(u.skill.active, 'the landing is a new deployment: a new window');
+  checkInvariants(h.b);
+});
+
+test('突袭 #49: non-passive members unchanged — a charged skill jumps at once, an uncharged one waits for the idle time; a passive one jumps at once', () => {
+  const idle = bondBb('raidShip').no_attack_duration;
+  const defs = {
+    chess: {
+      r_s: chessRec({ id: 'r_s', bonds: ['raidShip'], skill: { spCost: 10, initSp: 10 } }),
+      r_u: chessRec({ id: 'r_u', bonds: ['raidShip'], skill: { spCost: 100, initSp: 0, spType: 'INCREASE_WHEN_ATTACK' } }),
+      r_p: chessRec({ id: 'r_p', bonds: ['raidShip'], skill: { skillType: 'PASSIVE', spCost: 0, duration: -1, spType: 8 } }),
+    },
+    enemies: DUMMY,
+  };
+  const h = makeBattle({
+    defs, bonds: { raidShip: bond(1, 10, 3) }, enemies: [{ key: 'enemy_addon_dummy', pos: [9, 8] }, { key: 'enemy_addon_dummy', pos: [12, 9] }],
+    units: [{ chessId: 'r_s', row: 12, col: 3 }, { chessId: 'r_u', row: 11, col: 3 }, { chessId: 'r_p', row: 10, col: 3 }], hooks: ['deploy', 'death'],
+    autoFinish: false, timeLimit: 60,
+  });
+  h.step();
+  const s = h.unit('r_s'), un = h.unit('r_u'), p = h.unit('r_p');
+  assert.deepEqual([s.skill.ready, un.skill.ready, p.skill.kind, p.skill.ready], [true, false, 'passive', false]);
+  h.run(1);
+  const jumped = (u) => raidJumps(h).filter((c) => c.unit === u);
+  assert.equal(jumped(s).length, 1, 'charged: at once');
+  assert.equal(jumped(p).length, 1, 'passive: at once');
+  assert.equal(jumped(un).length, 0, 'uncharged: not yet');
+  assert.ok(h.runUntil(() => jumped(un).length > 0, idle + 1), 'uncharged: after the idle time');
+  assert.ok(h.b.time >= idle - 1e-6, `at ${h.b.time.toFixed(2)} s`);
+  checkInvariants(h.b);
+});
+
+test('不屈: knocked-out 地面干员 (melee position) redeploys (p=1 at high L); tier 2 every operator +5 SP; inactive / ranged → no', () => {
   const bb = bondBb('indomShip');
   const sk = { spCost: 50, initSp: 0 };
   const defs = { chess: { i_g: op('i_g', ['indomShip']), i_o: chessRec({ id: 'i_o', bonds: [], skill: sk }) } };
@@ -371,12 +696,21 @@ test('不屈: knocked-out ground operator redeploys (p=1 at high L); tier 2 ever
   close(o1.skill.sp, s1, 'tier 1: no SP');
   checkInvariants(t1.b);
 
+  // 地面干员 = the melee position, whatever the tile: up on a 高台 it still counts; a ranged operator on a melee tile never
   const hi = makeBattle({ defs, units: [{ chessId: 'i_g', row: 10, col: 2 }], bonds: { indomShip: bond(1, 300) } });
   hi.step(2);
   const hg = hi.unit('i_g');
   assert.equal(hg.ground, false, 'elevated tile');
   hi.b.dealDamage(null, hg, { amount: 1e9, type: 'true' });
-  assert.equal(hg.alive, false, 'not a ground operator');
+  assert.ok(hg.alive && hg.deployed, 'a melee operator on a 高台 is a 地面干员');
+  const rd = { chess: { i_r: ranged('i_r', ['indomShip']), i_o: chessRec({ id: 'i_o', bonds: [], skill: sk }) } };
+  const lo = makeBattle({ defs: rd, units: [{ chessId: 'i_r', row: 10, col: 4 }, { chessId: 'i_o', row: 12, col: 6 }], bonds: { indomShip: bond(2, 300, 3) } });
+  lo.step(2);
+  const lr = lo.unit('i_r'), lsp = lo.unit('i_o').skill.sp;
+  assert.equal(lr.ground, true, 'a melee (ground) tile');
+  lo.b.dealDamage(null, lr, { amount: 1e9, type: 'true' });
+  assert.equal(lr.alive, false, 'a ranged operator on a melee tile is not a 地面干员');
+  close(lo.unit('i_o').skill.sp, lsp, 'no tier 2 SP either');
 });
 
 test('协防干员: all operators take ×0.8 phys/arts; members deal ×1.2 (elite ×1.4)', () => {
@@ -560,17 +894,19 @@ test('远见 meta: a milestone crossed after the prep phase ended (助力 +2 at 
   m.dispose();
 });
 
-test('远见 meta: the discounts never push a price below 1', () => {
+test('远见 meta: 「购买价格永久-1资金」 has no floor but 0 — a price of 1 becomes 0 (owner\'s decision 2026-10-04)', () => {
   const { m, ps } = metaMatch(addonRegistry(), 94);
   ps.counters['bondaddon:visi:disc'] = 2;                 // 150 layers reached: every chess −1
   const at = (basePrice) => ps.priceOf({ kind: 'chess', id: 'chess_char_1_09_a', basePrice });
   assert.equal(at(3), 2);
   assert.equal(at(2), 1);
-  assert.equal(at(1), 1, 'a price of 1 (至简 / 休露丝) stays 1');
+  assert.equal(at(1), 0, 'a price of 1 (至简 / 休露丝) becomes 0');
+  assert.equal(at(0), 0, 'never negative');
   ps.counters['bondaddon:visi:disc'] = 1;                 // 80: 远见 chess only
   assert.equal(ps.priceOf({ kind: 'chess', id: 'chess_char_2_02_a', basePrice: 2 }), 1);
-  assert.equal(ps.priceOf({ kind: 'chess', id: 'chess_char_2_02_a', basePrice: 1 }), 1);
+  assert.equal(ps.priceOf({ kind: 'chess', id: 'chess_char_2_02_a', basePrice: 1 }), 0, '80: a 远见 operator at 1 → 0 too');
   assert.equal(at(2), 2, 'non-远见 chess unchanged at 80');
+  assert.equal(at(1), 1);
   m.dispose();
 });
 

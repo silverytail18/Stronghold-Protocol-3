@@ -1,4 +1,3 @@
-import {snapshotRecordContent} from '../../shared/record-content.js';
 // server/match/results.js — settlement (RESULT): per-player results, titles (评语), trophies and rewards
 // (DESIGN §6.1, research 06 §10.4–§10.6, data/config.json titles/titleRule/trophies/rewards).
 //
@@ -62,7 +61,6 @@ export function assignTitles(gd, players, victory) {
 }
 
 function trophiesFor(gd, roundsPassed, hiddenCleared) {
-  roundsPassed = baselineRewardRound(gd, roundsPassed);
   const tr = gd.config.trophies;
   if (!tr || gd.isSolo) return 0;
   let n = 0;
@@ -76,7 +74,6 @@ function trophiesFor(gd, roundsPassed, hiddenCleared) {
 }
 
 function rewardFor(gd, roundsPassed) {
-  roundsPassed = baselineRewardRound(gd, roundsPassed);
   const rw = gd.config.rewards;
   if (!rw || !Array.isArray(rw.baseByRoundsPassed)) return 0;
   const row = rw.baseByRoundsPassed.filter((r) => r.round <= roundsPassed).pop();
@@ -86,41 +83,43 @@ function rewardFor(gd, roundsPassed) {
   return Math.round(row.count * df * mf);
 }
 
-// Added ordinary rounds do not create new reward tables or pay the boss reward early.
-export function baselineRewardRound(gd, roundsPassed) {
-  const ext = gd.mode.testRoundExtension;
-  if (!ext) return roundsPassed;
-  return roundsPassed < gd.bossRound ? Math.min(roundsPassed, ext.baselineBossRound - 1)
-    : ext.baselineBossRound + (roundsPassed > gd.bossRound ? 1 : 0);
-}
-
 /**
  * @param {import('./Match.js').Match} m
  * @param {{ victory: boolean, hiddenReached: boolean, hiddenCleared: boolean, reason: string }} outcome
  */
+export function baselineRewardRound(gd,roundsPassed){const ext=gd.mode.testRoundExtension;if(!ext)return roundsPassed;return roundsPassed<gd.bossRound?Math.min(roundsPassed,ext.baselineBossRound-1):ext.baselineBossRound+(roundsPassed>gd.bossRound?1:0);}
 export function buildResult(m, outcome) {
   const gd = m.gd;
   const { victory, hiddenReached, hiddenCleared } = outcome;
   const players = [...m.players.values()].sort((a, b) => a.seat - b.seat);
-  const titles = assignTitles(gd, players, victory);
+  const titles = assignTitles(gd, players.filter(ps => !Number.isInteger(ps.aiTakeoverRound)), victory);
   const teamRounds = victory ? gd.bossRound + (hiddenCleared ? 1 : 0) : Math.max(0, Math.min(m.round, gd.bossRound) - 1);
   const rows = players.map((ps) => {
     const roundsPassed = !ps.alive && ps.eliminatedRound != null ? Math.max(0, ps.eliminatedRound - 1) : teamRounds;
-    const lineup = boardOrder(ps.board).filter((x) => x.piece.kind === 'chess').map(({ r, c, piece }) => ({
-      id: piece.id, golden: gd.isGolden(piece.id), tier: gd.tierOf(piece.id), row: r, col: c, items: (piece.items || []).map((i) => i.id),
-    }));
+    const lineup = boardOrder(ps.board).filter((x) => x.piece.kind === 'chess').map(({ r, c, piece }) => {
+      const e = { id: piece.id, golden: gd.isGolden(piece.id), tier: gd.tierOf(piece.id), row: r, col: c, items: (piece.items || []).map((i) => i.id) };
+      // 0.2.0 自选编队: a DIY slot's pick — the result screen names and draws the operator (shared/diy.js diyRecord)
+      const pick = typeof ps.diyPickOf === 'function' ? ps.diyPickOf(piece.id) : null;
+      if (pick) e.diy = { charId: pick.charId, skillIndex: pick.skillIndex, uniEquipId: pick.uniEquipId };
+      // 0.2.0 补位: a chess this player fielded as its stand-in — the result screen draws the stand-in (the owner's recall
+      // of the official mode, 2026-10-06); `standInFor` = the replaced operator's charId, like the sim's UnitInfo
+      const si = typeof ps.fieldsStandIn === 'function' && ps.fieldsStandIn(piece.id) ? gd.standIn(piece.id) : null;
+      if (si && si.standInFor) e.standInFor = si.standInFor;
+      return e;
+    });
     // the team's clear counts for the players still in; an eliminated / departed teammate did not pass the boss round
     const cleared = victory && ps.alive;
     return {
       playerId: ps.playerId,
       seat: ps.seat,
       name: ps.name,
-      ...(ps.rank ? { rank: ps.rank } : {}),
       isBot: ps.isBot,
+      ...(Number.isInteger(ps.aiTakeoverRound) ? { aiTakeoverRound: ps.aiTakeoverRound } : {}),
       left: ps.left,
       alive: ps.alive,
       victory: cleared,
       roundsPassed,
+      creditedKills: ps.creditedKills,
       eliminatedRound: ps.eliminatedRound,
       lp: Math.max(0, ps.lp),
       bandId: ps.bandId,
@@ -132,30 +131,44 @@ export function buildResult(m, outcome) {
         bossDamage: Math.round(ps.stats.bossDamage), activatedLayers: ps.activatedLayers(), lpLost: ps.stats.lpLost,
         perfectRounds: ps.stats.perfectRounds,
       },
-      title: titles.get(ps.playerId) ?? null,
-      trophies: trophiesFor(gd, roundsPassed, cleared && hiddenCleared),
-      reward: rewardFor(gd, roundsPassed),
+      ...(m.competitiveStats?{alive:ps.alive&&!ps.left,competitiveStats:ps.competitiveExit||{survivalRounds:ps.stats.survivalRounds,rankedDamage:ps.stats.rankedDamage,bossDamage:ps.stats.bossDamage,rankedPerfectRounds:ps.stats.rankedPerfectRounds,activatedLayers:ps.activatedLayers(),assists:ps.stats.assists,valid:ps.stats.rankedValid}}:{}),
+      title: m.test === true || Number.isInteger(ps.aiTakeoverRound) ? null : titles.get(ps.playerId) ?? null,
+      trophies: m.test === true || Number.isInteger(ps.aiTakeoverRound) ? 0 : trophiesFor(gd, baselineRewardRound(gd,roundsPassed), cleared && hiddenCleared),
+      reward: m.test === true || Number.isInteger(ps.aiTakeoverRound) ? 0 : rewardFor(gd, baselineRewardRound(gd,roundsPassed)),
     };
   });
-  return {
+  const out = {
     t: 'm.result',
+    ...(m.competitiveStats?{competitiveStatsVersion:1}:{}),
     victory,
     roundsPassed: teamRounds,
-    ...(gd.mode.testRoundExtension ? {lastRound: gd.lastRound} : {}),
+    ...(gd.mode.testRoundExtension?{lastRound:gd.lastRound}:{}),
     hiddenReached,
     hiddenCleared,
     reason: outcome.reason,
     // the merged Final Assault pool (null before round 14); players[].lp are the alive players' shares of it
     teamLp: m.teamLp != null ? Math.max(0, Math.round(m.teamLp)) : null,
     modeId: m.modeId,
+    ...(gd.cyclopsBalanceInfo ? { cyclopsBalance: gd.cyclopsBalanceInfo } : {}),
+    ...(m.variant ? { variant: m.variant } : {}),
     difficulty: m.difficulty,
     stageId: m.stageId,
+    // a non-default official version's match (DESIGN §35.23): its registry id — the page records and draws the settlement
+    // with that version even when it never saw the room (the lobby's replay after a kick / grace timeout); absent for
+    // the default, so its result stays byte-identical
+    ...(m.version ? { version: m.version } : {}),
     bossId: m.bossId,
     hiddenBossId: m.hiddenBossId,
     seed: m.seed,
     durationMs: Math.max(0, m.sched.now() - m.startedAt),
     players: rows,
-    content: snapshotRecordContent(m.data,rows,m.testRules),
-    ...(m.testRules?{testRules:structuredClone(m.testRules)}:{}),
   };
+  // A test match is marked on the settlement the replay stores. The keys are absent otherwise, so a normal
+  // result stays byte-identical. Test results award nothing and are never persisted by the client.
+  if (m.test === true) {
+    out.test = true;
+    out.testActions = m.testActions | 0;
+    if (m.testReplayable === false) out.testReplayable = false;
+  }
+  return out;
 }

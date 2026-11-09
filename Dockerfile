@@ -9,14 +9,11 @@
 #        docker build -t stronghold-protocol .
 #        docker run -d --name stronghold -p 3000:3000 --restart unless-stopped \
 #          -v "$PWD/public/assets:/app/public/assets:ro" stronghold-protocol
-#      (public/fonts, data/assets.json and data/local-assets.json are copied from the build context when present)
+#      (public/fonts, data/assets.json, data/local-assets.json and data/local-fx.json are copied from the build context when present)
 # Without any art the game still runs with placeholder visuals.
 #
 # Run:  docker run -d --name stronghold -p 3000:3000 --restart unless-stopped stronghold-protocol
-# Auth is enabled by default: create accounts on the host and mount /app/config/auth-users.json read-only.
-# See docs/AUTH.md for HTTPS, account-file permissions and complete docker run / Compose commands.
-# Env: PORT, HOST, SP_AUTH, SP_AUTH_USERS_FILE, SP_AUTH_COOKIE_SECURE, SP_AUTH_SESSION_HOURS,
-#      SP_COMBAT (client|server), SP_VERIFY (off|sample|all), TRUST_PROXY (auto|1|0), DEBUG
+# Env:  PORT (3000), HOST (0.0.0.0), SP_COMBAT (client|server), SP_VERIFY (off|sample|all), TRUST_PROXY (auto|1|0), DEBUG
 
 ARG NODE_IMAGE=node:22-alpine
 
@@ -35,18 +32,27 @@ COPY server ./server
 COPY tools ./tools
 COPY data ./data
 COPY public ./public
+COPY plugins ./plugin-resources
+COPY schemas ./schemas
+COPY test/helpers/battleHarness.js ./test/helpers/battleHarness.js
+COPY docs/PLUGIN*.md docs/plugin-catalog.example.json ./docs/
 COPY docs/research ./docs/research
 RUN node tools/vendor.mjs \
  && if [ "$FETCH_ASSETS" = "1" ]; then \
       node tools/fetch-assets.mjs || echo "WARNING: art download incomplete; the image falls back to placeholder art"; \
     fi \
  && rm -rf .cache
+# Maintainer 2026-10-23 (§35.66): this image is a release. Drop the external-AI / LLM files and write
+# server/release-without-llm so the server ignores those settings. The #673 bots stay. Do not import
+# llmGate.js here (it would load the host before the files are gone) or tools/package.mjs.
+RUN node --input-type=module -e "import { omitLlmFromRelease } from './server/match/llmRelease.js'; omitLlmFromRelease('/app');"
 
 # ---- 3. runtime ---------------------------------------------------------------------------------------
 FROM ${NODE_IMAGE}
 ENV NODE_ENV=production \
     PORT=3000 \
-    HOST=0.0.0.0
+    HOST=0.0.0.0 \
+    SP_PLUGIN_RESOURCES=/app/plugin-resources
 WORKDIR /app
 COPY --from=deps /app/package.json ./package.json
 COPY --from=deps /app/node_modules ./node_modules
@@ -54,11 +60,17 @@ COPY --from=build /app/shared ./shared
 COPY --from=build /app/server ./server
 COPY --from=build /app/data ./data
 COPY --from=build /app/public ./public
+# the Spine and atlas parsers the plugin packer and the plugin studio use (server/plugins/pack.js, server/studio/)
+COPY --from=build /app/tools/assets ./tools/assets
+COPY --from=build /app/tools/plugin.mjs ./tools/plugin.mjs
+COPY --from=build /app/test/helpers/battleHarness.js ./test/helpers/battleHarness.js
+COPY --from=build /app/schemas ./schemas
+COPY --from=build /app/docs/PLUGIN*.md /app/docs/plugin-catalog.example.json ./docs/
+# Root-owned templates and author guides remain visible when /app/plugins is a bind mount or named volume.
+COPY --from=build /app/plugin-resources ./plugin-resources
+RUN mkdir -p /app/plugins && chown node:node /app/plugins
 # research tables: read by server/sim/nodeData.js as a fallback
 COPY --from=build /app/docs/research ./docs/research
-# Offline account administration is also available in the image.
-COPY tools/auth-user.mjs ./tools/auth-user.mjs
-RUN mkdir /app/config && chown node:node /app/config
 
 USER node
 EXPOSE 3000

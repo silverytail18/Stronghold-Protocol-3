@@ -4,19 +4,27 @@
 // unknown ids. Tunables come from data/config.json with the documented defaults (research 00-INDEX §2–§8) when a
 // key is missing, so a partial data set (tests, data being regenerated) still yields a working match.
 //
-// No custom balance (DESIGN §14 corrections, research 08 §6): enemy numbers are the official ones — the PRTS
-// per-round enemyScale table of data/config.json, the leader pool = bloodPoint. data/tuning.json only overrides result
-// titles:
+// Vanilla balance (DESIGN §14 corrections, research 08 §6): enemy numbers are the official ones — the PRTS
+// per-round enemyScale table of data/config.json, the leader pool = bloodPoint per player alive at the fight's start
+// (bossPoolShareOf). data/tuning.json only overrides result titles:
 //   titles[titleId]                                                { stat?, rule? } merged over config.titles
 // (the former enemyHpMul / enemyAtkMul / enemySpeedMul / bossHpMul / flyPlaceholders knobs were removed; a tuning file
 // that still carries them is ignored).
 
 import { getConfig, getMode } from '../data.js';
 import { isShopItem } from '../sim/simdata.js';
+import { mergeData } from '../../shared/plugins/dataUtils.js';
+import { standInRecord } from '../../shared/standIn.js';
+import { snapshotCyclopsBalance, cyclopsScale } from './cyclopsBalance.js';
+import { MAX_OFFER_SLOTS } from './player/common.js';
+
+// Cyclops alone owns a frozen, versioned balance profile; it never rewrites vanilla tables.
 
 const own = (map, id) => (map && typeof map === 'object' && typeof id === 'string' && Object.hasOwn(map, id) && map[id] && typeof map[id] === 'object' ? map[id] : null);
 const numOr = (v, d) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
 const posIntOr = (v, d) => (Number.isInteger(v) && v > 0 ? v : d);
+const CYCLOPS_BANNED_ITEMS = new Set(['chess_item_1_03_e', 'chess_item_2_05_e', 'chess_item_2_07_e', 'chess_item_3_12_e']);
+const CYCLOPS_DIFFS = new Set(['FUNNY', 'NORMAL', 'HARD', 'ABYSS']);
 
 export const DEFAULTS = Object.freeze({
   income: [0, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 12, 12, 12, 12, 12],
@@ -54,6 +62,34 @@ export const DEFAULTS = Object.freeze({
 /** Game seconds per real second of a battle (forced 2×): combat limits in data are real seconds (combatTimeLimit). */
 export const COMBAT_TIME_SCALE = 2;
 
+/**
+ * Multiplier of bloodPoint[difficulty] for the shared leader pool (DESIGN §20.10, §25.13.4), from config bossHpScale —
+ * each key from the mode's entry first, then the global one; the defaults are the current rule:
+ *   solo   `solo` (1: the table value — one player's share);
+ *   co-op  `perPlayer` true (the owner's decision of 2026-10-06, adopting PR #209 by @qingjingshenghuo): `coop` (1) × the
+ *          players alive when the fight starts — bots and AI 托管 seats count, eliminated and departed seats do not —
+ *          at most `aliveFull` (4); a count left out means a full team;
+ *          `perPlayer` false: the fixed pool of 0.1.x (「保持固定血量」, restorable with `solo` 0.25): `coop` whatever the
+ *          count, × min(alive, aliveFull) / aliveFull with `aliveScaling`.
+ * @param {object|null|undefined} modeScale config.modes[modeId].bossHpScale
+ * @param {object|null|undefined} cfgScale config.bossHpScale
+ * @param {boolean} isSolo
+ * @param {number} [aliveCount] alive players at the Final Assault / Hidden Core start (co-op)
+ * @returns {number}
+ */
+export function bossPoolShareOf(modeScale, cfgScale, isSolo, aliveCount) {
+  const ms = modeScale && typeof modeScale === 'object' ? modeScale : {};
+  const cs = cfgScale && typeof cfgScale === 'object' ? cfgScale : {};
+  const pick = (k, d) => (Number.isFinite(ms[k]) && ms[k] > 0 ? ms[k] : Number.isFinite(cs[k]) && cs[k] > 0 ? cs[k] : d);
+  const flag = (k, d) => (typeof ms[k] === 'boolean' ? ms[k] : typeof cs[k] === 'boolean' ? cs[k] : d);
+  if (isSolo) return pick('solo', 1);
+  const full = Math.max(1, Math.floor(pick('aliveFull', 4)));
+  const n = Number(aliveCount);
+  const alive = Number.isFinite(n) && n >= 1 ? Math.min(full, Math.floor(n)) : full;
+  if (flag('perPlayer', true)) return pick('coop', 1) * alive;
+  return pick('coop', 1) * (flag('aliveScaling', false) ? alive / full : 1);
+}
+
 /** Strip the _a/_b suffix of an item id (the registry key of an item family). */
 export const itemKey = (id) => (typeof id === 'string' ? id.replace(/_[ab]$/, '') : '');
 
@@ -67,10 +103,21 @@ export class GameData {
     this.config = getConfig(this.raw) || {};
     this.modeId = modeId;
     this.mode = getMode(modeId, this.raw) || {};
+    this.isCyclops = modeId === 'mode_cyclops';
+    this._cyclopsDifficulty = null;
+    // Per-match immutable profile: hot reloads and upstream tables cannot change an existing match.
+    this.cyclopsBalance = this.isCyclops ? snapshotCyclopsBalance(this.raw['cyclops-balance']) : null;
+    // Mode-level globals inherit field by field; the vanilla mode never changes its config object.
+    const overrides = Object.fromEntries(Object.keys(this.config).filter(k => k !== 'modes' && Object.hasOwn(this.mode, k)).map(k => [k, this.mode[k]]));
+    if (Object.keys(overrides).length) this.config = mergeData(this.config, overrides);
     this.economy = this.config.economy && typeof this.config.economy === 'object' ? this.config.economy : {};
     const chess = this.raw.chess && typeof this.raw.chess === 'object' ? this.raw.chess : {};
     this._chess = chess;
     this._items = this.raw.items && typeof this.raw.items === 'object' ? this.raw.items : {};
+    // Fixed operator gifts are unlimited outputs, but every produced normal/advanced item still occupies 1/2 copies
+    // (card-pool experiment BV1eLXXBqEgF, maintainer-confirmed 2026-10-11). Random subset gifts are not exempt.
+    this._fixedGiftItems = new Set(Object.values(this.raw.garrisons || {})
+      .filter(g => g.effectKey === 'SERVER_GAIN_EQUIP').map(g => g.bbStr?.chess).filter(id => this._items[id]));
     this._bonds = this.raw.bonds && typeof this.raw.bonds === 'object' ? this.raw.bonds : {};
     /** visible, shop-eligible base (normal) chess ids */
     this.visibleChess = Object.keys(chess).filter((id) => {
@@ -79,12 +126,13 @@ export class GameData {
     }).sort();
     /**
      * Shop item ids by tier (sim/simdata.js isShopItem: normal EQUIP, not hidden, not effect-only — the special
-     * 维式重锤 and 突变细胞 are never sold). Every "shop item" draw uses it: the shop item slot (pool.js), the 道具补给 /
-     * 机密商店 cards (choices.js) and the shop-eligible item pools (Match.rollItemId).
+     * 维式重锤 and 突变细胞 are never sold). Every shop-item draw uses it: the shop item slot (pool.js), the 道具补给 /
+     * 机密商店 cards (choices.js) and the shop-eligible item pools (Match.rollItemId). A pool's `also` list
+     * (pool_equip_kathe: 突变细胞, #631) is appended there and is not in this table, so the shop slot still never sells it.
      */
     this.shopItemsByTier = {};
     for (const [id, it] of Object.entries(this._items)) {
-      if (!isShopItem(it)) continue;
+      if (!isShopItem(it) || (this.isCyclops && CYCLOPS_BANNED_ITEMS.has(itemKey(id)))) continue;
       (this.shopItemsByTier[it.tier] ||= []).push(id);
     }
     for (const k of Object.keys(this.shopItemsByTier)) this.shopItemsByTier[k].sort();
@@ -95,6 +143,8 @@ export class GameData {
     this.inactiveEnemies = new Set(Array.isArray(this.mode.inactiveEnemyKeys) ? this.mode.inactiveEnemyKeys : []);
     /** data/tuning.json (titles only, see the header) */
     this.tuning = this.raw.tuning && typeof this.raw.tuning === 'object' ? this.raw.tuning : {};
+    /** standIn memo: chess id → composed 补位 record | null */
+    this._standIns = new Map();
   }
 
   /**
@@ -107,14 +157,12 @@ export class GameData {
   }
 
   /**
-   * Official shared leader HP pool (DESIGN §20.10): ONE pool for every boss field of the match (official tip "最终攻势中，
+   * Shared leader HP pool (DESIGN §20.10, §25.13.4): ONE pool for every boss field of the match (official tip "最终攻势中，
    * 所有人将一起对敌方领袖造成伤害"; the mirrored copies of a pair field share it — notice 5114 "两侧的敌方领袖共享生命值
-   * （敌方领袖的总生命值不变）", which is about those copies, not about the number of players). Co-op = bloodPoint
-   * [difficulty]; with config bossHpScale.aliveScaling (default false) × alive / aliveFull (4) — 巴哈姆特 12294 "聯機隊友
-   * (撤退/死掉)變少，最後boss血條也會變少" is one community note without a proportion, kept off until confirmed (it would
-   * shorten fights after eliminations, the opposite of the playtest report); `aliveCount` omitted ⇒ a full team. Solo = bloodPoint ×
-   * bossHpScale.solo (0.25 = one player of four, [ASSUMED]). Leaders are never scaled by enemyScale ("领袖单位于服务器的
-   * 生命值加成不受上述加成影响").
+   * （敌方领袖的总生命值不变）", which is about those copies). Size = bloodPoint[difficulty] × bossPoolShare: the table value
+   * per player alive when the fight starts (the owner's decision of 2026-10-06, PR #209; it replaces the fixed pool of
+   * 「保持固定血量」, which config bossHpScale restores — bossPoolShareOf); `aliveCount` omitted ⇒ a full team. Leaders are
+   * never scaled by enemyScale ("领袖单位于服务器的生命值加成不受上述加成影响").
    * @param {string} bossId
    * @param {number} [aliveCount] alive players at the Final Assault / Hidden Core start (co-op)
    * @returns {number}
@@ -125,35 +173,18 @@ export class GameData {
     let base = boss && boss.bloodPoint && Number.isFinite(boss.bloodPoint[diff]) ? boss.bloodPoint[diff] : null;
     if (base == null && boss && boss.bloodPoint) base = Object.values(boss.bloodPoint).find((v) => Number.isFinite(v)) ?? null;
     if (base == null) base = 500000;
-    const baseline = Math.max(1, Math.round(base * this.bossPoolShare(aliveCount)));
-    return Math.max(1, Math.round(baseline * this.testBossHpMultiplierFor(bossId)));
-  }
-
-  get testBossHpMultiplier() {
-    const v = this.mode.bossHpScale?.testMultiplier;
-    return Number.isFinite(v) && v > 0 ? v : 1;
-  }
-  testBossHpMultiplierFor(bossId) {
-    const s=this.mode.bossHpScale;
-    const v=this.boss(bossId)?.hidden?s?.testHiddenMultiplier:s?.testMainMultiplier;
-    return Number.isFinite(v)&&v>0?v:this.testBossHpMultiplier;
+    const baseline=Math.max(1,Math.round(base*this.bossPoolShare(aliveCount)*(this.cyclopsBalance?.profile.difficulties[this.difficulty]?.bossPoolMul ?? 1)));
+    return Math.max(1,Math.round(baseline*this.testBossHpMultiplierFor(bossId)));
   }
 
   /**
-   * Multiplier of bloodPoint for the leader pool (see bossPoolHp): solo = bossHpScale.solo (0.25); co-op = coop (1) ×
-   * min(alive, aliveFull) / aliveFull when bossHpScale.aliveScaling (mode entry first, then the global one).
+   * Multiplier of bloodPoint for the leader pool (see bossPoolHp; the rule and the config keys: bossPoolShareOf).
    * @param {number} [aliveCount]
    */
+  get testBossHpMultiplier(){const v=this.mode.bossHpScale?.testMultiplier;return Number.isFinite(v)&&v>0?v:1;}
+  testBossHpMultiplierFor(bossId){const scale=this.mode.bossHpScale,value=this.boss(bossId)?.hidden?scale?.testHiddenMultiplier:scale?.testMainMultiplier;return Number.isFinite(value)&&value>0?value:this.testBossHpMultiplier;}
   bossPoolShare(aliveCount) {
-    const ms = this.mode.bossHpScale && typeof this.mode.bossHpScale === 'object' ? this.mode.bossHpScale : {};
-    const cs = this.config.bossHpScale && typeof this.config.bossHpScale === 'object' ? this.config.bossHpScale : {};
-    const pick = (k, d) => (Number.isFinite(ms[k]) && ms[k] > 0 ? ms[k] : Number.isFinite(cs[k]) && cs[k] > 0 ? cs[k] : d);
-    if (this.isSolo) return pick('solo', 0.25);
-    const scaling = typeof ms.aliveScaling === 'boolean' ? ms.aliveScaling : cs.aliveScaling === true;
-    const full = Math.max(1, Math.floor(pick('aliveFull', 4)));
-    const n = Number(aliveCount);
-    const alive = scaling && Number.isFinite(n) && n >= 1 ? Math.min(full, Math.floor(n)) : full;
-    return pick('coop', 1) * (alive / full);
+    return bossPoolShareOf(this.mode.bossHpScale, this.config.bossHpScale, this.isSolo, aliveCount);
   }
 
   /** config.titles with the tuning overrides (stat / rule per title id) merged in. */
@@ -185,6 +216,26 @@ export class GameData {
   token(id) { return own(this.raw.tokens, id); }
   get choices() { return this.raw.choices && typeof this.raw.choices === 'object' ? this.raw.choices : {}; }
   get factions() { return this.raw.factions && typeof this.raw.factions === 'object' ? this.raw.factions : {}; }
+
+  /**
+   * The 补位 record of chess `id` (normal or elite; DATA.md §18): shared/standIn.js standInRecord over data/backups.json
+   * — the chess's identity (ids, tier, bonds, 特质, price, merge) with its official stand-in's body (stats, range, skills
+   * with the backup skill as the default, talents, module, art, `standInFor`). Null for a PRESET / 自选 chess, an unknown
+   * id or data without backups.json. Memoized (frozen records).
+   * @param {string} id
+   * @returns {object|null}
+   */
+  standIn(id) {
+    if (typeof id !== 'string') return null;
+    if (this._standIns.has(id)) return this._standIns.get(id);
+    const c = this.chess(id);
+    const backups = this.raw.backups && typeof this.raw.backups === 'object' ? this.raw.backups : null;
+    let rec;
+    try { rec = c && backups ? standInRecord(c, backups) : null; } catch { rec = null; }
+    if (rec) Object.freeze(rec);
+    this._standIns.set(id, rec);
+    return rec;
+  }
 
   /** Normal (base) chess id of a chess id (golden → base). */
   baseIdOf(id) {
@@ -219,6 +270,8 @@ export class GameData {
 
   chessPrice(id) {
     const c = this.chess(id);
+    const override = this.mode.economy?.chessPrice?.[this.tierOf(id)]?.[c?.isGolden ? 'golden' : 'normal'];
+    if (Number.isFinite(override) && override >= 0) return override;
     if (c && Number.isFinite(c.price) && c.price >= 0) return c.price;
     const tier = this.tierOf(id);
     const row = this.economy.chessPrice && this.economy.chessPrice[tier];
@@ -229,6 +282,8 @@ export class GameData {
 
   sellPrice(id) {
     const c = this.chess(id);
+    const override = this.mode.economy?.chessSell?.[this.tierOf(id)]?.[c?.isGolden ? 'golden' : 'normal'];
+    if (Number.isFinite(override) && override >= 0) return override;
     if (c && Number.isFinite(c.sellPrice) && c.sellPrice >= 0) return c.sellPrice;
     const tier = this.tierOf(id);
     const row = this.economy.chessSell && this.economy.chessSell[tier];
@@ -249,29 +304,53 @@ export class GameData {
   get maxArtsPerRound() { return posIntOr(this.economy.maxArtsPerRound, DEFAULTS.maxArtsPerRound); }
   get goldenCopies() { return posIntOr(this.economy.goldenCopies, DEFAULTS.goldenCopies); }
   get itemMergeCount() { return posIntOr(this.economy.itemMergeCount, DEFAULTS.itemMergeCount); }
-  get leftoverKeptBands() { return Array.isArray(this.economy.leftoverFundsKeptByBands) ? this.economy.leftoverFundsKeptByBands : DEFAULTS.leftoverFundsKeptByBands; }
+  get leftoverKeptBands() {
+    const ids = Array.isArray(this.economy.leftoverFundsKeptByBands) ? this.economy.leftoverFundsKeptByBands : DEFAULTS.leftoverFundsKeptByBands;
+    const extra = Object.values(this.raw.bands || {}).filter(b => b.effectRef && ids.includes(b.effectRef)).map(b => b.bandId);
+    return extra.length ? [...ids, ...extra] : ids;
+  }
   get defaultBandId() { return typeof this.economy.defaultBandId === 'string' ? this.economy.defaultBandId : DEFAULTS.defaultBandId; }
   get defaultStartLp() { return posIntOr(this.economy.defaultStartLp, DEFAULTS.defaultStartLp); }
 
   rewardOffer() {
     const r = this.economy.rewardOffer && typeof this.economy.rewardOffer === 'object' ? this.economy.rewardOffer : {};
     return {
-      count: posIntOr(r.count, DEFAULTS.rewardOffer.count),
+      // (an offer shows at most MAX_OFFER_SLOTS: a larger count — a data plugin's — only rolled for slots nobody sees)
+      count: Math.min(MAX_OFFER_SLOTS, posIntOr(r.count, DEFAULTS.rewardOffer.count)),
       tierOffset: Number.isInteger(r.tierOffset) ? r.tierOffset : DEFAULTS.rewardOffer.tierOffset,
       maxTier: posIntOr(r.maxTier, DEFAULTS.rewardOffer.maxTier),
       price: Math.max(0, numOr(r.price, 0)),
     };
   }
 
-  /** Copies of a base chess in the shared pool. */
+  /**
+   * Copies of a base chess in the shared pool — and, for a DIY slot, of a slotted 自选 piece in its player's own stock
+   * (player/diy.js buildDiyStock).
+   */
   poolCopies(baseId) {
     const ov = this.economy.poolCopiesOverrides;
-    if (ov && typeof ov === 'object' && Number.isInteger(ov[baseId]) && ov[baseId] >= 0) return ov[baseId];
     const tier = this.tierOf(baseId);
     const pc = this.economy.poolCopies;
-    const v = pc && typeof pc === 'object' ? pc[tier] : undefined;
-    return Number.isInteger(v) && v >= 0 ? v : (DEFAULTS.poolCopies[tier] ?? 10);
+    const v = ov && Number.isInteger(ov[baseId]) && ov[baseId] >= 0 ? ov[baseId] : pc?.[tier];
+    const base = Number.isInteger(v) && v >= 0 ? v : (DEFAULTS.poolCopies[tier] ?? 10);
+    // Co-op doubles the single-player counts: the measured shared pool (shared by the whole team, independent of team
+    // size) and each player's private 自选 stock alike — the maintainer's decision of 2026-10-15 (GitHub #650): with
+    // the shared pool doubled and the 自选 stock not, a 自选 operator was diluted in the copy-weighted rolls.
+    const multiplier = this.isSolo ? 1 : posIntOr(this.economy.coopPoolMultiplier, 1);
+    const bonus=this.raw.config?.productContent?.ids?.length&&!this.isSolo?this.economy.productCoopPoolBonuses?.[baseId]||0:0;
+    return base * multiplier + bonus;
   }
+
+  /** Normal equipment copies in the shared pool; effect-only items have no shop stock limit. */
+  itemPoolCopies(id) {
+    const base = this.baseIdOf(id), rec = this.item(base);
+    if (!rec || !isShopItem(rec)) return null;
+    const count = this.economy.itemPoolCopiesOverrides?.[base] ?? this.economy.itemPoolCopies?.[rec.tier];
+    return Number.isInteger(count) && count >= 0 ? count : null;
+  }
+
+  /** Whether a fixed trait gift may be produced beyond stock (including the advanced version of that item). */
+  isUnlimitedGiftItem(id) { return this._fixedGiftItems.has(this.baseIdOf(id)); }
 
   /** Copies needed to merge (0 = never merges: golden chess). */
   mergeCount(id) {
@@ -286,7 +365,14 @@ export class GameData {
   // ---- mode -----------------------------------------------------------------------------------------
 
   get isSolo() { return this.mode.type === 'SINGLE' || /^mode_single_/.test(this.modeId || ''); }
-  get difficulty() { return this.mode.difficulty || (this.modeId ? String(this.modeId).split('_').pop().toUpperCase() : 'NORMAL'); }
+  get difficulty() { return this.modeId === 'mode_cyclops' ? this._cyclopsDifficulty || this.mode.difficulty || 'NORMAL' : this.mode.difficulty || (this.modeId ? String(this.modeId).split('_').pop().toUpperCase() : 'NORMAL'); }
+  setCyclopsDifficulty(difficulty) {
+    this.isCyclops = true;
+    this._cyclopsDifficulty = CYCLOPS_DIFFS.has(String(difficulty || '').toUpperCase()) ? String(difficulty).toUpperCase() : 'NORMAL';
+    this._cyclopsDifficultyMode = getMode(`mode_multi_${this._cyclopsDifficulty.toLowerCase()}`, this.raw);
+    this._shopItemsBuilt = false;
+    this._shopItemsByTier = null;
+  }
   get lastRound() {
     if (Number.isInteger(this.mode.lastRound) && this.mode.lastRound > 0) return this.mode.lastRound;
     return this.modeId === 'mode_single_funny' ? 9 : 14;
@@ -368,18 +454,38 @@ export class GameData {
     return typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : null;
   }
 
-  /** Official enemy multipliers of round r (config enemyScale: the PRTS table + 终极 speed ×1.15 from R3). */
+  /**
+   * Official enemy multipliers of round r (config enemyScale: the PRTS table + 终极 speed ×1.15 from R3). `supplyHpMul`
+   * (only when ≠ 1: co-op 终极 R5–R15) = the share of hpMul from 补给线 / 补给线II (config `supplyHp`), effects whose
+   * `enemy_exclude` leaves out the 14 器物 hit-count keys — they take hpMul / supplyHpMul (archetypes.js `times`).
+   */
   baseEnemyScale(r) {
-    const e = this.mode.enemyScale && this.mode.enemyScale[String(r)];
+    if (this.cyclopsBalance) return cyclopsScale(this.cyclopsBalance, this.difficulty, r);
+    let e = this.mode.enemyScale && this.mode.enemyScale[String(r)];
     if (!e || typeof e !== 'object') return { hpMul: 1, atkMul: 1, speedMul: 1 };
+    if (this.modeId === 'mode_cyclops' && this._cyclopsDifficultyMode && this.difficulty !== 'NORMAL' && ![4, 8, 12, 16].includes(Number(r))) {
+      const sourceRound = String(Math.max(1, Math.min(14, r - 3)));
+      const baseline = getMode('mode_multi_normal', this.raw)?.enemyScale?.[sourceRound];
+      const selected = this._cyclopsDifficultyMode.enemyScale?.[sourceRound];
+      if (baseline && selected) e = Object.fromEntries(['hp', 'atk', 'speed'].map(k => [k, (e[k] || 1) * (selected[k] || 1) / (baseline[k] || 1)]));
+    }
+    const supply = this.modeId === 'mode_cyclops' ? 1 : numOr(e.supplyHp, 1);
     return {
       hpMul: Math.max(0.01, numOr(e.hp, 1)),
       atkMul: Math.max(0, numOr(e.atk, 1)),
       speedMul: Math.max(0.01, numOr(e.speed, 1)),
+      ...(this.modeId !== 'mode_cyclops' && supply > 0 && supply !== 1 ? { supplyHpMul: supply } : {}),
     };
   }
 
-  /** Enemy multipliers of round r = the official table (baseEnemyScale; no custom multiplier). */
+  get cyclopsBalanceInfo() { return this.cyclopsBalance?.identity ?? null; }
+
+  bossPartScale(r) {
+    return this.cyclopsBalance && Number(r) === this.bossRound
+      ? cyclopsScale(this.cyclopsBalance, this.difficulty, r, true) : this.enemyScale(r);
+  }
+
+  /** Enemy multipliers: frozen Cyclops profile when present, otherwise the existing mode table. */
   enemyScale(r) {
     return this.baseEnemyScale(r);
   }
@@ -408,8 +514,8 @@ export class GameData {
    * Team LP the overtime drain has taken when a boss field clock reads `gt` game seconds: bossOvertimeDrainReal per
    * whole REAL second past bossOvertimeAfterReal (the first point at 151 real s).
    */
-  bossOvertimeDue(gt) {
-    const over = (Number(gt) || 0) / this.combatTimeScale - this.bossOvertimeAfterReal;
+  bossOvertimeDue(gt, afterReal = this.bossOvertimeAfterReal) {
+    const over = (Number(gt) || 0) / this.combatTimeScale - afterReal;
     return over >= 1 ? Math.floor(over) * this.bossOvertimeDrainReal : 0;
   }
   get dp() {
@@ -443,7 +549,6 @@ export class GameData {
     return {
       skipsPerPlayer: Number.isInteger(b.skipsPerPlayer) && b.skipsPerPlayer >= 0 ? b.skipsPerPlayer : DEFAULTS.bandDraft.skipsPerPlayer,
       timeoutBandId: typeof b.timeoutBandId === 'string' && this.band(b.timeoutBandId) ? b.timeoutBandId : this.defaultBandId,
-      confirmationOrder: b.confirmationOrder === true,
     };
   }
 

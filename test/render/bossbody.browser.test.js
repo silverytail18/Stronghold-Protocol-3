@@ -1,4 +1,3 @@
-import {appPage} from '../helpers/appPage.mjs';
 // test/render/bossbody.browser.test.js — user playtest #5 item 10 in headless Chrome through the render demo (real
 // Spine models, the official boss camera): a huge boss (假想敌：胄, data/enemies.json `hitArea` 4.95 × 2.95 up 1 — the
 // sim's hit rectangle, server/sim/body.js) is picked by a press anywhere on its hit area — the 5 × 3 tiles under its
@@ -48,7 +47,7 @@ describe('a huge boss is picked anywhere on its hit area (headless Chrome)', { s
   before(async () => {
     const puppeteer = (await import('puppeteer-core')).default;
     const { startServer } = await import('../../server/index.js');
-    srv = await startServer({ auth: false, port: 0, host: '127.0.0.1', quiet: true });
+    srv = await startServer({ port: 0, host: '127.0.0.1', quiet: true });
     browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--no-first-run'] });
     mkdirSync(OUT, { recursive: true });
   });
@@ -58,7 +57,7 @@ describe('a huge boss is picked anywhere on its hit area (headless Chrome)', { s
   });
 
   test('the 5 × 3 body picks the boss; the operator on the fence tile inside it and the tiles beside it do not', async () => {
-    const page = await appPage(await browser.newPage());
+    const page = await browser.newPage();
     const problems = [];
     page.on('console', (m) => { if (m.type() === 'error') problems.push(`console: ${m.text()}`); });
     page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));

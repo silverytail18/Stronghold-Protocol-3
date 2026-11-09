@@ -1,842 +1,286 @@
-// server/index.js — process entry & boot (DESIGN §1, §2).
+// server/index.js — process entry & boot (DESIGN §1, §2). Plain node:http + ws, no framework: startServer() below
+// wires the modules under server/http/, in this order —
 //
-//   * node:http static server:  /        → public/      (index.html for directories)
-//                                /data/   → data/        (generated game data)
-//                                /shared/ → shared/      (ESM shared with the browser)
-//                                /sim/    → server/sim/  (the battle simulation, read-only, `.js` only — client-side
-//                                                         combat, DESIGN §14; the Node-only loader nodeData.js is not served)
-//                                /data.js → a generated browser stand-in of server/data.js (the sim's content modules
-//                                           import `../../../data.js`; in the browser it serves the data injected with
-//                                           /sim/simdata.js setSimData). No other server file is ever served.
-//                                /media/bgm/act1 → public/assets/audio/bgm/act1.mp3 — the same audio files, addressed
-//                                           **without** an extension so download managers (IDM / 迅雷 …) stop popping a
-//                                           "下载文件信息" dialog for every BGM track (shared/media.js, public/js/media.js)
-//     MIME types incl. .mjs/.js text/javascript, .skel application/octet-stream, .atlas text/plain;
-//     gzip for text-like types, .skel and uncompressed fonts when the client accepts it (small files are
-//     compressed once and cached in memory); strong ETag + Last-Modified with 304s; Cache-Control
-//     (html & code/data: no-cache + revalidate; public/assets|fonts|vendor: 1 day; any `?v=` URL: immutable);
-//     single byte-range requests (206/416, used by <audio>); traversal & dotfile protection; 404 page.
-//   * GET /healthz → JSON status (protocol `version`, release `app`, rooms, matches, sessions, sockets).
-//   * WebSocket (ws) at /ws, maxPayload 64 KB → server/net.js Network → server/lobby.js Lobby.
-//   * Env: PORT (default 3000), HOST (default 0.0.0.0), TRUST_PROXY ('auto' default: honour CF-Connecting-IP /
-//     X-Real-IP / X-Forwarded-For only from loopback/private peers such as a local cloudflared; '1' always; '0' never).
-//     Prints LAN URLs on boot.
-//   * Per-network limits for internet clients (see net.js clientAddress; local/LAN peers are exempt): open sockets
-//     (maxConnectionsPerAddr, refused at upgrade with 429), rooms and running matches (lobby.js).
-//   * Graceful shutdown on SIGINT/SIGTERM (rooms get room.closed{reason:'shutdown'}, sockets close 1001).
+//   http/config.js     ROOT, the served directories, the environment (PORT 3000, HOST '::' dual-stack, TRUST_PROXY auto, DEBUG),
+//                      which startServer() options go to net.js / lobby.js, the console logger, the official versions
+//                      this server offers (SP_VERSIONS / SP_VERSION_DEFAULT / SP_MAX_VERSION_HOSTS — versions.js below)
+//   versions.js        the official versions (DESIGN §35.23, M1): each enabled one's cs, data, manifest
+//                      (/cs/<cs16>/index.json) and data directory (/data/versions/<slug>/); their matches run in match
+//                      hosts of their own (match/host/, kind 'version') — the pool exists when another version is
+//                      enabled (the default: all four) and forks a process on the first match of one, never at boot;
+//                      none when only 第二期下半 is enabled
+//   http/websocket.js  session wiring (SessionRegistry → Lobby → Network) and the WebSocket at /ws (maxPayload 64 KB,
+//                      permessage-deflate from 1 KB; refused at upgrade with 404 / 429 per network / 503)
+//   http/static.js     the static mounts (/ → public/, /data/, /shared/, /sim/ `.js` only), the /data.js browser stand-in,
+//                      the language packs (/packs/index.json, /packs/<id>/<file>), the plugin catalogue
+//                      (/plugins/index.json — the registry is plugins/registry.js), the vanilla content set's manifest
+//                      (/cs/<cs16>/index.json — plugins/identity.js: the content hash `cs`, DESIGN §32), the visual sets
+//                      of cosmetic plugins (/vs/<vs16>/…, plugins/visualSet.js) and their files (/p/<id>/<hash8>/…),
+//                      the content sets of gameplay plugins (/cs/<cs16>/…, plugins/contentSets.js — DESIGN §32.6; the
+//                      server owner's plugins/config.json: plugins/policy.js; a room's plugins: plugins/roomSets.js; its
+//                      match then runs in that set's worker: match/host/)
+//   http/media.js      /media/bgm/act1 → public/assets/audio/bgm/act1.mp3 (audio addressed without its extension)
+//   http/files.js      one file → response: MIME, brotli / gzip + memory cache, ETag / Last-Modified / 304, Cache-Control, ranges
+//   http/assetIndex.js the content hashes of public/assets and public/fonts (built in the background, cached in
+//                      .cache/asset-hashes.json by path + size + mtime; Spine models share one hash)
+//   http/assetViews.js the served /data/assets.json, /data/local-assets.json and /data/local-fx.json: every art URL with
+//                      its hash segment (/assets/~<hash>/…, immutable when the hash matches); the files stay unchanged
+//   http/buildTag.js   the build tag of the served browser runtime (/healthz `build`, public/js/ui/buildGuard.js)
+//   http/routes.js     the request listener: security headers, 414 / 400, the plugin studio (/studio/, studio/index.js —
+//                      this machine and the local network only), 405, GET /healthz → JSON status, else static
+//   http/traffic.js    the traffic counters: bytes sent per category (assets / audio / code / data) and on the
+//                      WebSocket, since the start (GET /healthz?traffic=1)
+//   http/common.js     what every answer shares: security headers, URL split, error page, JSON replies, bare 400
+//   http/boot.js       a pending update package first (update.js: old files deleted, the install verified against
+//                      MANIFEST.json), banner (Local / LAN / tunnel URLs), port-in-use hint, graceful shutdown on SIGINT /
+//                      SIGTERM
+//
+// Per-network limits for internet clients (see net.js clientAddress; local/LAN peers are exempt): open sockets
+// (maxConnectionsPerAddr, refused at upgrade with 429), rooms and running matches (lobby.js).
 //
 // Programmatic use (tests): `const srv = await startServer({ port: 0, quiet: true }); … await srv.close();`
 // The server only auto-listens when this file is the process entry point.
 
 import http from 'node:http';
-import fs from 'node:fs';
-import fsp from 'node:fs/promises';
-import os from 'node:os';
 import path from 'node:path';
-import zlib from 'node:zlib';
-import { promisify } from 'node:util';
-import { pipeline } from 'node:stream/promises';
-import { fileURLToPath } from 'node:url';
-import { WebSocketServer } from 'ws';
-import { Ranked } from './ranked.js';
-import { resolveStatePaths } from './state-paths.js';
-import { TestContentAccess } from './test-content-access.js';
-import { Network, SessionRegistry, NET_DEFAULTS } from './net.js';
-import { Lobby } from './lobby.js';
 import { getData, loadData } from './data.js';
-import { PROTOCOL_VERSION, APP_VERSION } from '../shared/constants.js';
-import { MEDIA_PREFIX, AUDIO_EXTS } from '../shared/media.js';
-import { createAuth } from './auth.js';
-import { isAppRequest, isAccountResource, BROWSER_STATIC } from './app-client.js';
-import { AppAssets } from './app-assets.js';
-import { ResourcePacks } from './resource-packs.js';
-import {downloadsPage,downloadName} from './client-downloads.js';
+import { getBotStrategy, getBotStrategySeats } from './match/botStrategies.js';
+import { noteLlmIgnored, releaseIgnoresExternalAi, validateExternalConfig } from './match/llmGate.js';
+import { ROOT, listenAddress, bindCandidates, serveDirs, makeLogger, parseTrustProxy, assetIndexOptionsFrom, versionsFrom, parseRoomCode } from './http/config.js';
+import { WS_MAX_PAYLOAD, createSessionStack, attachWebSocket } from './http/websocket.js';
+import { siteCsp } from './http/csp.js';
+import { DATA_SHIM_JS, createStaticHandler } from './http/static.js';
+import { createPluginRegistry } from './plugins/registry.js';
+import { computeVanillaContent } from './plugins/identity.js';
+import { createVisualSets } from './plugins/visualSet.js';
+import { createContentSets } from './plugins/contentSets.js';
+import { createPluginPolicy } from './plugins/policy.js';
+import { createRoomSets } from './plugins/roomSets.js';
+import { createMatchHosts } from './match/host/index.js';
+import { createVersionSets } from './versions.js';
+import { versionById } from '../shared/versions.js';
+import { t } from '../shared/i18n.js';
+import { createTrustedRuntime } from './plugins/trustedRuntime.js';
+import { trustedHostAllowed } from './plugins/trusted.js';
+import { createStudio } from './studio/index.js';
+import { MIME, COMPRESSIBLE, acceptsGzip, pickEncoding, parseRange } from './http/files.js';
+import { BUILD_INPUTS, computeBuildTag, buildTag, resetBuildTag } from './http/buildTag.js';
+import { createRequestHandler } from './http/routes.js';
+import { createTrafficCounter } from './http/traffic.js';
+import { createAssetIndex } from './http/assetIndex.js';
+import { createManifestViews } from './http/assetViews.js';
+import { answerClientError } from './http/common.js';
+import { createEventLoopMonitor } from './health/eventLoop.js';
+import { createRoomWorkerPool } from './workers/roomPool.js';
+import { lanUrls, displayHost, isProcessEntry, runMain } from './http/boot.js';
 
-/** Repository root. */
-export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-
-/** Inbound WebSocket frame limit (DESIGN §8). */
-export const WS_MAX_PAYLOAD = 64 * 1024;
-
-/** Browser stand-in of server/data.js, served at /data.js (see the header). */
-export const DATA_SHIM_JS = `// Generated by server/index.js — browser stand-in for server/data.js (DESIGN §14 client-side combat).
-// The simulation's content modules (/sim/content/support/index.js) import getData() from here; it returns the game data
-// the page injected with /sim/simdata.js setSimData(data).
-import { getSimData } from './sim/simdata.js';
-export function getData() { return getSimData() || {}; }
-export function resetData() {}
-`;
-/** Files under server/sim that are never served (Node-only). */
-const SIM_PRIVATE = new Set(['nodedata.js']); // lower-case (compared case-insensitively)
-
-/** Extension → Content-Type. */
-export const MIME = Object.freeze({
-  '.zip': 'application/zip',
-  '.apk': 'application/vnd.android.package-archive',
-  '.sha256': 'text/plain; charset=utf-8',
-  '.html': 'text/html; charset=utf-8',
-  '.htm': 'text/html; charset=utf-8',
-  '.js': 'text/javascript; charset=utf-8',
-  '.mjs': 'text/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.map': 'application/json; charset=utf-8',
-  '.webmanifest': 'application/manifest+json; charset=utf-8',
-  '.txt': 'text/plain; charset=utf-8',
-  '.md': 'text/markdown; charset=utf-8',
-  '.csv': 'text/csv; charset=utf-8',
-  '.xml': 'application/xml; charset=utf-8',
-  '.atlas': 'text/plain; charset=utf-8',
-  '.skel': 'application/octet-stream',
-  '.bin': 'application/octet-stream',
-  '.wasm': 'application/wasm',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.gif': 'image/gif',
-  '.webp': 'image/webp',
-  '.avif': 'image/avif',
-  '.svg': 'image/svg+xml; charset=utf-8',
-  '.ico': 'image/x-icon',
-  '.mp3': 'audio/mpeg',
-  '.ogg': 'audio/ogg',
-  '.oga': 'audio/ogg',
-  '.opus': 'audio/ogg',
-  '.wav': 'audio/wav',
-  '.m4a': 'audio/mp4',
-  '.aac': 'audio/aac',
-  '.webm': 'video/webm',
-  '.mp4': 'video/mp4',
-  '.woff2': 'font/woff2',
-  '.woff': 'font/woff',
-  '.otf': 'font/otf',
-  '.ttf': 'font/ttf',
-});
-
-/** Extensions worth gzipping (text-like, .skel, uncompressed fonts). */
-export const COMPRESSIBLE = new Set([
-  '.html', '.htm', '.js', '.mjs', '.css', '.json', '.map', '.webmanifest', '.txt', '.md', '.csv', '.xml',
-  '.atlas', '.skel', '.bin', '.wasm', '.svg', '.ico', '.otf', '.ttf', '.wav',
-]);
-
-const GZIP_MIN_BYTES = 512;
-const GZIP_CACHE_MAX_FILE = 8 << 20;      // larger files are gzip-streamed on the fly
-const GZIP_CACHE_MAX_TOTAL = 96 << 20;
-// Asset URLs carry no content hash yet, and tools/fetch-assets.mjs / tools/vendor.mjs can rewrite files in
-// place (atlas + png + skel must stay consistent), so "long" is one day; revalidation after that is a cheap 304.
-const LONG_CACHE = 'public, max-age=86400';          // 1 day
-const IMMUTABLE_CACHE = 'public, max-age=31536000, immutable';
-const LONG_CACHE_DIRS = ['assets', 'fonts', 'vendor']; // first path segment under public/
-const MAX_URL_LENGTH = 4096;
-
-const gzipAsync = promisify(zlib.gzip);
-const noopLog = { info() {}, warn() {}, error() {}, debug() {} };
-
-// ---------------------------------------------------------------------------------------------------
-// gzip cache (LRU by bytes)
-// ---------------------------------------------------------------------------------------------------
-
-class GzipCache {
-  constructor(maxTotal = GZIP_CACHE_MAX_TOTAL) {
-    this.maxTotal = maxTotal;
-    this.total = 0;
-    /** @type {Map<string, Buffer>} */ this.map = new Map();
-    /** @type {Map<string, Promise<Buffer>>} */ this.inflight = new Map();
-  }
-
-  /** @returns {Promise<Buffer>} gzip of the file identified by (path, size, mtime) */
-  get(absPath, stat, body = null, variant = '') {
-    const key = `${absPath}\0${stat.size}\0${stat.mtimeMs}\0${variant}`;
-    const hit = this.map.get(key);
-    if (hit) { this.map.delete(key); this.map.set(key, hit); return Promise.resolve(hit); }
-    const pending = this.inflight.get(key);
-    if (pending) return pending;
-    const p = (async () => {
-      const raw = body || await fsp.readFile(absPath);
-      const gz = await gzipAsync(raw, { level: 6 });
-      this.store(key, gz);
-      return gz;
-    })().finally(() => this.inflight.delete(key));
-    this.inflight.set(key, p);
-    return p;
-  }
-
-  store(key, buf) {
-    if (buf.length > this.maxTotal) return;
-    this.map.set(key, buf);
-    this.total += buf.length;
-    for (const [k, v] of this.map) {
-      if (this.total <= this.maxTotal) break;
-      this.map.delete(k);
-      this.total -= v.length;
-    }
-  }
-}
-
-// ---------------------------------------------------------------------------------------------------
-// HTTP helpers
-// ---------------------------------------------------------------------------------------------------
-
-/** Does the Accept-Encoding header allow gzip (q > 0)? @param {string | undefined} header */
-export function acceptsGzip(header) {
-  if (!header || typeof header !== 'string') return false;
-  let gzipQ = null;
-  let starQ = null;
-  for (const part of header.split(',')) {
-    const [token, ...params] = part.trim().toLowerCase().split(';');
-    let q = 1;
-    for (const p of params) {
-      const m = /^\s*q=([0-9.]+)\s*$/.exec(p);
-      if (m) q = Number(m[1]);
-    }
-    if (!Number.isFinite(q)) q = 0;
-    if (token === 'gzip' || token === 'x-gzip') gzipQ = q;
-    else if (token === '*') starQ = q;
-  }
-  if (gzipQ != null) return gzipQ > 0;
-  return starQ != null && starQ > 0;
-}
-
-/**
- * Parse a single `bytes=` range against a file size.
- * @returns {{ start: number, end: number } | 'unsatisfiable' | null} null = ignore header (serve 200)
- */
-export function parseRange(header, size) {
-  if (typeof header !== 'string') return null;
-  const m = /^\s*bytes\s*=\s*(\d*)\s*-\s*(\d*)\s*$/i.exec(header);
-  if (!m) return null; // multi-range or malformed → ignore (RFC 9110 permits serving the full body)
-  const [, a, b] = m;
-  if (a === '' && b === '') return null;
-  if (a === '') {
-    const suffix = Number(b);
-    if (suffix === 0 || size === 0) return 'unsatisfiable';
-    return { start: Math.max(0, size - suffix), end: size - 1 };
-  }
-  const start = Number(a);
-  const end = b === '' ? size - 1 : Math.min(Number(b), size - 1);
-  if (b !== '' && Number(b) < start) return null;
-  if (start >= size) return 'unsatisfiable';
-  return { start, end };
-}
-
-const stripWeak = (tag) => tag.trim().replace(/^W\//, '');
-
-/** Conditional GET check (If-None-Match wins over If-Modified-Since). */
-function isNotModified(req, etag, mtime) {
-  const inm = req.headers['if-none-match'];
-  if (typeof inm === 'string') {
-    if (inm.trim() === '*') return true;
-    return inm.split(',').some((t) => stripWeak(t) === etag);
-  }
-  const ims = req.headers['if-modified-since'];
-  if (typeof ims === 'string') {
-    const t = Date.parse(ims);
-    if (Number.isFinite(t)) return Math.floor(mtime.getTime() / 1000) * 1000 <= t;
-  }
-  return false;
-}
-
-/** If-Range: serve the range only when the validator still matches. */
-function ifRangeMatches(req, etag, lastModified) {
-  const v = req.headers['if-range'];
-  if (typeof v !== 'string') return true;
-  const s = v.trim();
-  if (s.startsWith('"') || s.startsWith('W/')) return s === etag; // strong comparison
-  return s === lastModified;
-}
-
-function cacheControlFor(ext, mountName, segments, query) {
-  if (ext === '.html' || ext === '.htm') return 'no-cache';
-  if (/(^|&)v=/.test(query)) return IMMUTABLE_CACHE;
-  if (mountName === 'public' && segments.length > 1 && LONG_CACHE_DIRS.includes(segments[0])) return LONG_CACHE;
-  return 'no-cache';
-}
-
-const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-
-function errorPage(status, title, detail = '') {
-  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${status} · 卫戍协议：盟约</title><style>
-:root{color-scheme:dark}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#111614;color:#d8e3de;font:16px/1.6 "Noto Sans SC",system-ui,sans-serif}
-main{border:1px solid #2c3a35;padding:32px 40px;max-width:520px;text-align:center}h1{margin:0;color:#4ed8af;font-size:56px;letter-spacing:4px}
-p{margin:8px 0}a{color:#4ed8af}</style></head><body><main><h1>${status}</h1><p>${escapeHtml(title)}</p>
-${detail ? `<p style="opacity:.6">${escapeHtml(detail)}</p>` : ''}<p><a href="/">返回首页 · Back to home</a></p></main></body></html>`;
-}
-
-function sendError(req, res, status, title, detail) {
-  if (res.headersSent) { res.destroy(); return; }
-  const body = Buffer.from(errorPage(status, title, detail));
-  res.writeHead(status, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': body.length, 'Cache-Control': 'no-store' });
-  res.end(req.method === 'HEAD' ? undefined : body);
-}
-
-function sendJson(req, res, status, obj) {
-  const body = Buffer.from(JSON.stringify(obj));
-  res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': body.length, 'Cache-Control': 'no-store' });
-  res.end(req.method === 'HEAD' ? undefined : body);
-}
-
-/** Split an absolute request URL into raw path + query (also accepts absolute-form URLs). */
-function splitUrl(url) {
-  let u = url || '/';
-  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(u)) {
-    try { const parsed = new URL(u); u = parsed.pathname + parsed.search; } catch { return null; }
-  }
-  const q = u.indexOf('?');
-  const hashless = (s) => { const h = s.indexOf('#'); return h >= 0 ? s.slice(0, h) : s; };
-  return q >= 0 ? { rawPath: hashless(u.slice(0, q)), query: hashless(u.slice(q + 1)) } : { rawPath: hashless(u), query: '' };
-}
-
-// ---------------------------------------------------------------------------------------------------
-// Static file handler
-// ---------------------------------------------------------------------------------------------------
-
-/**
- * Create the static request handler.
- * @param {{ publicDir: string, dataDir: string, sharedDir: string, simDir?: string, log?: object }} dirs
- * @returns {(req: http.IncomingMessage, res: http.ServerResponse, rawPath: string, query: string) => Promise<void>}
- */
-/** Optional per-machine art manifest (tools/local-extract) and the empty stand-in served when it is absent. */
-const LOCAL_ART_MANIFEST = 'local-assets.json';
-const EMPTY_LOCAL_ART = Buffer.from(JSON.stringify({ version: 1, source: 'none', count: 0, groups: {} }));
-
-export function createStaticHandler({ publicDir, dataDir, sharedDir, simDir = path.join(ROOT, 'server', 'sim'), log = noopLog }) {
-  const mounts = [
-    { prefix: '/data/', name: 'data', dir: path.resolve(dataDir) },
-    { prefix: '/shared/', name: 'shared', dir: path.resolve(sharedDir) },
-    // the simulation: ES modules only (no directory listings, no other file types, no Node-only loader)
-    { prefix: '/sim/', name: 'sim', dir: path.resolve(simDir), only: new Set(['.js']), deny: SIM_PRIVATE },
-    { prefix: '/', name: 'public', dir: path.resolve(publicDir) },
-  ];
-  const shimBody = Buffer.from(DATA_SHIM_JS);
-  const shimTag = `"shim-${shimBody.length.toString(16)}"`;
-  const gzipCache = new GzipCache();
-
-  return async function serveStatic(req, res, rawPath, query) {
-    let decoded;
-    try { decoded = decodeURIComponent(rawPath); } catch { sendError(req, res, 400, '请求地址无效 · Bad request'); return; }
-    if (!decoded.startsWith('/') || decoded.includes('\0') || decoded.includes('\\')) {
-      sendError(req, res, 400, '请求地址无效 · Bad request');
-      return;
-    }
-    if (decoded === '/data.js') {
-      const headers = { 'Content-Type': MIME['.js'], 'Cache-Control': req.authUsername ? 'private, no-cache' : 'no-cache', ETag: shimTag, 'Content-Length': shimBody.length };
-      if (isNotModified(req, shimTag, new Date(0))) { delete headers['Content-Length']; res.writeHead(304, headers); res.end(); return; }
-      res.writeHead(200, headers);
-      res.end(req.method === 'HEAD' ? undefined : shimBody);
-      return;
-    }
-    // Extension-less audio (download-manager avoidance): /media/bgm/act1 → /assets/audio/bgm/act1.mp3
-    if (decoded.startsWith(MEDIA_PREFIX)) {
-      await serveMedia(req, res, decoded.slice(MEDIA_PREFIX.length), query, publicDir, gzipCache, log);
-      return;
-    }
-    // Bare mount paths (e.g. "/data") → treat as the mount directory.
-    const mount = mounts.find((m) => decoded.startsWith(m.prefix) || decoded === m.prefix.slice(0, -1)) || mounts[mounts.length - 1];
-    const rest = decoded.length > mount.prefix.length ? decoded.slice(mount.prefix.length) : '';
-    const segments = rest.split('/').filter((s) => s.length > 0);
-    if (segments.some((s) => s === '..' || s === '.')) { sendError(req, res, 403, '禁止访问 · Forbidden'); return; }
-    if (segments.some((s) => s.startsWith('.'))) { sendError(req, res, 404, '页面不存在 · Not found'); return; }
-    if (mount.only && (!segments.length || !mount.only.has(path.extname(segments[segments.length - 1]).toLowerCase())
-      // (case-insensitive: the host may be Windows / macOS, where NODEDATA.JS opens nodeData.js)
-      || (mount.deny && mount.deny.has(segments[segments.length - 1].toLowerCase())))) {
-      sendError(req, res, 404, '页面不存在 · Not found');
-      return;
-    }
-    let absPath = path.join(mount.dir, ...segments);
-    if (absPath !== mount.dir && !absPath.startsWith(mount.dir + path.sep)) { sendError(req, res, 403, '禁止访问 · Forbidden'); return; }
-
-    let stat;
-    let viaDirectory = false;
-    try {
-      stat = await fsp.stat(absPath);
-      if (stat.isDirectory()) {
-        if (!decoded.endsWith('/')) {
-          // Built from normalized segments (never from the raw path) so "//host" can't become an open redirect.
-          const loc = (mount.prefix + segments.map(encodeURIComponent).join('/') + '/').replace(/\/{2,}/g, '/');
-          res.writeHead(301, { Location: loc + (query ? `?${query}` : ''), 'Cache-Control': req.authUsername ? 'private, no-cache' : 'no-cache', 'Content-Length': 0 });
-          res.end();
-          return;
-        }
-        absPath = path.join(absPath, 'index.html');
-        segments.push('index.html');
-        viaDirectory = true;
-        stat = await fsp.stat(absPath);
-      }
-      // Not a regular file, or a file addressed like a directory ("/app.js/") → 404.
-      if (!stat.isFile() || (decoded.endsWith('/') && !viaDirectory)) {
-        throw Object.assign(new Error('not a file'), { code: 'ENOENT' });
-      }
-      if (mount.deny) {
-        // the on-disk name decides (case-insensitive file systems, Windows 8.3 short names like NODEDA~1.JS)
-        const real = await fsp.realpath(absPath);
-        if (mount.deny.has(path.basename(real).toLowerCase())) throw Object.assign(new Error('private'), { code: 'ENOENT' });
-      }
-    } catch (e) {
-      if (e && e.code === 'ENOENT' && mount.name === 'data' && segments.length === 1 && segments[0] === LOCAL_ART_MANIFEST) {
-        // Optional local-client art (DESIGN §13): an install without it gets an empty manifest instead of a 404,
-        // so browsers don't log an error on every page load. Clients treat empty groups as "no local art".
-        res.writeHead(200, { 'Content-Type': MIME['.json'], 'Cache-Control': req.authUsername ? 'private, no-cache' : 'no-cache', 'Content-Length': EMPTY_LOCAL_ART.length });
-        res.end(req.method === 'HEAD' ? undefined : EMPTY_LOCAL_ART);
-      } else if (e && (e.code === 'ENOENT' || e.code === 'ENOTDIR' || e.code === 'EISDIR' || e.code === 'ENAMETOOLONG')) {
-        sendError(req, res, 404, '页面不存在 · Not found', decoded.length <= 200 ? decoded : '');
-      } else if (e && (e.code === 'EACCES' || e.code === 'EPERM')) {
-        sendError(req, res, 403, '禁止访问 · Forbidden');
-      } else {
-        log.error('[http] stat failed', e);
-        sendError(req, res, 500, '服务器内部错误 · Internal error');
-      }
-      return;
-    }
-    await serveFile(req, res, absPath, stat, mount.name, segments, query, gzipCache, log);
-  };
-}
-
-/**
- * Extension-less audio route: `/media/bgm/act1` → `public/assets/audio/bgm/act1.mp3`.
- *
- * Clients ask for audio through this path because download managers (IDM, 迅雷, FDM …) hijack XHR/fetch whose
- * URL ends in a media extension and pop a "下载文件信息" dialog for every BGM track — see `public/js/media.js`.
- * Requests for the direct `/assets/audio/…` URLs keep working (they are the fallback for plain static hosts).
- * `MEDIA_PREFIX` / `AUDIO_EXTS` live in `shared/media.js`: the browser decides which URLs to rewrite with the
- * same two values, and they must not drift apart.
- */
-async function serveMedia(req, res, rest, query, publicDir, gzipCache, log) {
-  const root = path.join(path.resolve(publicDir), 'assets', 'audio');
-  const segments = String(rest || '').split('/').filter((s) => s.length > 0);
-  if (!segments.length || rest.endsWith('/')) { sendError(req, res, 404, '页面不存在 · Not found'); return; }
-  if (segments.some((s) => s === '..' || s === '.')) { sendError(req, res, 403, '禁止访问 · Forbidden'); return; }
-  // A leading or trailing dot would address something else (dotfiles, "x..mp3") — and the client never asks for it.
-  if (segments.some((s) => s.startsWith('.') || s.endsWith('.'))) { sendError(req, res, 404, '页面不存在 · Not found'); return; }
-
-  const last = segments[segments.length - 1];
-  const given = path.extname(last).toLowerCase();
-  const wanted = AUDIO_EXTS.includes(given) ? given : '';
-  const stem = wanted ? last.slice(0, -wanted.length) : last;
-  if (!stem || stem.startsWith('.')) { sendError(req, res, 404, '页面不存在 · Not found'); return; }
-  const dir = path.join(root, ...segments.slice(0, -1));
-  if (dir !== root && !dir.startsWith(root + path.sep)) { sendError(req, res, 403, '禁止访问 · Forbidden'); return; }
-
-  // An explicit extension wins (`/media/bgm.ogg` → bgm.ogg), otherwise the usual order decides.
-  const order = wanted ? [wanted, ...AUDIO_EXTS.filter((e) => e !== wanted)] : AUDIO_EXTS;
-  for (const ext of order) {
-    const absPath = path.join(dir, stem + ext);
-    if (!absPath.startsWith(root + path.sep)) continue;
-    let stat;
-    try {
-      // eslint-disable-next-line no-await-in-loop
-      stat = await fsp.stat(absPath);
-    } catch { continue; }
-    if (!stat.isFile()) continue;
-    // serveFile decides Content-Type from the resolved name (`.mp3` → audio/mpeg) — Range/ETag handling is shared.
-    // Cache policy is that of the public path the client would otherwise have asked for (`/assets/audio/…`, 1 day).
-    // eslint-disable-next-line no-await-in-loop
-    await serveFile(req, res, absPath, stat, 'public', ['assets', 'audio', ...segments], query, gzipCache, log);
-    return;
-  }
-  sendError(req, res, 404, '页面不存在 · Not found');
-}
-
-async function serveFile(req, res, absPath, stat, mountName, segments, query, gzipCache, log) {
-  const ext = path.extname(absPath).toLowerCase();
-  const appTag=req.resourceHash || (req.appAssets ? await req.appAssets.contentTag(absPath,stat) : '');
-  let body = null, variant = '';
-  if(ext === '.css' && mountName==='public' && req.appAssets?.snapshot) {
-    variant=req.appAssets.snapshot.art;
-    body=Buffer.from(req.appAssets.css(await fsp.readFile(absPath,'utf8'),'/'+segments.join('/')));
-    stat={size:body.length,mtimeMs:stat.mtimeMs,mtime:stat.mtime};
-  }
-  const type = MIME[ext] || 'application/octet-stream';
-  const compressible = COMPRESSIBLE.has(ext);
-  const rangeHeader = req.headers.range;
-  const useGzip = compressible && stat.size >= GZIP_MIN_BYTES && !rangeHeader && acceptsGzip(req.headers['accept-encoding']);
-  const baseTag = appTag || `${stat.size.toString(16)}-${Math.floor(stat.mtimeMs).toString(16)}`;
-  const etag = `"${baseTag}${variant ? '-'+variant : ''}${useGzip ? '-gz' : ''}"`;
-  const lastModified = stat.mtime.toUTCString();
-  const isHead = req.method === 'HEAD';
-
-  const headers = {
-    'Content-Type': type,
-    'Cache-Control': req.appAssetCached ? 'private, max-age=31536000, immutable' : req.authUsername ? 'private, no-cache' : cacheControlFor(ext, mountName, segments, query),
-    ETag: etag,
-    'Last-Modified': lastModified,
-  };
-  if (compressible) headers.Vary = 'Accept-Encoding';
-  if(ext==='.css')headers.Vary='Accept-Encoding, User-Agent';
-
-  if (isNotModified(req, etag, stat.mtime)) {
-    res.writeHead(304, headers);
-    res.end();
-    return;
-  }
-
-  if (useGzip) {
-    headers['Content-Encoding'] = 'gzip';
-    if (stat.size <= GZIP_CACHE_MAX_FILE) {
-      const gz = await gzipCache.get(absPath, stat, body, appTag + variant);
-      headers['Content-Length'] = gz.length;
-      res.writeHead(200, headers);
-      res.end(isHead ? undefined : gz);
-      return;
-    }
-    res.writeHead(200, headers);
-    if (isHead) { res.end(); return; }
-    await streamTo(fs.createReadStream(absPath), res, log, zlib.createGzip());
-    return;
-  }
-
-  headers['Accept-Ranges'] = 'bytes';
-  let start = 0;
-  let end = stat.size - 1;
-  let status = 200;
-  if (rangeHeader && ifRangeMatches(req, etag, lastModified)) {
-    const r = parseRange(rangeHeader, stat.size);
-    if (r === 'unsatisfiable') {
-      res.writeHead(416, { 'Content-Range': `bytes */${stat.size}`, 'Content-Type': 'text/plain; charset=utf-8', 'Content-Length': 0 });
-      res.end();
-      return;
-    }
-    if (r) {
-      ({ start, end } = r);
-      status = 206;
-      headers['Content-Range'] = `bytes ${start}-${end}/${stat.size}`;
-    }
-  }
-  headers['Content-Length'] = stat.size === 0 ? 0 : end - start + 1;
-  res.writeHead(status, headers);
-  if (isHead || stat.size === 0) { res.end(); return; }
-  if(body){res.end(body.subarray(start,end+1));return;}
-  await streamTo(fs.createReadStream(absPath, { start, end }), res, log);
-}
-
-async function streamTo(src, res, log, transform) {
-  try {
-    if (transform) await pipeline(src, transform, res);
-    else await pipeline(src, res);
-  } catch (e) {
-    if (e && e.code !== 'ERR_STREAM_PREMATURE_CLOSE') log.debug?.('[http] stream aborted', e.code || e.message);
-    res.destroy();
-  }
-}
-
-// ---------------------------------------------------------------------------------------------------
-// Server assembly
-// ---------------------------------------------------------------------------------------------------
-
-/** Non-internal IPv4 addresses as http URLs. @param {number} port */
-export function lanUrls(port) {
-  const out = [];
-  for (const addrs of Object.values(os.networkInterfaces())) {
-    for (const a of addrs || []) {
-      if ((a.family === 'IPv4' || a.family === 4) && !a.internal) out.push(`http://${a.address}:${port}`);
-    }
-  }
-  return out;
-}
-
-/** TRUST_PROXY env → net.js trustProxy ('auto' unless explicitly on/off). @param {string | undefined} v */
-export function parseTrustProxy(v) {
-  const s = String(v ?? '').trim().toLowerCase();
-  if (['1', 'true', 'yes', 'on', 'always'].includes(s)) return true;
-  if (['0', 'false', 'no', 'off', 'never'].includes(s)) return false;
-  return 'auto';
-}
-
-function makeLogger(quiet) {
-  if (quiet) return noopLog;
-  return {
-    info: (...a) => console.log(...a),
-    warn: (...a) => console.warn(...a),
-    error: (...a) => console.error(...a),
-    debug: process.env.DEBUG ? (...a) => console.debug(...a) : () => {},
-  };
-}
+// The public API of this module (tests and tools import it from here); the code lives in ./http/.
+export {
+  ROOT, WS_MAX_PAYLOAD, DATA_SHIM_JS, MIME, COMPRESSIBLE, BUILD_INPUTS, computeBuildTag, buildTag, resetBuildTag,
+  acceptsGzip, pickEncoding, parseRange, createStaticHandler, lanUrls, parseTrustProxy,
+};
 
 /**
  * Build and start the HTTP + WebSocket server.
  * @param {{
- *   port?: number, host?: string, quiet?: boolean, log?: object, auth?: false | object,
- *   publicDir?: string, dataDir?: string, sharedDir?: string,
+ *   port?: number, host?: string, quiet?: boolean, log?: object,
+ *   publicDir?: string, dataDir?: string, sharedDir?: string, packsDir?: string, pluginsDir?: string,
  *   MatchClass?: Function, seedFn?: () => number,
  *   lobbyGraceMs?: number, reconnectWindowMs?: number, heartbeatMs?: number, helloTimeoutMs?: number,
  *   ratePerSec?: number, rateBurst?: number, maxConnections?: number, maxRooms?: number,
  *   maxConnectionsPerAddr?: number, maxRoomsPerAddr?: number, maxMatchesPerAddr?: number, resyncMinGapMs?: number,
  *   heavyPerSec?: number, heavyBurst?: number, trustProxy?: 'auto' | boolean, soloReconnectWindowMs?: number,
+ *   versionVoteMs?: number, versionRetryMs?: number,
+ *   roomCode?: string | null,
+ *   assetIndex?: boolean | { cacheFile?: string | null, delayMs?: number }, studio?: boolean,
+ *   matchHost?: object, versions?: { enabled?: 'all' | string[], default?: string, maxHosts?: number },
  * }} [opts]
- * @returns {Promise<{ port: number, host: string, url: string, server: http.Server, wss: WebSocketServer,
- *                     lobby: Lobby, network: Network, registry: SessionRegistry, close: () => Promise<void> }>}
+ *   assetIndex: the content-hash index (default on; false or SP_ASSET_INDEX=0: off — config.js assetIndexOptionsFrom);
+ *   studio: the plugin studio at /studio/ (default on for this machine and the local network — SP_STUDIO=local|off;
+ *   false: none);
+ *   matchHost: options of the match hosts (server/match/host/index.js — watchdogMs, matchOptions …; tests) — the
+ *   version hosts' too; versions: the official versions this server offers (http/config.js versionsFrom; DESIGN §35.23);
+ *   versionVoteMs / versionRetryMs: the version vote's answer window and the guard after a declined or expired vote (tests;
+ *   server/lobby.js header "Official versions")
+ *   roomCode: a fixed alliance key for every new room (--room-code; four letters or digits — config.js parseRoomCode);
+ * @returns {Promise<{ port: number, host: string, url: string, server: http.Server, wss: import('ws').WebSocketServer,
+ *                     lobby: import('./lobby.js').Lobby, network: import('./net.js').Network,
+ *                     registry: import('./net.js').SessionRegistry, packs: ReturnType<typeof createPluginRegistry>,
+ *                     content: import('./plugins/identity.js').VanillaContent, visual: ReturnType<typeof createVisualSets>,
+ *                     contents: ReturnType<typeof createContentSets>, hosts: ReturnType<typeof createMatchHosts>,
+ *                     versions: ReturnType<typeof createVersionSets>, versionHosts: ReturnType<typeof createMatchHosts> | null,
+ *                     traffic: ReturnType<typeof createTrafficCounter>, assetIndex: ReturnType<typeof createAssetIndex> | null,
+ *                     views: ReturnType<typeof createManifestViews> | null, studio: ReturnType<typeof createStudio> | null,
+ *                     close: () => Promise<void> }>}
  */
 export async function startServer(opts = {}) {
-  const port = opts.port ?? (process.env.PORT != null && process.env.PORT !== '' ? Number(process.env.PORT) : 3000);
-  const host = opts.host ?? process.env.HOST ?? '0.0.0.0';
-  if (!Number.isInteger(port) || port < 0 || port > 65535) throw new RangeError(`invalid PORT ${port}`);
+  // A release ignores external-AI settings (one log line) and keeps the built-in bot (§35.66).
+  // An unknown strategy id still fails here, before data is loaded or the port is opened.
   const log = opts.log || makeLogger(!!opts.quiet);
-  const publicDir = opts.publicDir || path.join(ROOT, 'public');
-  const dataDir = opts.dataDir || path.join(ROOT, 'data');
-  const sharedDir = opts.sharedDir || path.join(ROOT, 'shared');
+  if (releaseIgnoresExternalAi()) noteLlmIgnored(log);
+  try {
+    const strategy = getBotStrategy(process.env.SP_BOT_STRATEGY);
+    if (strategy.id === 'external') validateExternalConfig();
+  } catch (cause) {
+    throw new Error(`Invalid SP_BOT_STRATEGY: ${cause.message}. Unset SP_BOT_STRATEGY to use the original bot (legacy).`, { cause });
+  }
+  try {
+    const seats = getBotStrategySeats(process.env.SP_BOT_STRATEGY_SEATS);
+    if (Object.values(seats).some((s) => s.id === 'external')) validateExternalConfig();
+  } catch (cause) {
+    throw new Error(`Invalid SP_BOT_STRATEGY_SEATS: ${cause.message}. Unset SP_BOT_STRATEGY_SEATS to use SP_BOT_STRATEGY for every seat.`, { cause });
+  }
+  const { port, host } = listenAddress(opts);
+  const { publicDir, dataDir, sharedDir, packsDir, pluginsDir } = serveDirs(opts);
+  const simDir = path.join(ROOT, 'server', 'sim');
 
   // The process-wide singleton serves the default data dir; a custom dir (tests) gets its own copy.
   const data = opts.dataDir ? loadData(dataDir, { log }) : getData({ dir: dataDir, log });
-  const netOptions = {};
-  for (const k of ['reconnectWindowMs', 'heartbeatMs', 'helloTimeoutMs', 'ratePerSec', 'rateBurst', 'maxConnections', 'abuseDropsPerSec',
-    'maxConnectionsPerAddr', 'heavyPerSec', 'heavyBurst', 'trustProxy']) {
-    if (opts[k] != null) netOptions[k] = opts[k];
-  }
-  if (netOptions.trustProxy == null) netOptions.trustProxy = parseTrustProxy(process.env.TRUST_PROXY);
-  const auth = await createAuth(opts.auth, ROOT, netOptions.trustProxy, [publicDir, dataDir, sharedDir]);
-  let ranked = null;
-  if (auth && opts.ranked !== false && process.env.SP_RANKED !== 'off') {
-    try {
-      ranked = new Ranked({ auth, log, filename: opts.ranked?.filename || (opts.auth ? ':memory:' : resolveStatePaths(ROOT).rankedFile),
-        maxMatches: opts.ranked?.maxMatches ?? process.env.SP_RANKED_MAX_MATCHES ?? 4,
-        drainMs: opts.ranked?.drainMs ?? 600000, now: opts.ranked?.now,
-        servedRoots: [publicDir, dataDir, sharedDir, path.join(ROOT, 'server', 'sim')] });
-    } catch (e) { log.error('[ranked] 排位初始化失败，普通模拟仍可使用', e.message); }
-  }
-  const registry = new SessionRegistry({ reconnectWindowMs: netOptions.reconnectWindowMs ?? NET_DEFAULTS.reconnectWindowMs });
-  const lobbyOptions = {};
-  for (const k of ['lobbyGraceMs', 'maxRooms', 'maxRoomsPerAddr', 'maxMatchesPerAddr', 'resyncMinGapMs', 'soloReconnectWindowMs']) {
-    if (opts[k] != null) lobbyOptions[k] = opts[k];
-  }
-  const testContentAccess=await TestContentAccess.load(opts.testContentAccessFile ?? (opts.auth !== undefined ? null : path.join(resolveStatePaths(ROOT).directory,'test-content-access.json')),[publicDir,dataDir,sharedDir,path.join(ROOT,'server','sim')]);
-  const lobby = new Lobby({ registry, log, ranked, auth, testContentAccess, MatchClass: opts.MatchClass, getData: () => data, seedFn: opts.seedFn, options: lobbyOptions });
-  const network = new Network({ registry, handler: lobby, log, options: netOptions });
-  const serveStatic = createStaticHandler({ publicDir, dataDir, sharedDir, log });
-  const appAssets = new AppAssets({publicDir,dataDir,sharedDir,simDir:path.join(ROOT,'server','sim')});
-  const resourcePacks = new ResourcePacks(opts.resourcePacksDir || path.join(ROOT,'resource-packs'));
-  const resourceGzip = new GzipCache();
+  // the vanilla content hash `cs` (DESIGN §32): the bytes of the served sim, shared code and game data, read once now —
+  // like the data the matches use and the build tag below
+  const content = computeVanillaContent({ simDir, sharedDir, dataDir, shim: DATA_SHIM_JS, log });
+  log.info(`[content] vanilla ${content.cs.slice(0, 16)} (${Object.keys(content.simFiles).length} code files, ${Object.keys(content.data).length} data files)`);
+  // language packs and plugins (docs/PACKS.md, docs/PLUGINS.md): scanned now — the start log names them — and again
+  // whenever their folders change
+  const scriptMode = process.env.SP_PLUGIN_SCRIPTS;
+  const packs = createPluginRegistry({ publicDir, dataDir, packsDir, pluginsDir }, { log, scriptHost:host, scriptMode });
+  packs.refresh(true);
+  // the content hashes of the art (built in the background once listening) and the manifests served with them
+  const indexOptions = assetIndexOptionsFrom(opts, publicDir);
+  const assetIndex = indexOptions ? createAssetIndex({ publicDir, log, ...indexOptions }) : null;
+  const views = createManifestViews({ dataDir, index: assetIndex, log });
+  // the visual sets of the cosmetic plugins (DESIGN §32 P1a): what a room's host switches on, served at /vs/ and /p/
+  const visual = createVisualSets({ registry: packs, log });
+  // the server owner's policy (plugins/config.json), the content sets of the gameplay plugins (served at /cs/<cs16>/…),
+  // what a room's plugins make of both, and the match hosts a room with gameplay plugins plays in (DESIGN §32.6)
+  const policy = createPluginPolicy({ pluginsDir, log });
+  const contents = createContentSets({ registry: packs, vanillaData: data, log, maxSets: () => policy.get().maxSets });
+  const roomSets = createRoomSets({ registry: packs, visual, contents, policy });
+  // a child process per content set; SP_MATCH_HOST=worker asks for a worker thread instead (match/host/index.js header:
+  // an out-of-memory abort in a worker thread ends the whole server)
+  const transport = String(process.env.SP_MATCH_HOST || '').trim().toLowerCase() === 'worker' ? 'worker' : 'process';
+  const hosts = createMatchHosts({ contents, log, options: { transport, maxWorkers: Math.max(1, policy.get().maxSets), ...(opts.matchHost || {}) } });
+  // the official versions (DESIGN §35.23, M1): which ones (the option, else SP_VERSIONS …), their content, and — only
+  // when one beyond 第二期下半 is enabled — the match hosts their rooms play in (counted apart from the plugin hosts)
+  const versionCfg = versionsFrom(opts, log);
+  const versions = createVersionSets({ enabled: versionCfg.enabled, defaultId: versionCfg.default, dataDir, vanilla: content, defaultData: data, log });
+  // (the test options of matchHost apply to both pools, but never the version pool's kind or its own SP_MAX_VERSION_HOSTS)
+  const versionHosts = versions.nonDefault.length
+    ? createMatchHosts({ contents: versions, log, options: { transport, ...(opts.matchHost || {}), kind: 'version', maxWorkers: Math.max(1, versionCfg.maxHosts) } })
+    : null;
+  log.info(`[versions] enabled: ${versions.ids.map((id) => `${id} (${t(/** @type {any} */ (versionById(id)).label)}${id === versions.defaultId ? ', default' : ''})`).join(', ')}`);
+  const simPool = createRoomWorkerPool({ data });
+  const { registry, lobby, network } = createSessionStack(opts, { data, log, content, plugins: roomSets, hosts, versions, versionHosts, simPool });
+  // Main-thread event-loop delay sampling (server/health/eventLoop.js): opt-in with SP_LOOP_SAMPLE=1, no worker pool involved, and a
+  // LOCAL log line per window (`[loop] p50=… p95=… p99=… max=… cpu=… mem=… rooms=… humans=… phase=…`) — deliberately not
+  // part of /healthz. This is what tells an operator whether a stall is the rehearsal / battle slice or something else.
+  const eventLoop = createEventLoopMonitor({
+    log,
+    windowMs: opts.loopSample?.windowMs,
+    counts: () => {
+      const s = lobby.stats();
+      const phases = new Set();
+      let rehearsals = 0;
+      for (const room of lobby.rooms.values()) {
+        if (room.match?.phase) phases.add(room.match.phase);
+        rehearsals += room.match?._rehearsalTasks?.size || 0;
+      }
+      return { rooms: s.rooms, matches: s.matches, humans: s.humans, spectators: s.spectators,
+        phase: [...phases].sort().join('+') || 'idle', rehearsals };
+    },
+  });
+  const serveStatic = createStaticHandler({ publicDir, dataDir, sharedDir, simDir, packsDir, pluginsDir, packs, content, log, assetIndex, views, visual, contents, versions });
+  // the plugin studio (DESIGN §32.9): its page and API for this machine and the local network; it watches plugins/ only
+  // once it is used (hot reload), and rooms whose host is the author or alone follow a plugin's changes by themselves
+  const studio = opts.studio === false ? null : createStudio({ publicDir, pluginsDir, dataDir, registry: packs, lobby, sessions: registry, log, fetch: opts.fetch });
+  const trustedRuntime = await createTrustedRuntime({registry:packs,log});
+  lobby.trustedRuntime = trustedRuntime;
   const startedAt = Date.now();
+  // The tag is per process (see buildTag): read the browser runtime once, here, not on every /healthz.
+  resetBuildTag();
+  buildTag(ROOT, { servedVersionDirs: versions.servedDirs() });
 
-  const server = http.createServer((req, res) => {
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('Referrer-Policy', 'same-origin');
-    handleRequest(req, res).catch((e) => {
-      log.error('[http] request failed', e);
-      sendError(req, res, 500, '服务器内部错误 · Internal error');
-    });
-  });
+  const traffic = createTrafficCounter();
+  const server = http.createServer(createRequestHandler({ serveStatic, csp: process.env.SP_CSP === 'off' ? null : siteCsp(publicDir,{localImageFetch:opts.localImageFetch===true}), health: { startedAt, network, registry, lobby, content, traffic, assetIndex, views, trusted:trustedRuntime?.health, versions, versionHosts }, log, trustProxy: network.opts.trustProxy, studio, trustedRuntime }));
+  server.on('clientError', answerClientError);
+  const wss = attachWebSocket(server, { network, log, traffic });
 
-  async function handleRequest(req, res) {
-    const url = req.url || '/';
-    if (url.length > MAX_URL_LENGTH) { sendError(req, res, 414, '请求地址过长 · URI too long'); return; }
-    const parts = splitUrl(url);
-    if (!parts) { sendError(req, res, 400, '请求地址无效 · Bad request'); return; }
-    const app = isAppRequest(req);
-    if(app)req.appAssets=appAssets;
-    if (app && isAccountResource(parts.rawPath)) {
-      sendJson(req, res, 403, { error: '账号管理仅通过浏览器网页访问。请在浏览器打开本服务器 /admin 或 /account。' }); return;
-    }
-    if (parts.rawPath === '/login' && (req.method === 'GET' || req.method === 'HEAD')) {
-      let session = auth?.session(req);
-      if (session && app && auth.account(session).mustChangePassword) {
-        auth.revoke(session.key); res.setHeader('Set-Cookie', auth.cookie('', 0)); session = null;
-      }
-      if (!auth || session) {
-        const user = auth?.account(session);
-        const destination = user && (!app || user.mustChangePassword) ? (user.role === 'admin' ? '/admin' : '/account') : app ? '/' : '/downloads';
-        res.writeHead(302, { Location: destination, 'Cache-Control': 'no-store' }); res.end(); return;
-      }
-      const body = await fsp.readFile(path.join(ROOT, 'public', 'login.html'));
-      res.writeHead(200, { 'Content-Type': MIME['.html'], 'Content-Length': body.length, 'Cache-Control': 'no-store',
-        'X-Frame-Options': 'DENY', 'Content-Security-Policy': "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'" });
-      res.end(req.method === 'HEAD' ? undefined : body); return;
-    }
-    if ((parts.rawPath === '/admin' || parts.rawPath === '/account') && (req.method === 'GET' || req.method === 'HEAD')) {
-      const session = auth?.session(req);
-      if (!auth || !session) {
-        res.writeHead(302, { Location: `/login?next=${encodeURIComponent(parts.rawPath)}`, 'Cache-Control': 'no-store' }); res.end(); return;
-      }
-      if (parts.rawPath === '/admin' && auth.account(session).role !== 'admin') {
-        sendError(req, res, 403, '仅管理员可以访问账号管理'); return;
-      }
-      const body = await fsp.readFile(path.join(ROOT, 'public', 'account.html'));
-      res.writeHead(200, { 'Content-Type': MIME['.html'], 'Content-Length': body.length, 'Cache-Control': 'no-store',
-        'X-Frame-Options': 'DENY', 'Content-Security-Policy': "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'" });
-      res.end(req.method === 'HEAD' ? undefined : body); return;
-    }
-    if(parts.rawPath==='/auth/admin/test-content'){
-      await testContentAccess.handle(req,res,{auth,content:()=>lobby.testContent,onChange:()=>{lobby.refreshTestMenus();lobby.refreshAdminTestControls();}});return;
-    }
-    if (parts.rawPath.startsWith('/ranked/') || parts.rawPath.startsWith('/auth/admin/ranked')) {
-      if (ranked) await ranked.handle(req, res);
-      else sendJson(req, res, 503, { error: '排位服务未启用或初始化失败，请联系管理员检查日志', enabled: false });
-      return;
-    }
-    if (parts.rawPath.startsWith('/auth/')) {
-      if (auth) await auth.handle(req, res, parts.rawPath);
-      else if (parts.rawPath === '/auth/session' && (req.method === 'GET' || req.method === 'HEAD')) {
-        sendJson(req, res, 200, { enabled: false, authenticated: false, app, playAllowed: app });
-      } else sendJson(req, res, 404, { error: '认证未启用' });
-      return;
-    }
-    if (req.method !== 'GET' && req.method !== 'HEAD') {
-      res.setHeader('Allow', 'GET, HEAD');
-      sendError(req, res, 405, '不支持的请求方法 · Method not allowed');
-      return;
-    }
-    if (parts.rawPath === '/healthz') {
-      res.setHeader('X-Stronghold-Protocol', '1');
-      if (auth && !auth.session(req)) { sendJson(req, res, 200, { ok: true }); return; }
-      sendJson(req, res, 200, {
-        ok: true, version: PROTOCOL_VERSION, app: APP_VERSION, uptimeSec: Math.round((Date.now() - startedAt) / 1000),
-        sockets: network.connectionCount, sessions: registry.size, ...lobby.stats(),
-      });
-      return;
-    }
-    // Public installer downloads contain only distributable client code and fixed resources.
-    // Exact filenames prevent exposing signing keys, config or any player state.
-    if(parts.rawPath==='/downloads' || parts.rawPath.startsWith('/downloads/')) {
-      const directory=opts.clientDistDir || path.join(ROOT,'mobile','dist');
-      if(parts.rawPath==='/downloads'){
-        const body=await downloadsPage(directory);res.writeHead(200,{'Content-Type':MIME['.html'],'Content-Length':body.length,'Cache-Control':'no-store','Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'"});res.end(req.method==='HEAD'?undefined:body);return;
-      }
-      const name=downloadName(parts.rawPath);if(!name){sendError(req,res,404,'客户端文件不存在');return;}
-      let stat;const full=path.join(directory,name);try{stat=await fsp.stat(full);}catch(e){if(e.code==='ENOENT'){sendError(req,res,404,'客户端文件尚未生成');return;}throw e;}
-      res.setHeader('Content-Disposition',`attachment; filename="${name}"`);
-      await serveFile(req,res,full,stat,'downloads',[name],'',resourceGzip,log);return;
-    }
-    if (auth) {
-      const publicLoginAssets = new Set(['/js/login.js', '/css/login.css']);
-      const session = auth.session(req);
-      if (!session && !publicLoginAssets.has(parts.rawPath)) {
-        if (parts.rawPath === '/' || parts.rawPath === '/index.html') {
-          const next = parts.rawPath + (parts.query ? `?${parts.query}` : '');
-          res.writeHead(302, { Location: `/login?next=${encodeURIComponent(next)}`, 'Cache-Control': 'no-store' }); res.end();
-        } else sendJson(req, res, 401, { error: '请先登录' });
-        return;
-      }
-      if (session && auth.account(session).mustChangePassword && !publicLoginAssets.has(parts.rawPath)
-        && !['/js/account.js', '/js/ranked-admin.js', '/js/adminTestControls.js', '/css/account.css'].includes(parts.rawPath)) {
-        if (parts.rawPath === '/' || parts.rawPath === '/index.html') {
-          res.writeHead(302, { Location: app ? '/login?next=%2F' : auth.account(session).role === 'admin' ? '/admin' : '/account', 'Cache-Control': 'no-store' }); res.end();
-        } else sendJson(req, res, 403, { error: '请先修改初始密码' });
-        return;
-      }
-      if (session) req.authUsername = session.username;
-    }
-    if (!app && ['/', '/index.html'].includes(parts.rawPath)) {
-      if (auth) {
-        const destination = auth.account(auth.session(req)).role === 'admin' ? '/admin' : '/account';
-        res.writeHead(302, {Location:destination,'Cache-Control':'no-store'});res.end();
-      } else {res.writeHead(302,{Location:'/downloads','Cache-Control':'no-store'});res.end();}
-      return;
-    }
-    if (!app && !BROWSER_STATIC.has(parts.rawPath)) {
-      sendJson(req,res,403,{error:'浏览器仅提供登录和账号管理。游玩请下载 Windows 客户端或安卓 App。',code:'APP_REQUIRED'});return;
-    }
-    if(app && ['/', '/index.html'].includes(parts.rawPath)) {
-      try{await appAssets.manifest();}catch(error){log.warn('[app-cache] 使用原有资源校验方式',error.message);}
-    }
-    if (parts.rawPath === '/app/resource-manifest') {
-      if(!app){sendJson(req,res,403,{error:'仅供 App 检查资源版本'});return;}
-      try{
-        const manifest=await appAssets.manifest();
-        sendJson(req,res,200,{...manifest,resourcePack:await resourcePacks.current(appAssets.snapshot)});
-      }
-      catch(error){log.warn('[app-cache] 版本检查失败',error.message);sendJson(req,res,503,{error:'资源正在更新，请稍后重试'});}
-      return;
-    }
-    if(/^\/app\/resource-(catalog|pack|file)\//.test(parts.rawPath)) {
-      if(!app){sendError(req,res,403,'仅供 App 下载固定资源');return;}
-      if(!appAssets.snapshot)await appAssets.manifest();
-      const resource=await resourcePacks.resolve(parts.rawPath,appAssets.snapshot);
-      if(!resource){sendError(req,res,409,'资源包不存在或已过期，请在服务器生成资源包后重试');return;}
-      const stat=await fsp.stat(resource.full);
-      if(parts.rawPath.startsWith('/app/resource-file/') && await appAssets.contentTag(resource.full,stat)!==resource.hash){sendError(req,res,409,'资源已经变化，请重新检查版本');return;}
-      req.resourceHash=resource.hash;req.appAssetCached=true;
-      await serveFile(req,res,resource.full,stat,'public',['resource-packs',path.basename(resource.full)],parts.query,resourceGzip,log);
-      return;
-    }
-    if(parts.rawPath.startsWith('/app-cache/')) {
-      const resource=appAssets.resolve(parts.rawPath);
-      if(!app || !resource || resource.pathname.split('/').some(s=>s==='.'||s==='..'||s.startsWith('.')||s.includes('%')||s.includes('\\'))) {
-        sendError(req,res,404,'资源不存在');return;
-      }
-      const canonical = resource.pathname.split('/').map(encodeURIComponent).join('/');
-      if(appAssets.snapshot?.art===resource.version && !appAssets.snapshot.files.has(resource.pathname)) {
-        // Optional/missing art retains the original 404/fallback behavior, without an extra redirect.
-        await serveStatic(req,res,canonical,parts.query);return;
-      }
-      if(!await appAssets.fresh(resource.pathname,resource.version)) {
-        res.writeHead(307,{Location:canonical,'Cache-Control':'no-store'});res.end();return;
-      }
-      req.appAssetCached=true;
-      await serveStatic(req,res,canonical,parts.query);return;
-    }
-    await serveStatic(req, res, parts.rawPath, parts.query);
-  }
-
-  server.on('clientError', (err, socket) => {
-    if (err && err.code === 'ECONNRESET') { socket.destroy(); return; }
-    try {
-      if (socket.writable) socket.end('HTTP/1.1 400 Bad Request\r\nConnection: close\r\nContent-Length: 0\r\n\r\n');
-      else socket.destroy();
-    } catch { /* ignore */ }
-  });
-
-  const wss = new WebSocketServer({ noServer: true, maxPayload: WS_MAX_PAYLOAD, perMessageDeflate: false, clientTracking: false });
-  wss.on('connection', (ws, req) => {
-    if (auth) auth.attachSocket(ws, req.authSession);
-    network.handleConnection(ws, req);
-  });
-  wss.on('error', (e) => log.error('[ws] server error', e));
-
-  server.on('upgrade', (req, socket, head) => {
-    socket.on('error', () => {});
-    const parts = splitUrl(req.url || '/');
-    const reject = (status, text) => {
-      try { socket.end(`HTTP/1.1 ${status} ${text}\r\nConnection: close\r\nContent-Length: 0\r\n\r\n`); } catch { socket.destroy(); }
-    };
-    if (!parts || parts.rawPath !== '/ws') { reject(404, 'Not Found'); return; }
-    if (!isAppRequest(req)) { reject(403, 'App Required'); return; }
-    if (auth) {
-      const session = auth.session(req);
-      if (!session) { reject(401, 'Unauthorized'); return; }
-      if (auth.account(session).mustChangePassword) { reject(403, 'Password Change Required'); return; }
-      if (!auth.sameOrigin(req)) { reject(403, 'Forbidden'); return; }
-      req.authSession = session;
-      req.authUsername = session.username;
-      req.authAccountId = auth.account(session).accountId;
-    }
-    const refused = network.admission(req);
-    if (refused === 'per-address') { reject(429, 'Too Many Requests'); return; }
-    if (refused) { reject(503, 'Service Unavailable'); return; }
-    try {
-      wss.handleUpgrade(req, socket, head, (ws) => wss.emit('connection', ws, req));
-    } catch (e) {
-      log.error('[ws] upgrade failed', e);
-      socket.destroy();
-    }
-  });
-
+  // The address actually bound. The default may fall back to IPv4; the returned host and url follow that.
+  let boundHost;
   try {
-    await new Promise((resolve, reject) => {
-      const onError = (e) => { server.off('listening', onListening); reject(e); };
-      const onListening = () => { server.off('error', onError); resolve(); };
-      server.once('error', onError);
-      server.once('listening', onListening);
-      server.listen(port, host);
-    });
+    // Product services install admission and storage policy before a socket can listen.
+    if (typeof opts.beforeListen === 'function') await opts.beforeListen({ server, wss, lobby, network, registry, versions, versionHosts, content, contents, hosts, serveStatic, traffic });
+    // A host with IPv6 switched off refuses '::'. Fall back to IPv4 rather than not booting. Only the default is
+    // retried: an explicit HOST is literal (server/http/config.js bindCandidates).
+    let bound = null;
+    let lastError = null;
+    const candidates = bindCandidates(host);
+    for (let i = 0; i < candidates.length; i++) {
+      const candidate = candidates[i];
+      try {
+        await new Promise((resolve, reject) => {
+          const onError = (e) => { server.off('listening', onListening); reject(e); };
+          const onListening = () => { server.off('error', onError); resolve(); };
+          server.once('error', onError);
+          server.once('listening', onListening);
+          server.listen(port, candidate);
+        });
+        bound = candidate;
+        break;
+      } catch (e) {
+        lastError = e;
+        const retry = ['EAFNOSUPPORT', 'EADDRNOTAVAIL', 'EINVAL'].includes(e.code) && i < candidates.length - 1;
+        if (!retry) break;
+        log.warn(`[boot] cannot bind ${candidate} (${e.code}) — falling back to IPv4 only`);
+      }
+    }
+    if (bound === null) throw lastError;
+    boundHost = bound;
+    // Check the kernel's address too: aliases/DNS and bind fallback cannot weaken the owner gate.
+    const actual = server.address();
+    const scriptHost = actual && typeof actual === 'object' ? actual.address : '';
+    packs.setScriptHost(scriptHost);
+    const testGate = lobby.setTestHost(scriptHost);
+    if (testGate.warn) log.warn(`[test-mode] ${testGate.warn}`);
+    else if (testGate.enabled) log.info('[test-mode] test rooms enabled');
+    if (!trustedHostAllowed(scriptHost, scriptMode)) {
+      lobby.trustedRuntime = null;
+      await trustedRuntime?.close();
+    }
   } catch (e) {
-    auth?.close();
-    ranked?.close();
     network.close(); // stop heartbeat/sweep timers of the half-built server
+    hosts.close();
+    versionHosts?.close();
+    assetIndex?.close();
+    studio?.close();
+    eventLoop?.close();
+    await simPool?.close();
+    await trustedRuntime?.close();
     throw e;
   }
   server.on('error', (e) => log.error('[http] server error', e));
+  assetIndex?.start();
+  // started only once the server is listening: the first window then reports real counts, not a half-built hall
+  eventLoop?.start();
 
   const addr = server.address();
   const actualPort = typeof addr === 'object' && addr ? addr.port : port;
-  const url = `http://${host === '0.0.0.0' || host === '::' ? 'localhost' : host}:${actualPort}`;
+  const url = `http://${displayHost(boundHost)}:${actualPort}`;
 
   let closing = null;
   async function close() {
     if (closing) return closing;
     closing = (async () => {
       try { lobby.shutdown('shutdown'); } catch (e) { log.error('[shutdown] lobby', e); }
-      auth?.close();
+      try { hosts.close(); } catch (e) { log.error('[shutdown] match hosts', e); }
+      try { versionHosts?.close(); } catch (e) { log.error('[shutdown] version hosts', e); }
+      // after the lobby: every room is gone, so no rehearsal can still be waiting on a thread
+      try { await simPool?.close(); } catch (e) { log.error('[shutdown] simulation pool', e); }
+      eventLoop?.close();
       network.close();
-      ranked?.close();
+      assetIndex?.close();
+      studio?.close();
+      await trustedRuntime?.close();
       await new Promise((resolve) => {
         server.close(() => resolve());
         server.closeIdleConnections?.();
@@ -847,51 +291,36 @@ export async function startServer(opts = {}) {
     return closing;
   }
 
-  return { port: actualPort, host, url, server, wss, lobby, network, registry, auth, ranked, close };
+  return { port: actualPort, host: boundHost, url, server, wss, lobby, network, registry, packs, content, visual, contents, hosts, versions, versionHosts, traffic, assetIndex, views, studio, eventLoop, simPool, close };
 }
 
-// ---------------------------------------------------------------------------------------------------
-// Main
-// ---------------------------------------------------------------------------------------------------
-
-function isMain() {
-  if (!process.argv[1]) return false;
-  try {
-    return fs.realpathSync(process.argv[1]) === fs.realpathSync(fileURLToPath(import.meta.url));
-  } catch {
-    return false;
+/**
+ * The `--room-code ABCD` / `--room-code=ABCD` argument of this process entry, or null when it is absent. The value is
+ * read once at startup and lives only in this server instance: there is no environment variable and nothing is
+ * persisted, so stopping the server and starting it again without the argument is random again. A missing or invalid
+ * value throws (the boot helper reports it and exits) instead of silently starting random.
+ * @param {string[]} [argv]
+ * @returns {string | null}
+ */
+export function roomCodeFromArgv(argv = process.argv.slice(2)) {
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === '--room-code') {
+      const v = argv[i + 1];
+      if (v == null || v.startsWith('-') || !v.trim()) throw new RangeError('--room-code needs 4 letters or digits');
+      return parseRoomCode(v);
+    }
+    if (a.startsWith('--room-code=')) {
+      const v = a.slice('--room-code='.length);
+      if (!v.trim()) throw new RangeError('--room-code needs 4 letters or digits');
+      return parseRoomCode(v);
+    }
   }
+  return null;
 }
 
-async function main() {
-  process.on('unhandledRejection', (e) => console.error('[process] unhandled rejection', e));
-  process.on('uncaughtException', (e) => console.error('[process] uncaught exception', e));
-  let srv;
-  try {
-    srv = await startServer();
-  } catch (e) {
-    if (e && e.code === 'EADDRINUSE') console.error(`端口已被占用 / port in use: ${e.port ?? process.env.PORT ?? 3000}. Try PORT=3001 npm start`);
-    else console.error('[boot] failed to start', e);
-    process.exit(1);
-  }
-  console.log(`\n  卫戍协议：盟约 · Stronghold Protocol: Covenant v${APP_VERSION}`);
-  console.log(`  Local:   ${srv.url}`);
-  console.log(srv.auth ? '  Auth:    已启用账号认证' : '  Auth:    已关闭（SP_AUTH=off），访问者无需登录');
-  if (srv.host === '0.0.0.0' || srv.host === '::') {
-    for (const u of lanUrls(srv.port)) console.log(`  LAN:     ${u}`);
-  }
-  console.log('  Internet: cloudflared tunnel --url ' + `http://localhost:${srv.port}` + '\n');
-
-  let stopping = false;
-  const stop = (signal) => {
-    if (stopping) { console.log('forced exit'); process.exit(1); }
-    stopping = true;
-    console.log(`\n[${signal}] shutting down…`);
-    setTimeout(() => process.exit(0), 5000).unref();
-    srv.close().then(() => process.exit(0), () => process.exit(1));
-  };
-  process.on('SIGINT', () => stop('SIGINT'));
-  process.on('SIGTERM', () => stop('SIGTERM'));
-}
-
-if (isMain()) main();
+// `node server/index.js` / npm start: listen, print the banner, stop on SIGINT / SIGTERM (http/boot.js).
+if (isProcessEntry(import.meta.url)) runMain(async () => {
+  const {startProductServer} = await import('./product/game-server.js');
+  return startProductServer({roomCode:roomCodeFromArgv()});
+});

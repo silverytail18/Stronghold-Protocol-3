@@ -1,3 +1,4 @@
+import { activeBenchSize, handTile, tempTile, benchSlot } from '../zhajingMode.js';
 // render/drag.js — prep-phase pointer interactions: hover, click, right-click / long-press detail, and
 // drag & drop of pieces between hand, temp and board (DESIGN §9, §10). Pure logic (no PIXI, no DOM access):
 // app.js feeds it canvas pointer events and supplies hit-testing callbacks, so the state machine and the drop
@@ -11,8 +12,10 @@
 // direction wheel to re-orient it in place (research 09 §1.2 — "drag the unit onto its own tile and swipe").
 // Everything is judged at the pointer (user playtest #4 item 1: the ground is drawn as tiles): a press / hover is on the
 // piece standing on the tile under it (`hitPiece`, render/pick.js), and while dragging the target, `tileHover` and the
-// legality are that tile — an item dropped on a unit's tile goes to that unit; app.js holds the dragged ghost under
-// the pointer. A release over DOM UI covering the canvas (the shop bar) is 'outside' (mouse and touch alike).
+// legality are that tile — an item dropped on a unit's tile goes to that unit. app.js draws a dragged unit standing on
+// that tile while it is a legal target (`dragStandTile`, the official deploy drag) and held under the pointer
+// otherwise; an item plate stays on the pointer. A release over DOM UI covering the canvas (the shop bar) is 'outside'
+// (mouse and touch alike).
 //
 // Events emitted through `emit(name, payload)`:
 //   pieceHover     { uid, piece, clientX, clientY } | { uid: null }            (mouse/pen hover changes)
@@ -29,8 +32,8 @@ import { GEO } from '../../../shared/constants.js';
 /** Where a piece currently sits, as a tile. `piece.area` 'board' uses row/col; 'hand'/'temp' use idx. */
 export function pieceTile(piece) {
   if (!piece || typeof piece !== 'object') return null;
-  if (piece.area === 'hand' && Number.isInteger(piece.idx)) return { row: GEO.HAND_ROW, col: piece.idx };
-  if (piece.area === 'temp' && Number.isInteger(piece.idx)) return { row: GEO.TEMP_ROW, col: GEO.TEMP_C0 + piece.idx };
+  if (piece.area === 'hand' && Number.isInteger(piece.idx)) return handTile(piece.idx);
+  if (piece.area === 'temp' && Number.isInteger(piece.idx)) return tempTile(piece.idx);
   if (Number.isInteger(piece.row) && Number.isInteger(piece.col)) return { row: piece.row, col: piece.col };
   return null;
 }
@@ -51,8 +54,9 @@ export function pieceSlot(piece) {
 export function tileSlot(tile, geo = GEO) {
   if (!tile || !Number.isInteger(tile.row) || !Number.isInteger(tile.col)) return null;
   const { row, col } = tile;
+  if (geo === GEO && activeBenchSize() > 10) { const slot = benchSlot(row, col); if (slot) return slot; }
   if (row === geo.HAND_ROW && col >= 0 && col < geo.HAND_SIZE) return { area: 'hand', idx: col };
-  if (row === geo.TEMP_ROW && col >= geo.TEMP_C0 && col < geo.TEMP_C0 + geo.TEMP_SIZE) return { area: 'temp', idx: col - geo.TEMP_C0 };
+  if (!(geo === GEO && activeBenchSize() > 10) && row === geo.TEMP_ROW && col >= geo.TEMP_C0 && col < geo.TEMP_C0 + geo.TEMP_SIZE) return { area: 'temp', idx: col - geo.TEMP_C0 };
   const F = geo.FIELD;
   if (row >= F.r0 && row <= F.r1 && col >= F.c0 && col <= F.c1) return { area: 'board', row, col };
   return null;
@@ -78,6 +82,21 @@ export function resolveDrop(p) {
   if (sameSlot(slot, from) && slot.area !== 'board') return { kind: 'cancel', reason: 'same' };
   if (!isLegal(p.canPlace, piece, slot)) return { kind: 'cancel', reason: 'illegal' };
   return { kind: 'drop', target: slot };
+}
+
+/**
+ * The tile a dragged UNIT is drawn standing on, from a `pieceDragMove` payload: the drop target under the pointer while
+ * it is legal — a board tile, or a bench slot (row HAND_ROW) — as `{ row, col, bench }` in board space; null otherwise
+ * (no target, an illegal tile, a temp slot, the pointer over DOM UI such as the shop bar): the unit is then held under
+ * the pointer. As in the official deploy drag (the owner's recording of 2026-10-09) the model stands on the tile the
+ * finger is on, and moving within that tile leaves it where it is. app.js never snaps an item plate.
+ */
+export function dragStandTile(move, geo = GEO) {
+  const t = move && move.legal === true ? move.target : null;
+  if (!t) return null;
+  if (t.area === 'board' && Number.isInteger(t.row) && Number.isInteger(t.col)) return { row: t.row, col: t.col, bench: false };
+  if (t.area === 'hand' && Number.isInteger(t.idx)) return { ...(geo === GEO ? handTile(t.idx) : {row:geo.HAND_ROW,col:t.idx}), bench: true };
+  return null;
 }
 
 /** Legality via the UI callback (board → (piece,row,col); hand → (piece, HAND_ROW, idx)). Throwing ⇒ illegal. */
@@ -108,7 +127,7 @@ export function createDragController(hooks) {
   const clearT = h.clearTimeout || ((id) => clearTimeout(id));
   let editable = false;
   let canPlace = typeof h.canPlace === 'function' ? h.canPlace : null;
-  /** @type {null | { mode: 'pressed'|'dragging'|'held', pointerId, pointerType, piece, from, sx, sy, timer }} */
+  /** @type {null | { mode: 'pressed'|'dragging'|'held', pointerId, pointerType, piece, from, sx, sy, timer, last? }} */
   let st = null;
   let hoverUid = null;
   let hoverTileKey = '';
@@ -145,6 +164,7 @@ export function createDragController(hooks) {
   }
 
   function moveDrag(e) {
+    st.last = e;
     const tile = tileAt(e.x, e.y);
     const over = overCanvas(e.clientX, e.clientY);
     const slot = over && tile ? tileSlot(tile) : null;
@@ -243,6 +263,15 @@ export function createDragController(hooks) {
       if (st) return;
       setHoverPiece(null, e || {});
       setHoverTile(null);
+    },
+
+    /**
+     * Judge the drag again at the last pointer position: the ground under a still pointer changes while the camera
+     * moves (the shop-collapsed zoom of a deploy, GitHub #602), so the target tile, its legality and the dragged
+     * piece's place (pieceDragMove, tileHover) follow the camera, not only the pointer. No-op unless dragging.
+     */
+    refresh() {
+      if (st && st.mode === 'dragging' && st.last) moveDrag(st.last);
     },
 
     /** Abort any interaction (piece list replaced, view destroyed…). */

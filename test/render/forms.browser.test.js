@@ -1,4 +1,3 @@
-import {appPage} from '../helpers/appPage.mjs';
 // test/render/forms.browser.test.js — user playtest #5 item 1 in headless Chrome: a 掠海漂移体 hovering down act2 m01's
 // lower lane is stunned, drops to 爬行模式 for good (sim content/enemies.js kitSyufo: a ground unit from then on, blocked
 // and hit by 山), and its view follows — the real sim runs in the page (the client runner's loadBrowserSim) and feeds the
@@ -34,7 +33,7 @@ describe('掠海漂移体 drops to 爬行模式: its model crawls (headless Chro
   before(async () => {
     const puppeteer = (await import('puppeteer-core')).default;
     const { startServer } = await import('../../server/index.js');
-    srv = await startServer({ auth: false, port: 0, host: '127.0.0.1', quiet: true });
+    srv = await startServer({ port: 0, host: '127.0.0.1', quiet: true });
     browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--no-first-run'] });
     mkdirSync(OUT, { recursive: true });
   });
@@ -44,7 +43,7 @@ describe('掠海漂移体 drops to 爬行模式: its model crawls (headless Chro
   });
 
   test('hover clips before the stun, \'Change\' on the drop, then the crawl clips while 山 blocks and hits it', async () => {
-    const page = await appPage(await browser.newPage());
+    const page = await browser.newPage();
     const problems = [];
     page.on('console', (m) => { if (m.type() === 'error') problems.push(`console: ${m.text()}`); });
     page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));

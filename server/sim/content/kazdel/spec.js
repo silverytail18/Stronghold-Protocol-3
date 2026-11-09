@@ -1,4 +1,4 @@
-// 5.7 fixed personal garrisons and approved round blade.
+// 5.10: shared guard unlocks at nine; soul-fire rescue obeys external-healing restrictions.
 export const SPEC = {
   "traits": {
     "version": 2,
@@ -9,7 +9,7 @@ export const SPEC = {
       1,
       1
     ],
-    "blockScope": "all real melee operators when Kazdel active",
+    "blockScope": "own actual Kazdel ground melee operators; natural or equipment identity, excludes harmony-only beneficiaries",
     "pressureProtection": [
       0,
       0,
@@ -20,10 +20,10 @@ export const SPEC = {
     "ordinaryCap": 6,
     "eliteCap": 10
   },
-  "version": "fixed-personal-garrison-2",
-  "designVersion": "5.7",
+  "version": "nine-guard-external-rescue-1",
+  "designVersion": "5.10",
   "status": "verified",
-  "runtimeVersion": "5.7",
+  "runtimeVersion": "5.10",
   "layerCap": 999,
   "tiers": [
     3,
@@ -35,7 +35,11 @@ export const SPEC = {
     0.15,
     0.2
   ],
-  "hpPerLayer": 0.005,
+  "hpPerLayer": [
+    0.0015,
+    0.002,
+    0.0025
+  ],
   "nativeDamagePerLayer": [
     0.002,
     0.0035,
@@ -89,7 +93,8 @@ export const SPEC = {
       0.18,
       0.2
     ],
-    "nativeBudgetFraction": 0.35
+    "nativeBudgetFraction": 0.35,
+    "covenantRecoveryGeneratesFire": false
   },
   "defer": {
     "base": 0.2,
@@ -114,7 +119,11 @@ export const SPEC = {
       0.003
     ],
     "airMultiplier": 2,
-    "groundMultiplier": 1,
+    "groundMultiplier": [
+      1,
+      0.5,
+      0.5
+    ],
     "spawnDelay": 1,
     "interval": 2,
     "rangeScope": "whole field while a live deployed actual member exists",
@@ -142,18 +151,23 @@ export const SPEC = {
     "maxSpendScale": 1.25,
     "nineRescueTrueScale": 0.5,
     "guardReadyAttackReserve": [
-      0.5,
-      0.75,
+      0,
+      0,
       1.1
     ],
-    "dangerReserve": 1.1
+    "dangerReserve": 1.1,
+    "rescueRespectsExternalNoHeal": true,
+    "reserveMinimumPopulation": 9
   },
   "guard": {
-    "baseCd": 10,
-    "maximumCdReduction": 0.5,
+    "baseCd": 12,
+    "maximumCdReduction": 0,
     "requiredFireScale": 1,
-    "costScale": 0.5,
-    "sharedAcrossOwnTeam": true
+    "costScale": 0.75,
+    "sharedAcrossOwnTeam": true,
+    "minimumTier": 3,
+    "minimumPopulation": 9,
+    "reserveOnlyWhenUnlocked": true
   },
   "growth": {
     "prep": [
@@ -188,7 +202,8 @@ export const SPEC = {
       1,
       2
     ],
-    "includesSkillCycleActualHp": "converted core only; natural core uses personal conditions"
+    "includesSkillCycleActualHp": "actual self-loss counts for converted core; covenant recovery excluded",
+    "covenantRecoveryLifeFlowGrowth": false
   },
   "initialFireCountsBudget": false,
   "blood": {
@@ -315,9 +330,9 @@ export const SPEC = {
     "original boss single-hit cancellation",
     "native range and aerial eligibility"
   ],
-  "appVersion": "0.4.10",
-  "batchVersion": "kazdel-test-9",
-  "clientCapability": 28,
+  "appVersion": "0.9.5",
+  "batchVersion": "kazdel-test-13",
+  "clientCapability": 81,
   "theresa": {
     "firstRoundGift": null,
     "rounds": [
@@ -354,9 +369,11 @@ export const SPEC = {
   "skillCycle": {
     "currentHpLoss": 0.1,
     "floor": 1,
-    "recoveryMultiplier": 2,
+    "recoveryMultiplier": 1.2,
     "recoverySeconds": 1,
-    "bloodGrowth": false
+    "bloodGrowth": false,
+    "recoveryGeneratesFire": false,
+    "recoveryLifeFlowGrowth": false
   },
   "sp": {
     "minimumTier": 6,
@@ -396,19 +413,20 @@ export const SPEC = {
     "vortex": {
       "cooldown": 2,
       "forwardTiles": 1,
-      "artsFormula": "800 + 120*N + 2*G + .05*Q*paidFraction",
+      "artsFormula": ".85 * (800 + 120*N + 2*G + .05*Q*paidFraction)",
       "costScale": 0.03
     },
     "sword": {
       "cooldown": 1,
-      "travelTiles": 5,
+      "travelTiles": 3,
       "speed": 5,
       "width": 1,
       "originForwardTiles": 1,
-      "travelSeconds": 1,
-      "artsFormula": "1250 + 160*N + 3*G + .06*Q*paidFraction",
-      "trueFraction": 0.3,
-      "costScale": 0.04
+      "travelSeconds": 0.6,
+      "artsFormula": ".8 * (1250 + 160*N + 3*G + .06*Q*paidFraction)",
+      "trueFraction": 0.15,
+      "costScale": 0.04,
+      "subsequentTargetScale": 1
     },
     "perUnitCooldown": true,
     "validConvertedMembers": true,

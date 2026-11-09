@@ -17,7 +17,7 @@ export function install(battle){
   battle.snowfieldGuideInfo=pid=>{
     const s=byPlayer.get(pid);if(!s)return null;
     return {live:true,tier:s.tier,layers:s.player.bonds[GUIDE].layers||0,
-      coldRemaining:s.coldNext===null?null:Math.max(0,s.coldNext-battle.time),
+      coldRemaining:s.tier<2?null:s.coldNext===null?null:Math.max(0,s.coldNext-battle.time),
       iceRemaining:s.iceNext===null?0:Math.max(0,s.iceNext-battle.time),
       members:members(s).map(u=>({uid:u.uid,name:u.name,atk:Math.max(0,u._s?.atk??u.base.atk)}))};
   };
@@ -27,6 +27,7 @@ export function install(battle){
   const canHit=(u,e)=>canTargetEnemy(u,e,PROFILE)&&!e.s.flags.invulnerable;
   battle.on('tick',()=>{
     for(const s of schedulers){
+      if(s.tier<2)continue;
       if(s.coldNext!==null&&battle.time+EPS<s.coldNext)continue;
       const candidates=new Map();
       for(const u of members(s))for(const e of battle.enemiesInKeys(u.rangeKeys,u,PROFILE)){
@@ -37,18 +38,18 @@ export function install(battle){
       if(battle.time+EPS<s.coldNext)continue;
       let success=false;
       // Stable spawn order; overlapping members do not apply repeated cold in one pulse.
-      for(const e of candidates.values())if(battle.applyStatus(e,'cold',{duration:s.tier>=2?K.coldDuration4:K.coldDuration2,source:GUIDE})){
+      for(const e of candidates.values())if(battle.applyStatus(e,'cold',{duration:K.coldDuration5,source:GUIDE})){
         success=true;battle.fx('snowfieldGuide',{x:e.x,y:e.y,id:e.id});
       }
       if(success){s.coldLast=battle.time;s.coldNext=battle.time+K.coldCooldown;}
     }
   });
 
-  if(!schedulers.some(s=>s.tier>=2))return;
+  if(!schedulers.length)return;
   battle.on('statusApplied',({target,status,entered})=>{
     if(status!=='freeze'||entered!==true||target?.side!=='enemy')return;
     for(const s of schedulers){
-      if(s.tier<2||s.iceNext===null||battle.time+EPS>=s.iceNext||s.freezeRefund>=K.freezeRefundCap||!inRange(s,target))continue;
+      if(s.iceNext===null||battle.time+EPS>=s.iceNext||s.freezeRefund>=K.freezeRefundCap||!inRange(s,target))continue;
       const refund=Math.min(K.freezeRefund,K.freezeRefundCap-s.freezeRefund);
       s.freezeRefund+=refund;
       s.iceNext=Math.max(s.iceLast+K.iceMinimum,s.iceNext-refund);
@@ -61,9 +62,9 @@ export function install(battle){
   battle.on('hit',({source,target,dmg})=>{
     pending.delete(dmg);
     const s=byPlayer.get(source?.ownerId);
-    if(!s||s.tier<2||!isMember(source,s.player.playerId)||target?.side!=='enemy'||!target.s.flags.freeze||
+    if(!s||!isMember(source,s.player.playerId)||target?.side!=='enemy'||!target.s.flags.freeze||
        !dmg.isAttack||dmg.isSplash||dmg.sourceless||dmg.tags?.some(t=>[ICE_TAG,'chain','dot','periodic','hpLoss'].includes(t)))return;
-    pending.set(dmg,{s,source,target,x:target.x,y:target.y,amount:K.iceBase+Math.min(Math.max(0,source.s.atk)*K.iceAtkRatio,K.iceAtkCap)});
+    pending.set(dmg,{s,source,target,x:target.x,y:target.y,amount:K.iceBase});
   },{priority:1000});
   battle.on('damageResolved',({dmg,dealt,target})=>{
     const hit=pending.get(dmg);pending.delete(dmg);
@@ -73,9 +74,10 @@ export function install(battle){
     // Commit before secondary damage: reentrant hooks cannot trigger another ice burst.
     s.iceLast=battle.time;s.iceNext=battle.time+K.iceCooldown;s.freezeRefund=0;
     if(dmg.attackId)s.usedAttacks.add(dmg.attackId);
-    if(s.coldLast!==null&&battle.time+EPS<s.coldNext)s.coldNext=Math.max(s.coldLast+K.coldMinimum,s.coldNext-K.coldRefund);
-    const splash=battle.enemiesInRadius(x,y,K.iceRadius,true).filter(e=>e!==target&&canHit(source,e));
-    battle.fx('snowfieldIceBurst',{x,y,r:K.iceRadius,id:target.id});
+    if(s.tier>=2&&s.coldLast!==null&&battle.time+EPS<s.coldNext)s.coldNext=Math.max(s.coldLast+K.coldMinimum,s.coldNext-K.coldRefund);
+    const radius=s.tier>=2?K.iceRadius5:K.iceRadius2;
+    const splash=battle.enemiesInRadius(x,y,radius,true).filter(e=>e!==target&&canHit(source,e));
+    battle.fx('snowfieldIceBurst',{x,y,r:radius,id:target.id});
     if(canHit(source,target))battle.dealDamage(source,target,{amount,type:'arts',tags:[ICE_TAG]});
     for(const e of splash)if(canHit(source,e))battle.dealDamage(source,e,{amount:amount*K.iceSplashRatio,type:'arts',isSplash:true,tags:[ICE_TAG]});
   });

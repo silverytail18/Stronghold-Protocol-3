@@ -10,7 +10,7 @@ export function physicalArtsShelter(b,target,key,value,source,duration=0.15){
   b.applyStrongest(target,key,{value,duration,source,mods:v=>({physTakenMul:1-v,artsTakenMul:1-v})});
 }
 export function teleportEnemy(b,e,r,c,source){
-  if(!live(e)||e.side!=='enemy'||e.isBoss||e.s.flags.noDisplace||e.def?.staticBody||e.def?.immune?.has('teleport')||e.def?.raw?.teleportImmune||!b.grid.inRect(r,c)||!b.grid.groundPassable(r,c))return false;
+  if(!live(e)||e.mem?.ibStasis||e.side!=='enemy'||e.isBoss||e.s.flags.noDisplace||e.def?.staticBody||e.def?.immune?.has('teleport')||e.def?.raw?.teleportImmune||!b.grid.inRect(r,c)||!b.grid.groundPassable(r,c))return false;
   b._unblock(e);e.x=c;e.y=r;if(e.route)e.route.pts=null;b._enemiesDirty=true;b.fx('teleport',{x:c,y:r,id:e.id,src:source.id});return true;
 }
 export function groundbind(b,source,e,duration){

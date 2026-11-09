@@ -13,6 +13,8 @@ Copyright (C) 2026 Stronghold-Protocol contributors
 - `tools/local-extract/aklz4.py` 来自 [isHarryh/Ark-Unpacker](https://github.com/isHarryh/Ark-Unpacker)，保持 BSD-3-Clause 许可（见 `tools/local-extract/LICENSE-Ark-Unpacker.txt`）。
 - 通过 npm 安装的第三方库（PixiJS、pixi-spine、Preact、htm、three.js、ws 等）和字体各自保留原许可证，见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。
 
+**英文翻译致谢**：界面英文文本 `public/i18n/en.json` 与游戏文本的补充译文 `tools/i18n/fallback-pr70.json` 以 GitHub PR #70（分支 `en-translation`）中 **@YuriRestia** 的翻译为基础，经项目所有者决定（2026-10-05）署名沿用，随本项目一同以 GPL-3.0-or-later 发布；PR #70 中取自 ak-spa-database.pages.dev（未声明许可）的文本未被采用。英文游戏文本 `data/i18n/en.json` 本身是官方英文服数据（见第 2 节）。
+
 **附加许可（GPL-3.0 第 7 条）** — Additional permission under GNU GPL version 3 section 7:
 
 > If you modify this Program, or any covered work, by linking or combining it with the Spine Runtimes (as shipped in
@@ -27,12 +29,14 @@ Copyright (C) 2026 Stronghold-Protocol contributors
 
 《明日方舟》及「卫戍协议」相关的全部**名称、角色、美术、Spine 模型、界面图、音乐音效、文本与游戏数据**，版权归上海鹰角网络科技有限公司及其授权方（Yostar 等）所有。具体包括：
 
-- Release 完整包中的 `public/assets/**`（含从官方客户端本地提取的 3D 棋盘模型与贴图 `public/assets/local/**`）和 `public/fonts/**`（字体归各自作者）；
-- 由官方数据表生成的 `data/*.json`，以及含有或派生自游戏数据的 `docs/research/*.json`、`test/fixtures/official-waves.json`、`public/dev/recordings/*.json`；
+- Release 完整包中的 `public/assets/**`（含从官方客户端本地提取的 3D 棋盘模型与贴图、官方战斗特效 `public/assets/local/**`）和 `public/fonts/**`（字体归各自作者）；
+- 由官方数据表生成的 `data/*.json` 与 `data/i18n/*.json`（官方英文服文本），以及含有或派生自游戏数据的 `docs/research/*.json`、`test/fixtures/official-waves.json`、`public/dev/recordings/*.json`；
 - `docs/img/` 中的游戏截图；
 - `docs/` 中引用的 PRTS、BWIKI、NGA、巴哈姆特等社区页面的文字（仍按其来源的许可，维基文本为 CC BY-NC-SA）。
 
 这些内容**不在 GPL-3.0 授权范围内**，本项目也无权就它们向任何人授予任何权利。
+
+官方战斗特效（0.3.0「官方特效」）：特效的粒子系统、网格、贴图和动画从《明日方舟》官方客户端本地提取（`tools/local-extract`，完整包附带一份），同样属于上面所说、不受 GPL 约束的内容；播放它们的着色器（`public/js/render/vfx/glsl.js`）是本项目按官方客户端着色器的计算自己重写的 GLSL 代码，仓库里不含官方着色器源码。
 
 ## 3. 仅限非商业用途
 
@@ -47,10 +51,6 @@ Copyright (C) 2026 Stronghold-Protocol contributors
 - GPL 本身允许商业使用**代码**，上述限制针对的是不属于本项目的游戏素材与数据。
 
 ## 4. 权利人通知与删除
-
-本工作区干员皮肤素材来源：[fexli/ArknightsResource](https://github.com/fexli/ArknightsResource)，固定提交d0b5af0b004b044d322397ce5ae79632b6d9fcdd；头像、半身立绘、Spine模型及皮肤名称版权仍属于原权利人。资源清单及范围见[干员皮肤说明](docs/OPERATOR-SKINS.md)。
-
-2026-10-07补充对照[isHarryh/Ark-Models](https://github.com/isHarryh/Ark-Models)固定提交8a3857c250a5c271429aefa82c660ff35803166e的模型元数据；该库对应干员模型为基建／动态立绘，未将其作为战斗资源分发。新增38款实际素材仍来自上述fexli提交，包含同款低分辨率完整立绘。
 
 如果你是相关权利人，认为本项目的任何内容不妥，请在本仓库提交 Issue（或通过 GitHub 联系仓库所有者），我们会尽快删除相关内容，或下架完整包乃至整个仓库。
 
@@ -68,3 +68,5 @@ art, models, audio and data — including everything under `public/assets/` in t
 Yostar and their licensors, are **not** covered by the GPL, and may be used for study and personal non-commercial
 purposes only: no selling, paid distribution, paid hosting, ads, donations or any other monetisation. Rights holders
 can request removal through a GitHub issue and the content will be taken down. No warranty of any kind.
+The English UI strings were seeded from GitHub PR #70 by @YuriRestia (credited, released with the project under
+GPL-3.0-or-later); the English game texts (`data/i18n/en.json`) are official EN client data like `data/*.json`.

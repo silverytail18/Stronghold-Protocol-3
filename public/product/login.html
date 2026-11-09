@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="dark"><title>卫戍协议 · 客户端登录</title>
+  <link rel="stylesheet" href="/css/theme.css"><link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/product/account.css"><link rel="stylesheet" href="/product/login.css">
+  <link rel="stylesheet" href="/css/community.css">
+</head>
+<body class="account-page client-entry">
+  <main id="account-root">
+    <header class="client-brand"><p class="client-eyebrow">STRONGHOLD PROTOCOL / CLIENT</p><h1>卫戍协议：盟约</h1><p class="account-subtitle">登录后检查本地资源与兼容更新。</p><span class="client-brand-line" aria-hidden="true"></span></header>
+    <section class="panel client-login" aria-labelledby="login-title">
+      <div class="panel__head"><h2 id="login-title">账号登录</h2></div>
+      <div class="panel__body">
+        <form id="login" class="account-form">
+          <label>账号<input name="username" autocomplete="username" required maxlength="64" autocapitalize="none" spellcheck="false"></label>
+          <label>密码<input name="password" type="password" autocomplete="current-password" required maxlength="256"></label>
+          <label class="client-remember"><input name="remember" type="checkbox">记住本设备30天</label>
+          <button type="submit" class="btn btn--primary">登录并进入</button>
+        </form>
+        <form id="initial-password" class="account-form" hidden>
+          <h2>修改初始密码</h2>
+          <label>当前密码<input name="currentPassword" type="password" autocomplete="current-password" required></label>
+          <label>新密码<input name="newPassword" type="password" autocomplete="new-password" required minlength="6"></label>
+          <label>确认新密码<input name="confirmPassword" type="password" autocomplete="new-password" required minlength="6"></label>
+          <button type="submit" class="btn btn--primary">修改并返回登录</button>
+        </form>
+        <button id="resume" type="button" class="btn btn--primary" hidden>继续进入</button>
+        <div id="resource-state" class="client-resource" aria-busy="true">
+          <div class="client-resource__line"><p id="status" role="status" aria-live="polite"></p><span id="resource-percent" aria-hidden="true"></span></div>
+          <div id="resource-progress" class="client-progress is-indeterminate" role="progressbar" aria-label="资源校验" aria-valuemin="0" aria-valuemax="100"><span id="resource-fill"></span></div>
+          <p id="resource-count" class="client-resource__count"></p>
+        </div>
+        <p class="account-subtitle client-footnote">账号与管理员设置请使用浏览器的账号页面。大版本更新需要安装新客户端。</p>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="/product/login.js"></script>
+</body></html>

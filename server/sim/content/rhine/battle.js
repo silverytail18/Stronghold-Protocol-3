@@ -4,7 +4,7 @@ import {ITEMS} from './data.js';
 import {unitBonds} from '../support/index.js';
 import {canTargetEnemy,tileKeyOf} from '../../targeting.js';
 import {bodyInKeys} from '../../body.js';
-import {calibration,adaptation,PULSE,pulseDamage,MARK,SCAN,BROADCAST,REPAIR,PARALLEL,EMERGENCY,STRUCTURE,JOINT_DAMAGE} from '../../../../shared/rhine-balance.js';
+import {calibration,adaptation,PULSE,pulseDamage,MARK,SCAN,BROADCAST,REPAIR,PARALLEL,EMERGENCY,structureDefIgnore,structureResIgnore,JOINT_DAMAGE} from '../../../../shared/rhine-balance.js';
 import {install as installSpecialResearch} from './research.js';
 const live=u=>u?.alive&&u.deployed&&!u.removed;
 const member=u=>u?.kind==='op'&&unitBonds(u).includes(RHINE);
@@ -71,7 +71,10 @@ export function install(b){
   let bonus=active(s,'T01')?calibration(layer(s),s.count,inEnhancedRegion(s,u,'T01')):0;
   if(joint(s)&&['phys','arts'].includes(dmg.type)&&marked(s,e))bonus+=JOINT_DAMAGE;
   dmg.mul*=1+bonus;
-  if(active(s,'T16')&&marked(s,e)){if(dmg.type==='phys'&&e.s.def>=STRUCTURE.defThreshold)dmg.defIgnorePct+=STRUCTURE.defIgnore;if(dmg.type==='arts'&&e.s.res>=STRUCTURE.resThreshold)dmg.resIgnoreFlat+=STRUCTURE.resIgnore;}
+  if(active(s,'T16')&&marked(s,e)){
+   if(dmg.type==='phys'&&e.s.def>0)dmg.defIgnorePct+=structureDefIgnore(e.s.def)/e.s.def;
+   if(dmg.type==='arts')dmg.resIgnoreFlat+=structureResIgnore(e.s.res);
+  }
  },{priority:-8500});
  b.on('damageMitigated',ctx=>{const u=ctx.target,s=st(u);if(!s||!member(u)||ctx.source?.side!=='enemy'||!(ctx.amount>0))return;
   if(active(s,'T02')&&['phys','arts','true','elemental'].includes(ctx.dmg.type)&&!ctx.dmg.tags?.includes('hpLoss'))ctx.amount*=1-adaptation(layer(s),s.count,inEnhancedRegion(s,u,'T02'));

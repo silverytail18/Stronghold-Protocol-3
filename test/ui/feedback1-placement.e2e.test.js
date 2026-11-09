@@ -12,7 +12,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { Client, ROOT, sleep, hasChrome, startRealServer, problemsOf } from '../e2e/client.mjs';
+import { Client, ROOT, sleep, hasChrome, startRealServer, problemsOf, groundAnchor, anchorPoint, cameraSettled } from '../e2e/client.mjs';
 import { ownerRangeKeys } from '../../server/match/board.js';
 
 const ENABLED = process.env.SP_E2E === '1' && hasChrome() && existsSync(path.join(ROOT, 'public/assets'));
@@ -35,6 +35,8 @@ async function soloToPrep(c) {
   await c.click('.dband', null, { nth: 1 });
   await c.click('.draft-detail__btns .btn--primary', '确认选择');
   await c.waitFor((x) => x.phase === 'PREP' && !x.ready, 'prep', 60000);
+  // the held 已选定策略 and 协议启动！ (screens/game.js DRAFT_HOLD_MS + BOOT_MIN_MS, inside BATTLE_CHECK) cover the board first
+  await c.page.waitForFunction(() => !document.querySelector('.screen.draft, [data-testid="protocol-boot"]'), { timeout: 15000 });
   await sleep(1800);
 }
 
@@ -46,16 +48,25 @@ const legalLit = (c) => c.page.evaluate(() => {
 });
 const wheelOpen = (c) => c.page.evaluate(() => !!document.querySelector('.fwheel__dia'));
 
-/** Press on hand piece `uid`, move over `hover` and read the legal highlights mid-drag, then release on `drop`. */
+/**
+ * Press on hand piece `uid`, move over `hover` and read the legal highlights mid-drag, then release on `drop`. The tiles'
+ * points are aimed at again once the piece is picked up: the deploy fold zooms the board then (GitHub #602).
+ */
 async function dragRead(c, uid, hover, drop, shot = null) {
   const from = await c.piecePoint(uid);
-  const over = await c.tilePoint(hover[0], hover[1]);
-  const to = await c.tilePoint(drop[0], drop[1]);
+  let over = await c.tilePoint(hover[0], hover[1]);
+  let to = await c.tilePoint(drop[0], drop[1]);
   assert.ok(from && over && to, `piece ${uid} and tiles on screen`);
+  const [aOver, aTo] = [await groundAnchor(c.page, over), await groundAnchor(c.page, to)];
   const m = c.page.mouse;
   await m.move(from.x, from.y);
   await m.down();
-  for (let i = 1; i <= 12; i++) { await m.move(from.x + ((over.x - from.x) * i) / 12, from.y + ((over.y - from.y) * i) / 12); await sleep(14); }
+  for (let i = 1; i <= 3; i++) { await m.move(from.x + ((over.x - from.x) * i) / 12, from.y + ((over.y - from.y) * i) / 12); await sleep(14); }
+  await cameraSettled(c.page);
+  const start = { x: from.x + ((over.x - from.x) * 3) / 12, y: from.y + ((over.y - from.y) * 3) / 12 };
+  over = (await anchorPoint(c.page, aOver)) || over;
+  to = (await anchorPoint(c.page, aTo)) || to;
+  for (let i = 1; i <= 9; i++) { await m.move(start.x + ((over.x - start.x) * i) / 9, start.y + ((over.y - start.y) * i) / 9); await sleep(14); }
   await sleep(250);
   const lit = (await legalLit(c)).sort();
   if (shot) await c.shot(shot);

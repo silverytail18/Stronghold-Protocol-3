@@ -1,3 +1,4 @@
+import {markProductContent} from '../../../../shared/product-content.js';
 import {KJERAG_GUIDE,guideDescription} from './kjerag-balance.js';
 import {setTestBondDescription} from '../../../../shared/test-bond-descriptions.js';
 export const GUIDE='snowfieldGuideShip', RECRUIT='band_exp_kjerag_recruit';
@@ -6,9 +7,10 @@ const recruitDesc='【山路招募】调度中心首次升至3级、4级时，�
 const guideDesc=guideDescription();
 /** Only caller-owned copies: no baseline files, skills, stats or persistent state are changed. */
 export function applyKjerag(data){
+ markProductContent(data,"arknights-expansion-v1");
   data.bands||={};data.assets||={};
   data.bands[RECRUIT]={bandId:RECRUIT,sortId:31,name:'山路招募',iconId:'icon_kjerag_recruit',modeTypeList:['SINGLE','MULTI'],totalHp:24,effectId:'exp_kjerag_recruit',effectName:'山路招募',desc:recruitDesc,descRaw:recruitDesc,buffs:[],params:{},bondIds:['kjeragShip'],requiresAvailableBond:{bondId:'kjeragShip',count:3},expansionBatch:'arknights-expansion-v1'};
-  data.bonds[GUIDE]={bondId:GUIDE,name:'雪境向导',identifier:10013,isCore:false,bondType:'REGULAR',bondOrder:2,powerIdList:[],iconId:'icon_snowfieldGuideShip',activeCount:2,thresholds:[2,4],maxCount:null,thresholdTemplate:'count_threshold_upward',countMode:'BOARD',countsHand:false,countsGoldenOnly:false,activeType:'BATTLE',isActiveInDeck:false,noStack:true,weight:10,maxInactiveBondCount:-1,layerMilestones:[],desc:guideDesc,descRaw:guideDesc,effectId:'exp_snowfield_guide',effectName:'雪境向导',effectDesc:guideDesc,effectDescRaw:guideDesc,effectDescParams:[],bb:{banWeight:10,...KJERAG_GUIDE},bbStr:{key:'exp_snowfield_guide'},buffs:[],baseParams:[],perStackParams:[],expansionBatch:'arknights-expansion-v1'};
+  data.bonds[GUIDE]={bondId:GUIDE,name:'雪境向导',identifier:10013,isCore:false,bondType:'REGULAR',bondOrder:2,powerIdList:[],iconId:'icon_snowfieldGuideShip',activeCount:2,thresholds:[2,5],maxCount:null,thresholdTemplate:'count_threshold_upward',countMode:'BOARD',countsHand:false,countsGoldenOnly:false,activeType:'BATTLE',isActiveInDeck:false,noStack:true,weight:10,maxInactiveBondCount:-1,layerMilestones:[],desc:guideDesc,descRaw:guideDesc,effectId:'exp_snowfield_guide',effectName:'雪境向导',effectDesc:guideDesc,effectDescRaw:guideDesc,effectDescParams:[],bb:{banWeight:10,...KJERAG_GUIDE},bbStr:{key:'exp_snowfield_guide'},buffs:[],baseParams:[],perStackParams:[],expansionBatch:'arknights-expansion-v1'};
   setTestBondDescription(data.bonds[GUIDE],'snow',KJERAG_GUIDE);
   // Explicit normal/elite IDs; hidden forms keep their original membership and availability.
   for(const base of GUIDE_MEMBERS)for(const suffix of ['_a','_b']){const c=data.chess[base+suffix];if(c&&!c.bonds.includes(GUIDE))c.bonds=[...c.bonds,GUIDE];}

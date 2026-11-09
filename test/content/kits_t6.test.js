@@ -1,8 +1,9 @@
-// Content tests for the tier-6 kits (server/sim/content/kits/tier6.js) + 盟约·辅助干员 (chess_char_1_15).
+// Content tests for the tier-6 kits (server/sim/content/kits/ops/chess_char_6_*.js) + 盟约·辅助干员 (chess_char_1_15).
 // Every test runs a real battle through the harness and checks the signature effect of the kit.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { makeBattle, enemyRec, chessRec, checkInvariants } from '../helpers/battleHarness.js';
+import { applyModuleRange } from '../../server/sim/content/kits/shared/tier4.js';
 
 const dummy = (o = {}) => enemyRec({ key: 'enemy_dummy', hp: 1e7, speed: 0, ...o });
 const DEFS = {
@@ -21,6 +22,7 @@ const DEFS = {
       id: 'test_lat_a', profession: 'SNIPER', bonds: ['lateranoShip'], skill: null, stats: { atk: 1 },
       rangeGrid: Array.from({ length: 11 }, (_, c) => [0, c]).concat(Array.from({ length: 11 }, (_, c) => [-2, c]), Array.from({ length: 11 }, (_, c) => [2, c])),
     }),
+    test_short_a: chessRec({ id: 'test_short_a', profession: 'SNIPER', skill: null, stats: { atk: 1 }, rangeGrid: [[0, 0], [0, 1]] }),
   },
 };
 
@@ -281,8 +283,8 @@ test('余: blocked enemies take 40 % ATK arts + 12 % burn per second, 庇护 whi
   assert.ok(dot.length >= 2);
   const burn = h.dmg.filter((d) => d.src === u.id && d.element === 'burn');
   assert.ok(burn.length >= 2);
-  // 庇护 (ba.protect): physical and arts damage only
-  assert.ok(u.findBuff('yu:shelter') && near(u.s.physTakenMul, 1 - t0.damage_resistance) && near(u.s.artsTakenMul, 1 - t0.damage_resistance));
+  // 庇护 (ba.protect): physical and arts damage only — the shared effect of every source (kits/shared/tier1.js holdProtect)
+  assert.ok(u.findBuff('protect')?.source === u && near(u.s.physTakenMul, 1 - t0.damage_resistance) && near(u.s.artsTakenMul, 1 - t0.damage_resistance));
   assert.equal(u.s.trueTakenMul, 1, '庇护 does not reduce true damage');
   assert.equal(u.s.dmgTakenMul, 1);
   const base = u.base.maxHp;
@@ -298,6 +300,10 @@ test('余: S3 fire wall adds burn to allied arts damage crossing it and clears c
     enemies: [{ key: 'enemy_dummy', pos: [10, 6] }, { key: 'enemy_shooter', pos: [11, 8] }],
     seed: 11,
   });
+  // the shooter aims at 优等生 behind the wall: a taunt, since 余 (his column further right) now deploys last — the
+  // latest deployed, the shooter's pick at equal taunt (deployment by column since 0.1.3)
+  h.step();
+  h.b.addBuff(h.unit('chess_char_1_15_a'), { key: 'test:taunt', mods: { taunt: 1 }, persist: true });
   const u = h.unit('chess_char_6_03_a');
   assert.ok(h.runUntil(() => u.skill.active, 10));
   h.run(15);
@@ -587,6 +593,89 @@ test('迷迭香: S2 adds 2 aftershocks per attack, ignores 160 DEF (talent)', ()
   assert.equal(u.profile.shockTimes, u.def.traitBb['attack@times'], 'restored after the skill');
 });
 
+test('新约能天使 火力电台 (PRTS 备注, DESIGN §35.28): one target per round, a bombing per success 0.1 s apart, radius 1.3', () => {
+  const h = battle({
+    units: [{ chessId: 'chess_char_6_13_a', row: 10, col: 1 }, { chessId: 'test_lat_a', row: 10, col: 2 }],
+    enemies: [{ key: 'enemy_dummy', pos: [10, 8] }, { key: 'enemy_dummy2', pos: [9, 8.7] }],
+  });
+  const u = h.unit('chess_char_6_13_a'), lat = h.unit('test_lat_a');
+  h.step();
+  const a = enemyAt(h, 'enemy_dummy'), b = enemyAt(h, 'enemy_dummy2');
+  assert.ok(h.b.enemiesInKeys(lat.rangeKeys, u).includes(a) && !h.b.enemiesInKeys(lat.rangeKeys, u).includes(b), 'only the first one in the consumer\'s range');
+  const rng = h.b.rng;
+  h.b.rng = Object.assign(() => 0, rng); // every chance succeeds
+  const t0 = h.b.time;
+  for (let i = 0; i < 3; i++) h.b.emit('ammoUsed', { unit: lat, left: 10 - i, skill: lat.skill }); // one action spends 3 bullets
+  h.run(0.6);
+  h.b.rng = rng;
+  const hits = h.dmg.filter((d) => d.src === u.id && d.tags.includes('airstrike'));
+  const onA = hits.filter((d) => d.tgt === a.id).map((d) => d.t - t0), onB = hits.filter((d) => d.tgt === b.id).map((d) => d.t - t0);
+  assert.equal(onA.length, 3, 'three successes: three bombings of the round');
+  assert.equal(onB.length, 3, 'radius 1.3 reaches the enemy 1.22 tiles away (radius 1 did not)');
+  onA.forEach((t, k) => assert.ok(Math.abs(t - 0.1 * k) < 0.04, `bombing ${k} at +${t.toFixed(3)} s`));
+  assert.ok(near(hits[0].amount, hits[2].amount), 'the round\'s damage computed once');
+  // 「预计算的物理普通伤害」: an ATK buff after the round's first bombing leaves its later bombings at the first amount
+  h.b.rng = Object.assign(() => 0, rng);
+  const t1 = h.b.time;
+  for (let i = 0; i < 3; i++) h.b.emit('ammoUsed', { unit: lat, left: 7 - i, skill: lat.skill });
+  h.b.rng = rng;
+  h.b.addBuff(u, { key: 'test:atk', mods: { atkPct: 1 }, duration: 5 });
+  h.run(0.6);
+  const round2 = h.dmg.filter((d) => d.src === u.id && d.tags.includes('airstrike') && d.tgt === a.id && d.t >= t1 - 1e-9);
+  assert.equal(round2.length, 3);
+  assert.ok(near(round2[1].amount, round2[0].amount) && near(round2[2].amount, round2[0].amount), 'the round keeps the damage it was made with');
+});
+
+test('新约能天使 火力电台: the target among the enemies of the consumer\'s own grid — a permanent 攻击距离 extension does not count', () => {
+  // PRTS 「不受对方的攻击距离增减」: baseRangeKeys carries the permanent extension (talents, modules, bonds), the bombing's
+  // search takes the consumer's grid alone (DESIGN §35.28)
+  const h = battle({
+    units: [{ chessId: 'chess_char_6_13_a', row: 10, col: 1 }, { chessId: 'test_short_a', row: 10, col: 3 }],
+    enemies: [{ key: 'enemy_dummy', pos: [10, 5] }],
+  });
+  const u = h.unit('chess_char_6_13_a'), sh = h.unit('test_short_a');
+  h.step();
+  h.b.addBuff(sh, { key: 'test:range', persist: true, duration: Infinity, mods: { rangeExtend: 1 } });
+  h.step();
+  const d = enemyAt(h, 'enemy_dummy');
+  assert.ok(h.b.enemiesInKeys(sh.baseRangeKeys, u).includes(d), 'the permanent extension reaches the dummy');
+  const rng = h.b.rng;
+  h.b.rng = Object.assign(() => 0, rng);
+  const t0 = h.b.time;
+  h.b.emit('ammoUsed', { unit: sh, left: 4, skill: sh.skill });
+  h.b.rng = rng;
+  h.run(0.3);
+  assert.equal(h.dmg.filter((x) => x.src === u.id && x.tags.includes('airstrike') && x.t >= t0 - 1e-9).length, 0, 'no target in the consumer\'s own grid: no bombing');
+});
+
+test('新约能天使 火力电台: a module that replaces the consumer\'s grid defines its own range', () => {
+  const h = battle({
+    units: [{ chessId: 'chess_char_6_13_a', row: 10, col: 1 }, { chessId: 'test_short_a', row: 10, col: 3 }],
+    enemies: [{ key: 'enemy_dummy', pos: [10, 5] }],
+  });
+  const u = h.unit('chess_char_6_13_a'), sh = h.unit('test_short_a');
+  h.step();
+  const d = enemyAt(h, 'enemy_dummy');
+  assert.ok(!h.b.enemiesInKeys(sh.rangeKeys, u).includes(d), 'outside the original grid');
+  // The production module helper replaces rangeGrid, unlike a rangeExtend buff. No current ammo consumer has such
+  // a module, so the fixture supplies one to exercise that distinction (DESIGN §35.28 review).
+  const grid = [[0, 0], [0, 1], [0, 2]];
+  applyModuleRange(h.b, sh, { raw: {
+    module: { active: true, id: 'test:module' },
+    modules: [{ uniEquipId: 'test:module', talentChanges: [{ rangeGrid: grid }] }],
+  } });
+  assert.deepEqual(sh.rangeGrid, grid);
+  assert.ok(h.b.enemiesInKeys(sh.rangeKeys, u).includes(d), 'inside the module grid');
+  const rng = h.b.rng;
+  h.b.rng = Object.assign(() => 0, rng);
+  const t0 = h.b.time;
+  h.b.emit('ammoUsed', { unit: sh, left: 4, skill: sh.skill });
+  h.b.rng = rng;
+  h.run(0.3);
+  assert.equal(h.dmg.filter((x) => x.src === u.id && x.tgt === d.id && x.tags.includes('airstrike') && x.t >= t0 - 1e-9).length, 1);
+  checkInvariants(h.b);
+});
+
 test('新约能天使: S2 steals 70 ASPD from an ally in range, shields both, 35+5 ammo; 火力电台 heals per ammo', () => {
   const h = battle({
     units: [{ chessId: 'chess_char_6_13_a', row: 10, col: 3, carryState: { sp: 29 } }, { chessId: 'test_guard_a', row: 10, col: 4 }],
@@ -715,9 +804,11 @@ test('耀骑士临光: S3 summons 耀阳 (90 % true + stun 3 s around it), true 
 });
 
 test('荒芜拉普兰德: S3 drones chase enemies anywhere, fear on catch, 100 % ATK arts per second around them', () => {
+  // (one enemy, far outside her range: every drone picks the enemy nearest to itself — PRTS S3 备注 ② — so a second,
+  // nearer enemy would draw all of them; the full flight is in test/sim/feedback2-whitw2-yu.test.js)
   const h = battle({
     units: [{ chessId: 'chess_char_6_18_a', row: 10, col: 3, carryState: { sp: 68 } }],
-    enemies: [{ key: 'enemy_dummy', pos: [10, 4] }, { key: 'enemy_dummy2', pos: [12, 9] }],
+    enemies: [{ key: 'enemy_dummy2', pos: [12, 9] }],
   });
   const u = h.unit('chess_char_6_18_a');
   const bb = u.def.skill.bb;
@@ -991,8 +1082,9 @@ test('荒芜拉普兰德: 叙拉古的荣幸 +5 initial SP on every deployment; 
   // (S3 may be running — its drones do not normal-attack): wait for a normal attack after stage 3
   assert.ok(h.runUntil(() => h.dmg.some((d) => d.src === u.id && d.attack && d.tgt === e.id && d.t > ts), 60));
   const last = h.dmg.filter((d) => d.src === u.id && d.attack && d.tgt === e.id).at(-1);
-  const same = h.dmg.filter((d) => d.src === u.id && d.attack && d.t === last.t);
-  assert.equal(same.length, 2, 'two drone hits per attack');
+  const same = h.dmg.filter((d) => d.src === u.id && d.t === last.t);
+  assert.equal(same.filter((d) => d.attack).length, 1, 'one body hit per attack');
+  assert.equal(same.filter((d) => d.tags.includes('funnel')).length, 2, 'two drone additions per attack');
 });
 
 test('缪尔赛思: 流形 copies stats/range/damage type but not the attack shape (锏 2-hit); a capped melee copy steals nothing more', () => {
@@ -1089,6 +1181,34 @@ test('异客: the S3 storm stops when she leaves the field', () => {
   const n = h.eventsOf('fx').filter((e) => e[1] === 'lightning').length;
   h.run(5);
   assert.equal(h.eventsOf('fx').filter((e) => e[1] === 'lightning').length, n, 'no strike after her retreat');
+});
+
+test('异客: the S3 storm is range x-1 — the 13-tile diamond — around the tile of the target\'s centre (PRTS 备注; GitHub #322, PR #329)', () => {
+  // the storm's target stands off its tile centre at (5.4, 10.4) — tile (10, 5) — and is removed right after the cast, so
+  // every strike starts on the probe (no chain bounce from the target) when, and only when, the probe is in the zone
+  const strikes = ([dx, dy]) => {
+    const h = battle({ units: [{ chessId: 'chess_char_6_05_a', row: 10, col: 3 }], autoFinish: false });
+    h.step();
+    const u = h.unit('chess_char_6_05_a');
+    const tgt = h.spawn('enemy_dummy2', { pos: [10, 5], mods: { hpMul: 2 } });
+    tgt.x = 5.4; tgt.y = 10.4;
+    h.step();
+    assert.ok(u.skill.activate('test', { free: true }));
+    const storm = h.eventsOf('fx').find((e) => e[1] === 'storm');
+    assert.deepEqual([storm[2], storm[3]], [5, 10], 'the storm sits on the centre of the target\'s tile');
+    h.b.dealDamage(null, tgt, { amount: 1e12, type: 'true' });
+    const p = h.spawn('enemy_dummy', { pos: [10, 5] });
+    p.x = 5 + dx; p.y = 10 + dy;
+    h.run(4.2);
+    checkInvariants(h.b);
+    return h.dmg.filter((d) => d.src === u.id && d.tgt === p.id && d.tags.includes('storm')).length;
+  };
+  // in the diamond (|Δrow| + |Δcol| ≤ 2 by tile): (2, 0) / (0, −2) / (1.95, 0.4) lay outside the old 1.5 circle; (1.55, 1.05)
+  // stands on tile (+2, +1) but its 0.1 collider reaches tile (+1, +1) — a zone takes it since 0.3.0 (the range test)
+  for (const off of [[0, 0], [2, 0], [0, -2], [-2, 0], [1.45, 1.45], [1.95, 0.4], [1.55, 1.05]]) assert.equal(strikes(off), 8, `(${off}) struck by all 8 strikes`);
+  // outside it: tile (+2, +1) and tile (+3, 0); (1.65, 1.05) on tile (+2, +1), its collider 0.05 short of tile (+1, +1)
+  // three tiles off along the columns: the field has no row 13 (a probe there is held on row 12, inside the diamond)
+  for (const off of [[2, 1], [1.65, 1.05], [2.6, 0]]) assert.equal(strikes(off), 0, `(${off}) never struck`);
 });
 
 test('蕾缪安: 通缉 needs a continuous 8 s stay in a 拉特兰 range (leaving restarts the count)', () => {

@@ -1,0 +1,191 @@
+{
+  "yu-ai": {
+    "name": "雨爱",
+    "mode": "coop",
+    "file": "/assets/audio/music/yu-ai/song.mp3",
+    "gain": 1,
+    "sha256": "9621cec4efa2039e7af572fc90d62ea7b6db22f5ebd822610ef1aaca1f3dbfa3",
+    "bytes": 3944174,
+    "provenance": "User-confirmed custom soundtrack retained from existing project"
+  },
+  "peng-you-de-jiu": {
+    "name": "朋友的酒",
+    "mode": "coop",
+    "file": "/assets/audio/music/peng-you-de-jiu/song.mp3",
+    "gain": 1,
+    "sha256": "0b00700c0b68913fcb7abf494bbd9f79b1d21ac175232c5dec835e364712675f",
+    "bytes": 5219468,
+    "provenance": "User-confirmed custom soundtrack retained from existing project"
+  },
+  "ba-qian-li": {
+    "name": "八千里路明月照",
+    "mode": "coop",
+    "file": "/assets/audio/music/ba-qian-li/song.mp3",
+    "gain": 1,
+    "sha256": "753980b8725fd92e50df9f3b5bea267206e96efc0983e42372491b9bf0069570",
+    "bytes": 3264986,
+    "provenance": "User-confirmed custom soundtrack retained from existing project"
+  },
+  "zhong-guo-ren": {
+    "name": "中国人能飞",
+    "mode": "coop",
+    "file": "/assets/audio/music/zhong-guo-ren/song.mp3",
+    "gain": 1,
+    "sha256": "632bf378fdd8f2f62d750b17c14796e4026a30a147c904c487414d7912a1356c",
+    "bytes": 1979239,
+    "provenance": "User-confirmed custom soundtrack retained from existing project"
+  },
+  "xia-shan": {
+    "name": "下山",
+    "mode": "coop",
+    "file": "/assets/audio/music/xia-shan/song.mp3",
+    "gain": 1,
+    "sha256": "dc7ec85929d21aa500c0673d159068a0adf435f7075fb0680fed40b0f68b5779",
+    "bytes": 4148974,
+    "provenance": "User-confirmed custom soundtrack retained from existing project"
+  },
+  "zhen-xiong-di": {
+    "name": "难得真兄弟",
+    "mode": "coop",
+    "file": "/assets/audio/music/zhen-xiong-di/song.mp3",
+    "gain": 1,
+    "sha256": "96a6cf57a5d8c4d86e64d7bd584c91df1c6724f52f837758a17f5bf661ec1331",
+    "bytes": 4294215,
+    "provenance": "User-confirmed custom soundtrack retained from existing project"
+  },
+  "qiu-fo": {
+    "name": "求佛",
+    "mode": "coop",
+    "file": "/assets/audio/music/qiu-fo/song.mp3",
+    "gain": 1,
+    "sha256": "67962500fb967a216eb65be347a8f64cfcb34bb65e3d558b0e1bed0026cbc4f4",
+    "bytes": 4635896,
+    "provenance": "User-confirmed custom soundtrack retained from existing project"
+  },
+  "pi-pa-xing": {
+    "name": "琵琶行",
+    "mode": "coop",
+    "file": "/assets/audio/music/pi-pa-xing/song.mp3",
+    "gain": 1,
+    "sha256": "6414247d5011d344d5242a2d7536effd21d2c2fb557f363c2b9419e0d2e4fa70",
+    "bytes": 5289476,
+    "provenance": "User-confirmed custom soundtrack retained from existing project"
+  },
+  "guan-shan-jiu": {
+    "name": "关山酒",
+    "mode": "coop",
+    "file": "/assets/audio/music/guan-shan-jiu/song.mp3",
+    "gain": 1,
+    "sha256": "0dd91ac1ff197db557cee00cddbf3f974e637b8fd4d340a7f0353303b7e9ab10",
+    "bytes": 6100843,
+    "provenance": "User-confirmed custom soundtrack retained from existing project"
+  },
+  "xin-zheng-cheng": {
+    "name": "开启新征程2",
+    "mode": "coop",
+    "file": "/assets/audio/music/xin-zheng-cheng/song.mp3",
+    "gain": 1,
+    "sha256": "4774be0643e9d67e7b51bc223ca938b7e268065571187231d9de1ec8c7767dd1",
+    "bytes": 3394033,
+    "provenance": "User-confirmed custom soundtrack retained from existing project"
+  },
+  "rong-yao": {
+    "name": "荣耀向我俯首",
+    "mode": "coop",
+    "file": "/assets/audio/music/rong-yao/song.mp3",
+    "gain": 1,
+    "sha256": "729d6a0af83d6162ca86f580b7e286c74d1ede6df8d937bdabde418e8b67354f",
+    "bytes": 3326637,
+    "provenance": "User-confirmed custom soundtrack retained from existing project"
+  },
+  "zhen-ying-xiong": {
+    "name": "真英雄",
+    "mode": "coop",
+    "file": "/assets/audio/music/zhen-ying-xiong/song.mp3",
+    "gain": 1,
+    "sha256": "a1e29111ba4d90b2af2947bd49d1aaf7cdc6e2bfc2f467c24c93b94e456eca37",
+    "bytes": 35427994,
+    "provenance": "User-confirmed custom soundtrack retained from existing project"
+  },
+  "ci-jiu-men": {
+    "name": "辞九门回忆",
+    "mode": "coop",
+    "file": "/assets/audio/music/ci-jiu-men/song.mp3",
+    "gain": 1,
+    "sha256": "efe8911f2c6a5b77836c84d725f19af219f25de3f38f72588ccfec2e771965d7",
+    "bytes": 5015194,
+    "provenance": "User-confirmed custom soundtrack retained from existing project"
+  },
+  "ban-shan-yao": {
+    "name": "半山腰",
+    "mode": "coop",
+    "file": "/assets/audio/music/ban-shan-yao/song.mp3",
+    "gain": 1,
+    "sha256": "4b931a6c5d23a37937c93d93155fe4310f2d827ab490d40634efebe1b86dd61f",
+    "bytes": 4169347,
+    "provenance": "User-confirmed custom soundtrack retained from existing project"
+  },
+  "nan-wang-jin-xiao": {
+    "name": "难忘今宵",
+    "mode": "coop",
+    "file": "/assets/audio/music/nan-wang-jin-xiao/song.mp3",
+    "gain": 1,
+    "sha256": "e90c92e1b200c85d2afc7dc603b737f5402756ce2b4ff795ed2c0c2b7f106796",
+    "bytes": 5321443,
+    "provenance": "User-provided music/难忘今宵.mp4; normalized to existing custom soundtrack loudness (-13 LUFS)"
+  },
+  "cha-yi-bu": {
+    "name": "差一步",
+    "mode": "coop",
+    "file": "/assets/audio/music/cha-yi-bu/song.mp3",
+    "gain": 1,
+    "sha256": "904e096aefa9228d3f4d134c06b4b2c285650548434cd82749ac6b6c8ef16a75",
+    "bytes": 3137857,
+    "provenance": "User-provided music/差一步.mp4; normalized to -13 LUFS"
+  },
+  "guan-yu-zhi-ge": {
+    "name": "关羽之歌",
+    "mode": "coop",
+    "file": "/assets/audio/music/guan-yu-zhi-ge/song.mp3",
+    "gain": 1,
+    "sha256": "8b934e0b4044786428cba677ae6caf50fc2f2fd60f030b93ca119905687536a8",
+    "bytes": 1041093,
+    "provenance": "User-provided music/关羽之歌.mp4; normalized to -13 LUFS"
+  },
+  "tian-liang-yi-qian-shuo-zai-jian": {
+    "name": "天亮以前说再见",
+    "mode": "coop",
+    "file": "/assets/audio/music/tian-liang-yi-qian-shuo-zai-jian/song.mp3",
+    "gain": 1,
+    "sha256": "18b2f8c3d85b61a59c5695b9a0d29e8343384aa43bb9429492f04114e7e4d93b",
+    "bytes": 4709554,
+    "provenance": "User-provided music/天亮以前说再见.mp4; normalized to -13 LUFS"
+  },
+  "gu-yong-zhe": {
+    "name": "孤勇者",
+    "mode": "coop",
+    "file": "/assets/audio/music/gu-yong-zhe/song.mp3",
+    "gain": 1,
+    "sha256": "f461881940e1381fdc094880f43aa8e987e78f44add492098813b1cf07cfd0f0",
+    "bytes": 5824543,
+    "provenance": "User-provided music/孤勇者.mp4; normalized to approximately -13 LUFS"
+  },
+  "pi-pa-qu": {
+    "name": "琵琶曲",
+    "mode": "coop",
+    "file": "/assets/audio/music/pi-pa-qu/song.mp3",
+    "gain": 1,
+    "sha256": "b6a91a1eecfcfdc27fe299d30b07195b8d391bd9bfd65a9c469f338684b935be",
+    "bytes": 3577095,
+    "provenance": "User-provided music/琵琶曲.mp4; normalized to approximately -13 LUFS"
+  },
+  "you-shan-lian": {
+    "name": "游山恋",
+    "mode": "coop",
+    "file": "/assets/audio/music/you-shan-lian/song.mp3",
+    "gain": 1,
+    "sha256": "7242063499ddf2512a1cfc31828a389d49da51dba27f57fe005358aa5ed555ba",
+    "bytes": 4837034,
+    "provenance": "User-provided music/游山恋.mp4; normalized to approximately -13 LUFS"
+  }
+}

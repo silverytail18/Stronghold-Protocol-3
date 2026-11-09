@@ -4,6 +4,7 @@ import {state,inFever,install as installFever} from './fever.js';
 import {RI_BALANCE as R} from './balance.js';
 import {RHODES_ITEMS} from './content-text.js';
 import {installEngineering,riMember,livingRhodes} from './engineering.js';
+import {installPersonal} from './personal.js';
 const ownDmg=d=>d&&!d.sourceless&&(!d.tags?.some(t=>t==='item'||t==='bond'||t.startsWith('item:')||t.startsWith('bond:')||t.startsWith('exp:sui')));
 export function install(b){
  installFever(b);
@@ -24,5 +25,5 @@ export function install(b){
  if(hasClosure)b.on('hit',({target:u,dmg})=>{if(u.kind==='op'&&b.getPlayer(u.ownerId)?.bandId==='band_rm_closure'&&S.itemsOf(u).length>=1&&['phys','arts'].includes(dmg.type))dmg.mul*=.9;});
  if(hasGirl)b.on('heal',ctx=>{if(ctx.source&&!ctx.opts?.regen&&!ctx.opts?.aura)ctx.amount*=coef(ctx.source);});
 
- if(hasRI){installEngineering(b);b.rhodesInfo=pid=>{const st=b.getPlayer(pid)?.bonds?.[RI];if(!st?.active)return null;return{atk:livingRhodes(b,pid).reduce((n,u)=>n+Math.max(0,u._s?.atk??u.base.atk),0),layers:st.layers||0,tier:st.tier,live:true};};}
+ if(hasRI){const fire=installEngineering(b);installPersonal(b,fire);b.rhodesInfo=pid=>{const st=b.getPlayer(pid)?.bonds?.[RI];if(!st?.active)return null;const t=fire.get(pid);return{atk:livingRhodes(b,pid).reduce((n,u)=>n+Math.max(0,u._s?.atk??u.base.atk),0),layers:st.layers||0,tier:st.tier,live:true,...(t?{commands:t.commands,commandCooldown:Math.max(0,t.teamReady-b.time),followRemaining:t.chain?.remaining||0,personal:b.rhodesPersonal.view(pid)}: {})};};}
 }

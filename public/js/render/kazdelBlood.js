@@ -1,4 +1,5 @@
 import {createBloodTextureCanvas} from './kazdelBloodTextures.js';
+import {SWORD_RANGE,SWORD_SPEED} from '../../../shared/kazdel-rules.js';
 // World origin is the ground contact. Horizontal travel and vertical blade height use independent camera vectors.
 export class KazdelBloodSystem{
  constructor(ctx){this.ctx=ctx;this.effects=[];this.textures=new Map();this.spare=[];this.g=new ctx.P.Graphics();ctx.layers.fxNormal.addChild(this.g);}
@@ -6,7 +7,7 @@ export class KazdelBloodSystem{
  free(e){if(e.sprite){e.sprite.visible=false;this.spare.push(e.sprite);e.sprite=null;}}
  emit(kind,ex){
   if(!Number.isFinite(ex.x)||!Number.isFinite(ex.y))return;
-  const sword=kind==='kz-blood-sword',vortex=kind==='kz-blood-vortex',e={...ex,kind,age:0,flight:Math.max(0,ex.t??.4),dur:Math.max(.05,ex.t??.4)+(sword?.06:0)};
+  const sword=kind==='kz-blood-sword',vortex=kind==='kz-blood-vortex',distance=sword?Math.min(SWORD_RANGE,Math.max(0,ex.distance??SWORD_RANGE)):0,speed=sword?SWORD_SPEED:0,flight=sword?distance/speed:Math.max(0,ex.t??.4),e={...ex,...(sword?{distance,speed}:{}),kind,age:0,flight,dur:Math.max(.05,flight)+(sword?.06:0)};
   if(sword||vortex){e.sprite=this.spare.pop()||new this.ctx.P.Sprite();e.sprite.anchor.set(135/190,90/125);e.sprite.visible=true;const parent=sword?this.ctx.layers.units:this.ctx.layers.fxNormal;if(e.sprite.parent!==parent)parent.addChild(e.sprite);e.sprite.texture=this.texture(sword?'sword':'vortex',0);}
   this.effects.push(e);if(this.effects.length>96)this.free(this.effects.shift());
  }
@@ -16,7 +17,7 @@ export class KazdelBloodSystem{
    const alpha=Math.min(1,(e.dur-e.age)/.08),dx=Number.isFinite(e.dx)?e.dx:0,dy=Number.isFinite(e.dy)?e.dy:1;
    const ground=(x,y)=>this.ctx.heightAt?.(Math.round(y),Math.round(x))||0;
    if(e.sprite){
-    const sword=e.kind==='kz-blood-sword',d=sword?Math.min(e.distance??5,e.age*(e.speed??5)):0,x=e.x+dx*d,y=e.y+dy*d,z=ground(x,y)+.025;
+    const sword=e.kind==='kz-blood-sword',d=sword?Math.min(e.distance,e.age*e.speed):0,x=e.x+dx*d,y=e.y+dy*d,z=ground(x,y)+.025;
     const p=cam.project(x,y,z),a=cam.project(x+dx,y+dy,z),up=cam.project(x,y,z+1);
     e.sprite.alpha=Math.min(1,e.age/.025)*alpha;
     if(sword){

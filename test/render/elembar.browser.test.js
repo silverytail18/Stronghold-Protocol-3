@@ -1,4 +1,3 @@
-import {appPage} from '../helpers/appPage.mjs';
 // test/render/elembar.browser.test.js — user playtest #6 report 11 in headless Chrome ("干员血条右边的元素损伤条积累速度
 // 不对，损伤条远远没扣完但是实际已经爆条"): a real battle (古米 against 底海滑动者) is simulated in Node, its frames are fed
 // to the real field view (public/dev/render-demo.html, real Spine models) the way the client runner does (local feed,
@@ -61,7 +60,7 @@ describe('element gauge row in headless Chrome (user playtest #6)', { skip }, ()
   before(async () => {
     const puppeteer = (await import('puppeteer-core')).default;
     const { startServer } = await import('../../server/index.js');
-    srv = await startServer({ auth: false, port: 0, host: '127.0.0.1', quiet: true });
+    srv = await startServer({ port: 0, host: '127.0.0.1', quiet: true });
     browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--no-first-run'] });
     mkdirSync(OUT, { recursive: true });
   });
@@ -71,7 +70,7 @@ describe('element gauge row in headless Chrome (user playtest #6)', { skip }, ()
   });
 
   const open = async (viewport) => {
-    const page = await appPage(await browser.newPage());
+    const page = await browser.newPage();
     const problems = [];
     page.on('console', (m) => { if (m.type() === 'error') problems.push(`console: ${m.text()}`); });
     page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));

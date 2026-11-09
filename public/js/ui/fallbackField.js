@@ -1,3 +1,4 @@
+import {activeBenchSize, benchSlot} from '../zhajingMode.js';
 // DOM fallback for the Pixi field view (DESIGN §9 API). Used when public/js/render/app.js is missing or
 // fails to initialise, so the match stays playable: a flat tile board + 整备区, pieces as avatars with
 // tier chips, pointer drag & drop (same events as the render engine), and a simple battle view (units as
@@ -16,28 +17,42 @@
 // Final Assault prep) keeps the own board layout here — every coordinate the UI exchanges is a board coordinate anyway —
 // but draws the tiles of the player's half of the boss field (gameLogic fieldTile, the legality the highlights use: act2
 // m01's fence tiles are floor there, not the normal field's walls; user playtest #5 item 7).
+// A tap on the ground itself emits tileClick { row, col } like render/app.js does, so a special terrain tile
+// explains itself on this board too (GitHub issue #184).
 
+import { resourceFloat } from '../render/resourceNumbers.js';
+import { pieceItemProgress, progressLabel } from '../itemProgress.js';
 import { render } from '../../vendor/preact.module.js';
 import { html, TierChip } from './components.js';
 import { GEO } from '../../../shared/constants.js';
-import { rhineMarks, RHINE_COLORS } from '../../../shared/rhine-visual.js';
 import { chessAvatarUrl, itemIconUrl, tokenAvatarUrl, enemyIconUrl } from './assetUrls.js';
-import { tileKey, hasFlag, UF, penPlacement, PEN, fieldTile } from './gameLogic.js';
+import { tileKey, hasFlag, UF, penPlacement, PEN, fieldTile, ownStandIn, ownDiyRecord } from './gameLogic.js';
+import { t } from '../../../shared/i18n.js';
+import { ownerSkin } from './skins.js';
 
 const DRAG_PX = 6;
 const DMG_TTL = 900;
 const cx = (...p) => p.flat().filter(Boolean).join(' ');
 
 /** Avatar URL for a UnitInfo `avatar` asset id (chars / E2 / tokens / enemies). */
-function unitArt(m, info) {
+export function unitArt(m, info, appearance = {}) {
   const id = info?.avatar || info?.defId;
   if (!m || !id) return null;
   if (info.side === 'enemy' || String(id).startsWith('enemy_')) return enemyIconUrl(m, id);
-  if (String(id).startsWith('token_')) return tokenAvatarUrl(m, id);
-  const chars = m.chars || {};
-  if (chars[id]?.avatar) return chars[id].avatar;
-  if (String(id).endsWith('_2') && chars[id.slice(0, -2)]) return chars[id.slice(0, -2)].avatarE2 || chars[id.slice(0, -2)].avatar;
-  return null;
+  if (String(id).startsWith('token_')) {
+    // 召唤物皮肤 (docs/SKINS.md): the same switch as an operator's: another seat's outfit is hidden when off. With its
+    // owner's operator known (UnitInfo ownerCharId, #876) the summon follows that operator's CURRENT outfit like the Pixi
+    // board does — the spawn-time info.skin missed a change made during the battle (round-54 audit)
+    const mine = info.ownerId == null || info.ownerId === appearance.myId;
+    const skin = info.ownerCharId && info.ownerId != null
+      ? ownerSkin(info.ownerCharId, { ...appearance, ownerId: info.ownerId, skin: info.skin })
+      : (mine || appearance.otherSkins !== false ? info.skin : null);
+    return tokenAvatarUrl(m, id, { skin });
+  }
+  // Same golden rule as chessAvatarUrl: a character-key avatar uses avatarE2 on a golden piece.
+  const charId = info.diy?.charId || info.spine || String(id).replace(/_[12]$/, '');
+  const skin = ownerSkin(charId, { ...appearance, ownerId: info.ownerId ?? null, skin: info.skin });
+  return chessAvatarUrl(m, { charId, isGolden: !!info.golden, assets: { avatar: id } }, { skin });
 }
 
 /** Look of the stage tile (row, col) on the fallback board (stage coordinates). */
@@ -59,6 +74,31 @@ export function fallbackTileClass(stage, row, col) {
 }
 
 /**
+ * The simplified board's floating label for one event, or null when that event draws no digits.
+ * Official mode keeps only a marked red integer (including 0) and a yellow MISS. The slot stays above the unit;
+ * the random offset of the Pixi numbers is not repeated here [ASSUMED].
+ * @param {any[]} e
+ * @param {{ damageNumbers?: boolean, officialDamageNumbers?: boolean }} settings
+ * @returns {{ id: any, text: string, type: string }|null}
+ */
+export function fallbackFloat(e, settings) {
+  if (!settings?.damageNumbers || !Array.isArray(e)) return null;
+  if (e[0] === 'resource') return resourceFloat(e, settings);
+  if (settings.officialDamageNumbers === true) {
+    if (e[0] === 'fx' && e[1] === 'dodge' && e[4] && e[4].num === 'm') return { id: e[4].id, text: 'MISS', type: 'miss' };
+    if (e[0] !== 'dmg' || e[4] !== 'r') return null;
+    const amount = Math.round(Number(e[2]) || 0);
+    if (!Number.isFinite(amount) || amount < 0) return null;
+    return { id: e[1], text: String(amount), type: 'crit' };
+  }
+  if (e[0] !== 'dmg' && e[0] !== 'heal') return null;
+  const amount = Math.round(Number(e[2]) || 0);
+  if (amount <= 0) return null;
+  const type = e[0] === 'heal' ? 'heal' : (e[3] === 'arts' ? 'arts' : e[3] === 'true' ? 'true' : 'phys');
+  return { id: e[1], text: e[0] === 'heal' ? `+${amount}` : String(amount), type };
+}
+
+/**
  * Create the DOM fallback view.
  * @param {HTMLElement} host
  * @param {{ data: any, assets?: any, settings?: any }} opts
@@ -76,8 +116,8 @@ export function createFallbackView(host, opts = {}) {
     stage: null, camera: 'prep', rect: { ...GEO.NORMAL_RECT }, side: 'L', deployField: 'normal',
     mode: 'prep', priv: null, editable: false, canPlace: null,
     field: null, units: new Map(), snapUnits: new Map(), highlight: new Map(), hlGroups: new Map(), held: new Map(), dirs: new Map(),
-    drag: null, hoverTarget: null, floats: [], settings: { damageNumbers: true, ...(opts.settings || {}) },
-    size: { w: 0, h: 0 }, destroyed: false, pen: [],
+    drag: null, hoverTarget: null, floats: [], settings: { damageNumbers: true, officialDamageNumbers: false, ...(opts.settings || {}) },
+    size: { w: 0, h: 0 }, destroyed: false, pen: [], myId: null, players: [],
   };
 
   const emit = (type, payload) => {
@@ -101,7 +141,7 @@ export function createFallbackView(host, opts = {}) {
     const cols = r.c1 - r.c0 + 1;
     const prep = st.mode === 'prep';
     const hasTemp = prep && Array.isArray(st.priv?.temp) && st.priv.temp.some(Boolean);
-    const rows = r.r1 - r.r0 + 1 + (prep ? 2.6 + (hasTemp ? 1.2 : 0) : 0); // + gap + hand (+ temp) rows
+    const rows = r.r1 - r.r0 + 1 + (prep ? 2.6 + (activeBenchSize() > 10 ? 1.1 : 0) + (hasTemp ? 1.2 : 0) : 0); // + gap + hand (+ temp) rows
     // keep clear of the HUD: top bar + bond strip above, shop bar (prep) / switcher (combat) below
     const top0 = rem * 2.0;
     const bottom0 = h - rem * (prep ? 3.3 : 1.1);
@@ -116,20 +156,38 @@ export function createFallbackView(host, opts = {}) {
   }
 
   const tilePos = (L, row, col) => ({ x: (col - st.rect.c0) * L.tile, y: (st.rect.r1 - row) * L.tile });
-  const handPos = (L, idx) => ({ x: idx * L.tile, y: (L.rows + 0.6) * L.tile });
-  const tempPos = (L, idx) => ({ x: (GEO.TEMP_C0 + idx) * L.tile, y: (L.rows + 1.72) * L.tile });
+  const handPos = (L, idx) => ({ x: (idx % 10) * L.tile, y: (L.rows + 0.6 + Math.floor(idx / 10) * 1.1) * L.tile });
+  const tempPos = (L, idx) => ({ x: (GEO.TEMP_C0 + idx) * L.tile, y: (L.rows + 1.72 + (activeBenchSize() > 10 ? 1.1 : 0)) * L.tile });
 
   // ---- pieces (prep) ---------------------------------------------------------------------------------------
   function pieceArt(p) {
     const mm = m();
     if (p.kind === 'item') return itemIconUrl(mm, lookup('items', p.id));
-    if (p.kind === 'token') return tokenAvatarUrl(mm, p.id);
-    return chessAvatarUrl(mm, lookup('chess', p.id));
+    // 召唤物皮肤 (docs/SKINS.md): the summon wears its owner's outfit; 设置「显示其他玩家的皮肤」 off hides another
+    // seat's outfit
+    if (p.kind === 'token') {
+      const own = (st.priv?.playerId ?? st.myId) === st.myId || st.settings?.otherSkins !== false;
+      return tokenAvatarUrl(mm, p.id, { skin: own ? p.skin : null });
+    }
+    const chess = lookup('chess', p.id);
+    const body = ownSi(chess) || ownDiy(chess) || chess;
+    const skin = ownerSkin(body?.charId, { ownerId: st.priv?.playerId ?? st.myId, skin: p.skin,
+      myId: st.myId, players: st.players, otherSkins: st.settings.otherSkins });
+    return chessAvatarUrl(mm, body, { skin });
+  }
+  /** 0.2.0 补位: the player's own piece of a chess it does not own is its stand-in, bench and board alike (render/app.js pieceInfo) */
+  function ownSi(chess) {
+    return chess ? ownStandIn(chess, st.priv, dataStore?.get?.('backups') ?? null) : null;
+  }
+  /** 0.2.0 自选编队: the player's own piece of a DIY slot it filled is its operator (gameLogic ownDiyRecord) */
+  function ownDiy(chess) {
+    return chess ? ownDiyRecord(chess, st.priv, { chess: dataStore?.get?.('chess') ?? null, backups: dataStore?.get?.('backups') ?? null }) : null;
   }
   function pieceName(p) {
-    if (p.kind === 'item') return lookup('items', p.id)?.name || '道具';
-    if (p.kind === 'token') return lookup('tokens', p.id)?.name || '召唤物';
-    return lookup('chess', p.id)?.name || '干员';
+    if (p.kind === 'item') return lookup('items', p.id)?.name || t('道具');
+    if (p.kind === 'token') return lookup('tokens', p.id)?.name || t('召唤物');
+    const chess = lookup('chess', p.id);
+    return (ownSi(chess) || ownDiy(chess) || chess)?.name || t('干员');
   }
 
   function Piece({ p, x, y, L, area }) {
@@ -148,8 +206,14 @@ export function createFallbackView(host, opts = {}) {
       ${tier && p.kind !== 'token' ? html`<${TierChip} tier=${tier} golden=${golden} size="sm" class="ff-piece__tier" />` : null}
       ${p.kind === 'chess' && Array.isArray(p.items) && p.items.length ? html`<div class="ff-piece__items">${p.items.slice(0, 2).map((it) => html`<i key=${it.uid}></i>`)}</div>` : null}
       ${p.kind === 'token' && p.count > 1 ? html`<b class="ff-piece__count">×${p.count}</b>` : null}
+      <${EquipmentProgress} rows=${pieceItemProgress(p)} />
       ${wedge ? html`<i class="ff-piece__dir" aria-hidden="true"></i>` : null}
     </div>`;
+  }
+
+  function EquipmentProgress({ rows }) {
+    const labels = (rows || []).map(progressLabel).filter(Boolean);
+    return labels.length ? html`<span class="ff-progress">${labels.map((label, i) => html`<span key=${i}>${label}</span>`)}</span>` : null;
   }
 
   function onDown(e, p) {
@@ -238,7 +302,7 @@ export function createFallbackView(host, opts = {}) {
     const py = (st.rect.r1 - y + 0.5) * L.tile;
     const enemy = info.side === 'enemy';
     const size = info.boss ? L.tile * 1.3 : L.tile * 0.86;
-    const src = unitArt(m(), info);
+    const src = unitArt(m(), info, { myId: st.myId, players: st.players, otherSkins: st.settings.otherSkins });
     const dead = anim === 4;
     const hpPct = maxHp > 0 ? Math.max(0, Math.min(100, (hp / maxHp) * 100)) : 0;
     const spPct = spMax > 0 ? Math.max(0, Math.min(100, (sp / spMax) * 100)) : 0;
@@ -249,6 +313,7 @@ export function createFallbackView(host, opts = {}) {
         onContextMenu=${(e) => { e.preventDefault(); emit('pieceClick', { unitId: id, uid: info.uid ?? null, unit: info, button: 2, clientX: e.clientX, clientY: e.clientY }); }}>
       <div class="ff-unit__art">${src ? html`<img src=${src} alt="" draggable=${false} />` : html`<span>${[...(info.name || '?')][0]}</span>`}</div>
       <div class="ff-unit__bars"><i class="hp" style=${`width:${hpPct}%`}></i>${!enemy && spMax > 0 ? html`<i class="sp" style=${`width:${spPct}%`}></i>` : null}</div>
+      ${!dead ? html`<${EquipmentProgress} rows=${info.itemProgress} />` : null}
     </div>`;
   }
 
@@ -292,7 +357,7 @@ export function createFallbackView(host, opts = {}) {
     });
     return html`<div class="ff-board ff-board--pen" style=${`left:${left}px;top:${top}px;width:${bw}px;height:${tile * rows}px;--tile:${tile}px`}>
       ${cells}${figs}
-      ${models.length ? null : html`<p class="ff-pen__empty">暂无敌方情报</p>`}
+      ${models.length ? null : html`<p class="ff-pen__empty">${t('暂无敌方情报')}</p>`}
     </div>`;
   }
 
@@ -302,8 +367,6 @@ export function createFallbackView(host, opts = {}) {
     const L = layout();
     const r = st.rect;
     const tiles = [];
-    const marks = st.mode === 'prep' ? rhineMarks(st.priv?.rhine?.positions) : (st.rhine || []);
-    const paused = st.mode === 'prep' && !st.priv?.rhine?.enabled;
     for (let row = r.r1; row >= r.r0; row--) {
       for (let col = r.c0; col <= r.c1; col++) {
         const p = tilePos(L, row, col);
@@ -311,12 +374,10 @@ export function createFallbackView(host, opts = {}) {
         let hl = st.highlight.get(k);
         for (const g of st.hlGroups.values()) if (g.tiles.has(k)) hl = g.name;
         const hov = st.hoverTarget?.area === 'board' && st.hoverTarget.row === row && st.hoverTarget.col === col ? dropState(st.hoverTarget) : null;
-        const mark = marks.find(m => m.row === row && m.col === col);
         tiles.push(html`<div key=${k} class=${cx('ff-tile', `ff-tile--${tileClass(row, col)}`, hl && `is-${hl}`, hov && `is-hover-${hov}`)}
           data-drop="board" data-row=${row} data-col=${col}
-          style=${`transform:translate(${p.x}px,${p.y}px);width:${L.tile}px;height:${L.tile}px;${mark ? `--rhine-color:${mark.color}` : ''}`}>
-          ${mark ? html`<i class="rhine-cell__mark" style=${`opacity:${paused || mark.paused || st.mode === 'prep' && !st.priv?.rhine?.active?.includes(mark.id) ? .16 : .36}`} title=${mark.id}></i>` : null}
-        </div>`);
+          onPointerDown=${(e) => { if (e.button === 0) emit('tileClick', { row, col, button: 0, clientX: e.clientX, clientY: e.clientY }); }}
+          style=${`transform:translate(${p.x}px,${p.y}px);width:${L.tile}px;height:${L.tile}px`}></div>`);
       }
     }
     const pieces = [];
@@ -324,12 +385,24 @@ export function createFallbackView(host, opts = {}) {
     const now = performance.now();
     if (st.mode === 'prep' && st.priv) {
       const heldPos = (p) => { const t = st.held.get(p.uid); return t ? tilePos(L, t.row, t.col) : null; };
+      for (const u of Array.isArray(st.priv.prepMapChars) ? st.priv.prepMapChars : []) {
+        if (!u || !Number.isInteger(u.x) || !Number.isInteger(u.y) || typeof u.defId !== 'string') continue;
+        const pos = tilePos(L, u.y, u.x);
+        const src = tokenAvatarUrl(m(), u.defId);
+        pieces.push(html`<div key=${`map:${u.uid}`} class="ff-piece ff-piece--token ff-piece--map-char"
+            style=${`transform:translate(${pos.x}px,${pos.y}px);width:${L.tile}px;height:${L.tile}px`}
+            onPointerDown=${(e) => { if (e.button === 0) emit('pieceClick', { unit: u, unitId: null, uid: u.uid, prepMapChar: true, button: 0, clientX: e.clientX, clientY: e.clientY }); }}
+            onContextMenu=${(e) => { e.preventDefault(); emit('pieceClick', { unit: u, unitId: null, uid: u.uid, prepMapChar: true, button: 2, detail: true, clientX: e.clientX, clientY: e.clientY }); }}
+            title=${u.name || u.defId}>
+          <div class="ff-piece__art">${src ? html`<img src=${src} alt="" draggable=${false} />` : html`<span>${[...(u.name || '?')][0]}</span>`}</div>
+        </div>`);
+      }
       for (const p of Array.isArray(st.priv.board) ? st.priv.board : []) {
         if (!p || !Number.isInteger(p.row)) continue;
         const pos = heldPos(p) || tilePos(L, p.row, p.col);
         pieces.push(html`<${Piece} key=${p.uid} p=${p} x=${pos.x} y=${pos.y} L=${L} area="board" />`);
       }
-      for (let i = 0; i < GEO.HAND_SIZE; i++) {
+      for (let i = 0; i < activeBenchSize(); i++) {
         const pos = handPos(L, i);
         const hov = st.hoverTarget?.area === 'hand' && st.hoverTarget.idx === i ? dropState(st.hoverTarget) : null;
         hand.push(html`<div key=${`h${i}`} class=${cx('ff-slot', hov && `is-hover-${hov}`)} data-drop="hand" data-idx=${i}
@@ -365,7 +438,7 @@ export function createFallbackView(host, opts = {}) {
     })() : null;
     if (st.camera === 'pen') { render(html`${penView()}<div class="ff-badge">SIMPLIFIED VIEW</div>`, root); return; }
     render(html`<div class=${cx('ff-board', `ff-board--${st.mode}`, `ff-cam--${st.camera}`)} style=${`left:${L.left}px;top:${L.top}px;width:${L.bw}px;height:${L.bh}px;--tile:${L.tile}px`}>
-      ${st.mode === 'prep' ? html`<div class="ff-hand-label" style=${`top:${(L.rows + 0.18) * L.tile}px`}><span>整备区</span><i></i></div>` : null}
+      ${st.mode === 'prep' ? html`<div class="ff-hand-label" style=${`top:${(L.rows + 0.18) * L.tile}px`}><span>${t('整备区')}</span><i></i></div>` : null}
       ${tiles}${hand}${units}${pieces}${floats}
     </div>${ghost}
     <div class="ff-badge">SIMPLIFIED VIEW</div>`, root);
@@ -403,7 +476,6 @@ export function createFallbackView(host, opts = {}) {
     },
     enterBattle(field) {
       st.mode = 'battle';
-      st.rhine = field?.prep ? rhineMarks(field.rhine?.positions).map(m=>({...m,paused:!field.rhine?.active?.includes(m.id)})) : [];
       st.field = field || null;
       // a scouted teammate's prep board brings their pen; a real battle empties it
       st.pen = field?.prep && Array.isArray(field.nextEnemies) ? field.nextEnemies : [];
@@ -420,7 +492,6 @@ export function createFallbackView(host, opts = {}) {
     pushSnapshot(snap) {
       if (st.mode !== 'battle' || !snap || !Array.isArray(snap.units)) return;
       if (st.field && snap.fieldId && st.field.fieldId && snap.fieldId !== st.field.fieldId) return;
-      if(!st.field?.prep||snap.rhine)st.rhine = (snap.rhine || []).filter(m => RHINE_COLORS[m.id]).map(m => ({...m, color: RHINE_COLORS[m.id]}));
       const seen = new Set();
       for (const t of snap.units) {
         if (!Array.isArray(t) || t.length < 9) continue;
@@ -440,16 +511,15 @@ export function createFallbackView(host, opts = {}) {
         if (e[0] === 'spawn' && e[1] && e[1].id != null) {
           st.units.set(e[1].id, e[1]);
           if (!st.snapUnits.has(e[1].id)) st.snapUnits.set(e[1].id, [e[1].id, e[1].x, e[1].y, e[1].maxHp, e[1].maxHp, 0, 0, 0, 6]);
-        } else if ((e[0] === 'dmg' || e[0] === 'heal') && st.settings.damageNumbers && st.floats.length < 60) {
-          const amount = Math.round(Number(e[2]) || 0);
-          if (amount <= 0) continue;
-          const type = e[0] === 'heal' ? 'heal' : (e[3] === 'arts' ? 'arts' : e[3] === 'true' ? 'true' : 'phys');
-          st.floats.push({ key: `${now}:${Math.random()}`, id: e[1], text: e[0] === 'heal' ? `+${amount}` : String(amount), type, at: now });
+        } else if (st.floats.length < 60) {
+          const spec = fallbackFloat(e, st.settings);
+          if (spec) st.floats.push({ key: `${now}:${Math.random()}`, id: spec.id, text: spec.text, type: spec.type, at: now });
         }
       }
       schedule();
     },
     highlightTiles(tiles, style) {
+      if (st.destroyed) return false;
       if (!tiles || !style) { st.highlight.clear(); st.hlGroups.clear(); schedule(); return; }
       if (typeof style === 'object' && style.group) {
         // a named group (direction wheel / selected unit range): replaced as a whole, drawn as a range tile
@@ -471,6 +541,8 @@ export function createFallbackView(host, opts = {}) {
       schedule();
     },
     setSettings(s) { st.settings = { ...st.settings, ...(s || {}) }; schedule(); },
+    setMe(id) { st.myId = id; schedule(); },
+    setSkins(players) { st.players = players || []; schedule(); },
     on(type, fn) {
       if (typeof fn !== 'function') return () => {};
       if (!listeners.has(type)) listeners.set(type, new Set());
@@ -478,6 +550,15 @@ export function createFallbackView(host, opts = {}) {
       return () => listeners.get(type)?.delete(fn);
     },
     off(type, fn) { listeners.get(type)?.delete(fn); },
+    /** Resolve the live DOM target, never a remembered hover or selected piece. */
+    pieceAtClientPoint(clientX, clientY) {
+      if (st.destroyed || st.mode !== 'prep' || st.camera === 'pen' || st.drag
+        || !Number.isFinite(clientX) || !Number.isFinite(clientY)) return null;
+      const el = document.elementFromPoint(clientX, clientY)?.closest('.ff-piece[data-uid]');
+      if (!el || !root.contains(el)) return null;
+      const uid = Number(el.dataset.uid);
+      return Number.isInteger(uid) ? uid : null;
+    },
     pieceScreenRect(uid) {
       const el = root.querySelector(`[data-uid="${Number(uid)}"]`);
       return el ? el.getBoundingClientRect() : null;
@@ -488,7 +569,9 @@ export function createFallbackView(host, opts = {}) {
       const br = root.querySelector('.ff-board')?.getBoundingClientRect();
       if (!br) return null;
       let p = null;
-      if (row === GEO.HAND_ROW && col >= 0 && col < GEO.HAND_SIZE && st.mode === 'prep') p = handPos(L, col);
+      const slot = activeBenchSize() > 10 ? benchSlot(row, col) : null;
+      if (slot && st.mode === 'prep') p = slot.area === 'hand' ? handPos(L, slot.idx) : tempPos(L, slot.idx);
+      else if (row === GEO.HAND_ROW && col >= 0 && col < activeBenchSize() && st.mode === 'prep') p = handPos(L, col);
       else if (row === GEO.TEMP_ROW && col >= GEO.TEMP_C0 && col < GEO.TEMP_C0 + GEO.TEMP_SIZE && st.mode === 'prep') p = tempPos(L, col - GEO.TEMP_C0);
       else if (row >= st.rect.r0 && row <= st.rect.r1 && col >= st.rect.c0 && col <= st.rect.c1) p = tilePos(L, row, col);
       if (!p) return null;

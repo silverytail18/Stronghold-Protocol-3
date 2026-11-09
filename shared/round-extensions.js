@@ -1,8 +1,13 @@
 // Match-scoped extension rules. The unchanged baseline R13 is the anchor in every mode.
 export const ROUND_EXTENSION_TOTALS = Object.freeze([20,24,30]);
-export const SINGLE_STEPS = Object.freeze([0,1,1,2,2,2,3,3,3,4,4,4,5,5,5,6]);
+export const SINGLE_STEPS = Object.freeze([1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8]);
 export const MULTI_HP_STEPS = SINGLE_STEPS;
-export const MULTI_ATK_STEPS = Object.freeze([0,1,1,1,2,2,2,3,3,3,4,4,4,5,5,5]);
+export const MULTI_ATK_STEPS = Object.freeze([1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8]);
+export const EXTENSION_DECISIONS = Object.freeze({
+  20:Object.freeze([16]),
+  24:Object.freeze([16,20,22]),
+  30:Object.freeze([16,20,24,28]),
+});
 export const EXTENSION_SOURCES = Object.freeze([13,13,12,13,12,13,13,12,13,13,12,13,13,12,13,13]);
 export const EXTENSION_PROFILES = Object.freeze(['transition','pressure','focus','pressure','focus','consolidate','pressure','focus','consolidate','pressure','focus','consolidate','pressure','focus','consolidate','pressure']);
 export const EXTENSION_FLY = Object.freeze([false,null,true,false,null,null,false,true,null,false,true,null,false,true,null,null]);

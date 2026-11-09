@@ -1,4 +1,3 @@
-import {appPage} from '../helpers/appPage.mjs';
 // Browser regressions of user playtest #5, UI items 8 / 9, through the mock harness (public/dev/game-mock.html) in
 // headless Chrome (puppeteer-core + system Chrome). Opt-in: SP_E2E=1.
 //
@@ -52,7 +51,7 @@ describe('user playtest #5 — UI items 8 / 9 (mock harness, headless Chrome)', 
   before(async () => {
     const { startServer } = await import('../../server/index.js');
     const puppeteer = (await import('puppeteer-core')).default;
-    srv = await startServer({ auth: false, port: 0, host: '127.0.0.1', quiet: true });
+    srv = await startServer({ port: 0, host: '127.0.0.1', quiet: true });
     base = `http://127.0.0.1:${srv.port}`;
     browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--no-sandbox'] });
     mkdirSync(OUT, { recursive: true });
@@ -64,7 +63,7 @@ describe('user playtest #5 — UI items 8 / 9 (mock harness, headless Chrome)', 
   });
 
   async function open(query, { w, h, touch, insets }) {
-    const page = await appPage(await browser.newPage());
+    const page = await browser.newPage();
     await page.setViewport({ width: w, height: h, deviceScaleFactor: 1, isMobile: touch, hasTouch: touch });
     const problems = [];
     page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));

@@ -1,0 +1,163 @@
+.mz-home{display:grid;grid-template-columns:1fr 1.1fr;gap:32px;padding:12px;color:#e5edf2}.mz-home__ocean{min-height:320px;padding:28px;display:flex;flex-direction:column;justify-content:flex-end;background:linear-gradient(180deg,#071b2a22,#07283be8),url(/assets/mizuki/native-ui/init/background.png) center/cover;border-left:3px solid #6ac2e3}.mz-home__ocean>span{letter-spacing:.16em;color:#8db2c6}.mz-home h2{font-size:28px;line-height:1.5;margin:12px 0}.mz-home p{color:#b7cbd6;line-height:1.8}.mz-home__content{display:flex;flex-direction:column;gap:16px;justify-content:center}.mz-home__stats{display:flex;gap:28px;flex-wrap:wrap}.mz-home__stats dt{font-size:12px;color:#93a9b5}.mz-home__stats dd{margin:6px 0;font-size:22px}.mz-home__grade{display:flex;gap:16px;align-items:center}.mz-home__grade select{min-height:44px;padding:8px 20px;background:#112c3b;color:#ecf7ff;border:1px solid #648b9e;border-radius:3px;font:inherit}.mz-home__error{color:#ffb5b5!important}.mz-home__continue{border-top:1px solid #39505f;padding-top:16px}
+@media(max-width:700px){.mz-home{grid-template-columns:1fr;gap:18px}.mz-home__ocean{min-height:180px;padding:18px}.mz-home h2{font-size:24px}}
+
+/* Product chat stays outside the scaled scene and keeps a full touch target. */
+.mz-product-chat{position:fixed;left:max(12px,env(safe-area-inset-left));bottom:max(12px,env(safe-area-inset-bottom));z-index:180}
+@media(max-width:1000px),(max-height:600px){
+ .mizuki-active :is(button,[role=button],select,input){min-height:44px;min-width:44px}
+ .mz-screen .mz-btn{font-size:14px;padding:10px 14px}
+ .mz-screen .mz-content{padding-bottom:68px}
+ .mz-screen .mz-native-map__viewport{max-height:45vh;overflow:auto;touch-action:pan-x pan-y}
+ .mz-screen .mz-map-node{min-width:64px;min-height:64px}
+ .mz-screen .mz-phase-heading h2{font-size:24px}
+ .mz-screen :is(.mz-card,.mz-event-choice){font-size:14px}
+ .mz-screen .mz-event-choice__text>small{font-size:14px;line-height:1.5}
+ .mz-screen .mz-phase-footer{flex-wrap:wrap;gap:8px}
+ .mz-screen .mz-phase-footer>.mz-btn{min-height:44px}
+ .mz-screen .mz-resources{font-size:12px}
+ .mz-screen .mz-resource>span{font-size:11px}
+ .mz-screen .mz-resource>span>small{font-size:10px}
+ .mz-screen .mz-footer{display:none}
+}
+
+/* Product entry typography is in CSS pixels,.mz-home{font-size:16px}.mz-home-modal .btn{font-size:14px;min-height:44px;min-width:44px}
+
+/* Uses upstream device.js queries, devices.css safe areas / --tap-min,
+   and the same scroll body plus fixed action footer pattern as its dialogs. */
+@media(max-width:980px),(max-height:520px){
+ .mz-screen{padding:var(--sa-t) var(--sa-r) var(--sa-b) var(--sa-l)}
+ .mz-screen .mz-content{display:block;padding:12px 16px 76px}
+ .mz-screen .mz-expedition-aside{display:none}
+ .mz-screen .mz-init-gallery{zoom:1;display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;overflow:visible;padding:8px 0}
+ .mz-screen .mz-init-card{width:100%;height:auto;min-height:180px;display:grid;grid-template-columns:64px 1fr;align-content:start;gap:8px 12px;padding:16px;text-align:left;background:#102535d9;border:1px solid #657a88}
+ .mz-screen .mz-init-card.is-selected{border-color:#b9e7f0;background:#254757}
+ .mz-screen .mz-init-card :is(.mz-init-card__back,.mz-init-card__under,.mz-init-card__line,.mz-init-card__select){display:none}
+ .mz-screen .mz-init-card .mz-init-card__icon{position:static;width:64px;height:64px;grid-row:1/3}
+ .mz-screen .mz-init-card .mz-init-card__title{position:static;height:auto;white-space:normal;font-size:18px;line-height:1.4}
+ .mz-screen .mz-init-card .mz-init-card__desc{position:static;grid-column:1/-1;max-height:none;font-size:14px;line-height:1.6}
+ .mz-screen .mz-init-card>.mz-votes{position:static;grid-column:1/-1;justify-content:flex-start}
+ .mz-screen .mz-init-commit{position:fixed;left:var(--sa-l);right:var(--sa-r);bottom:var(--sa-b);margin:0;padding:8px 16px 8px 80px;min-height:64px;background:#0b1624f5;z-index:30;border-top:1px solid #79919e;gap:12px}
+ .mz-screen .mz-init-commit,.mz-screen .mz-init-commit *{pointer-events:auto}
+ .mz-screen .mz-init-commit{z-index:40}
+ .mz-screen .mz-init-confirm{height:var(--tap-min);min-height:var(--tap-min);width:auto;flex:0 0 auto;background:#d9e4e8;color:#10222c;padding:10px 20px}
+ .mz-screen .mz-init-confirm>.mz-art{display:none}
+ .mz-screen .mz-init-commit__summary{margin-right:auto;align-items:flex-start}
+ .mz-screen .mz-init-commit__summary>span{font-size:14px}.mz-screen .mz-init-commit__summary>small{font-size:12px}
+ .mz-screen .mz-native-map__viewport{min-height:240px;max-height:none;height:55vh}
+ .mz-screen .mz-map-node__label{background:#0b1726e8;color:#eef5fa!important;padding:2px 6px;font-size:14px!important;height:auto!important;line-height:1.5!important}
+ .mz-screen .mz-phase-heading{align-items:center;gap:12px}
+ .mz-screen .mz-phase-heading>div>p:last-child:not(.mz-eyebrow){font-size:14px}
+}
+
+@media(max-height:520px){
+ .mz-screen--selection>:is(.mz-progress,.mz-phase-footer,.mz-light-effect){display:none}
+ .mz-screen .mz-brand>div{display:none}
+ .mz-screen .mz-header{padding-block:4px}
+ .mz-screen .mz-phase-heading{margin-bottom:10px}
+ .mz-screen .mz-phase-heading h2{font-size:20px;margin:0}
+ .mz-screen .mz-phase-heading .mz-eyebrow,.mz-screen .mz-phase-heading>div>p:last-child:not(.mz-eyebrow){display:none}
+}
+@media(max-width:980px),(max-height:520px){.mz-screen .mz-native-map__edges path{stroke-width:2px}}
+
+@media(max-width:980px),(max-height:520px){
+ .mz-screen .mz-native-selection{display:flex;flex-direction:column;align-items:stretch;gap:16px;min-height:0}
+ .mz-screen .mz-native-selection__preview{min-height:0;border:1px solid #698493;background:#102535e8;padding:16px}
+ .mz-screen .mz-native-selection__preview>div{padding-left:0;position:relative;align-items:flex-start;text-align:left}
+ .mz-screen .mz-strategy-emblem{position:static;width:56px;height:56px;margin:0 0 8px}
+ .mz-screen .mz-native-selection__preview h2{font-size:22px;margin:4px 0 8px}
+ .mz-screen .mz-native-selection__description{font-size:14px;line-height:1.6;min-height:0;max-width:none}
+ .mz-screen .mz-native-selection__preview .mz-btn{margin-top:12px;min-width:0;width:100%}
+ .mz-screen .mz-strategy-list{max-height:none;overflow:visible;gap:10px}
+ .mz-screen .mz-strategy-option{min-height:88px;padding:12px;background:#102535e8;border:1px solid #698493;color:#e9f1f7;gap:12px}
+ .mz-screen .mz-strategy-option.is-selected{background:#254757;border-color:#c1e7ef}
+ .mz-screen .mz-strategy-option>span:not(.mz-art):not(.mz-group-tickets){margin:0;align-items:flex-start;text-align:left;max-width:none;padding:0}
+ .mz-screen .mz-strategy-option :is(b,small){color:inherit!important;font-size:14px;line-height:1.5}
+ .mz-screen .mz-map-node{width:160px;height:100px}
+ .mz-screen .mz-map-node__plate{width:160px;height:90px}
+ .mz-screen .mz-map-node__icon{width:90px;height:40px;top:15px}
+ .mz-screen .mz-map-node__tag{width:150px;top:64px;mask:none;background:#172b40}
+ .mz-screen .mz-map-node__type-name{display:none}
+ .mz-screen .mz-map-node:has(.mz-map-node__tag) .mz-map-node__label{top:64px;left:0;right:0}
+ .gm--mizuki-native .mz-roster-management>.btn{min-height:44px;font-size:14px;pointer-events:auto}
+}
+
+.mz-art:not(.is-fallback)>.mz-art__fallback{display:none}
+@media(min-width:700px) and (max-height:520px){
+ .mz-screen .mz-native-selection{display:grid;grid-template-columns:minmax(250px,.8fr) minmax(0,1.2fr);gap:16px;align-items:start}
+ .mz-screen .mz-native-selection__preview{padding:12px}
+ .mz-screen .mz-strategy-emblem{width:36px;height:36px;margin:0}
+ .mz-screen .mz-native-selection__preview .mz-eyebrow,.mz-screen .mz-native-selection__waiting{display:none}
+ .mz-screen .mz-native-selection__preview h2{font-size:20px;margin:4px 0}
+ .mz-screen .mz-native-selection__preview .mz-btn{margin-top:8px}
+ .mz-screen .mz-strategy-option{min-height:90px}
+}
+
+.mz-native-roster-modal .modal__actions .btn,.mz-native-roster-modal .modal__close{min-height:44px;min-width:44px;font-size:14px}.mz-native-roster-empty>.icon{width:32px;height:32px;color:#555}.mz-native-roster-card__remove>.icon{width:25px;height:25px;color:#f36f6f}
+@media(max-width:600px){.mz-native-roster-modal .modal__body{display:flex;flex-direction:column;overflow:auto}.mz-native-roster-modal .modal__actions{padding:8px 14px}.mz-native-roster-card__remove{min-height:44px;font-size:12px}}
+
+.mz-home__help{border-top:1px solid #53767c66;padding:12px 0;font-size:14px;line-height:1.7}.mz-home__help summary{cursor:pointer;min-height:44px;display:flex;align-items:center;color:#bce8e6}.mz-home__stats{grid-template-columns:repeat(4,minmax(0,1fr))}@media(max-width:600px){.mz-home__stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Content screens own one vertical scrollport on phones in landscape.
+   Keep the battle canvas gesture handling independent from exploration pages. */
+@media(max-width:980px),(max-height:520px){
+ .mz-screen{overflow-x:hidden;overflow-y:auto;touch-action:pan-y;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
+ .mz-screen>.mz-header,.mz-screen>.mz-progress,.mz-screen>.mz-footer{flex-shrink:0}
+ .mz-screen .mz-content{flex:0 0 auto;min-height:0;overflow:visible;padding-bottom:96px}
+ .mz-screen .mz-phase{min-height:0}
+ .mz-screen .mz-native-selection,.mz-screen .mz-strategy-list{overflow:visible;max-height:none}
+ .mz-screen .mz-init-gallery{overflow:visible}
+ .mz-screen .mz-native-map__viewport{touch-action:pan-x pan-y}
+ .mz-home-modal .modal__body,.mz-native-roster-modal .modal__body{min-height:0;overflow-y:auto;touch-action:pan-y;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
+}
+
+/* Emi mizukiSetup + upstream ProtocolScene: mode-private layout only. */
+.mz-setup-modal .proto-stage>.protocol-scene{width:100%;height:100%}
+.mz-setup-modal .mizuki-setup{--d-color:#8bc9ff}
+.mz-setup-modal .proto-stage{display:flex;align-items:center;min-width:0;overflow:hidden}
+.mz-setup-modal .proto-stage>svg{width:100%;height:100%;max-height:none}
+.mz-setup-modal .proto-title__mode{color:#f07837}
+.mz-setup-modal .pcard{flex-shrink:0;min-height:116px;border-radius:18px}
+.mz-setup-modal .pcard__desc{white-space:normal;line-height:1.5}
+.mz-setup-modal .mizuki-setup__card-growth{display:block;font-size:12px;line-height:1.5}
+.mz-setup-modal .proto-list{overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain}
+.mz-setup-status{display:flex;flex-direction:column;gap:6px;font-size:13px}
+.mz-setup-status p{margin:0;color:#ffb7b7}
+.mz-profile-open{background:transparent;color:#b8dff7;border:1px solid #7793a266;min-height:44px;padding:6px 12px;text-align:left;font:inherit}
+@media(max-width:980px),(max-height:520px){
+ .mz-setup-modal .proto__body{overflow-y:auto;touch-action:pan-y;display:block}
+ .mz-setup-modal .proto-body{display:grid;grid-template-columns:minmax(0,.8fr) minmax(280px,1.2fr);grid-template-rows:auto;min-height:100%;align-items:start;padding:10px 16px 24px;gap:16px}
+ .mz-setup-modal .proto-stage{position:sticky;top:12px;height:240px}
+ .mz-setup-modal .proto-side{overflow:visible;min-height:0}
+ .mz-setup-modal .proto-list{overflow:visible;flex:none;padding:0 0 10px 12px}
+ .mz-setup-modal .pcard{min-height:120px;padding:14px 18px;margin-left:0;width:100%;border-radius:12px}
+ .mz-setup-modal .pcard.is-on{transform:none}
+ .mz-setup-modal .pcard__name{font-size:24px}.mz-setup-modal .pcard__desc{font-size:14px}.mz-setup-modal .pcard__stamp{right:12px;transform:scale(.75);transform-origin:right top}
+ .mz-setup-modal .proto-foot{position:sticky;bottom:0;padding:10px;background:#0d1517f5;border-top:1px solid #637e8b;z-index:3;margin-left:0}
+ .mz-setup-modal .proto-start{min-height:60px}.mz-setup-modal .proto-start__label{font-size:20px;white-space:normal}.mz-setup-modal .proto-start__mark{display:none}
+ .mz-setup-modal .proto-top{padding:12px 16px}.mz-setup-modal .proto-title .modal__title{font-size:22px}.mz-setup-modal .proto-title__mode{font-size:12px;flex-wrap:wrap;justify-content:flex-end}.mz-setup-modal .proto-title__mode i{font-size:10px}
+ .mz-setup-modal .east-capacity{font-size:14px;display:flex;gap:10px;align-items:center}.mz-setup-modal select{min-height:44px;font-size:16px}.mz-setup-modal .proto-hint{font-size:12px}
+}
+
+.mz-setup-modal .east-capacity{display:flex;align-items:center;gap:10px;font-size:14px;flex-wrap:wrap}.mz-setup-modal .east-capacity select{min-height:44px;padding:6px 10px;background:#192927;color:#eaf4ef;border:1px solid #78968f}.mz-setup-modal .east-capacity>span{color:#99aaa5;font-size:12px}
+
+/* ProtocolScene is mounted directly here; its upstream absolute positioning assumes a picture wrapper. */
+.mz-setup-modal .proto-stage>svg{position:relative;inset:auto;display:block}
+
+/* Mobile Mizuki uses the shared landscape-only rotation gate in theme.css.
+   Do not hide .rotate-hint or introduce a portrait gameplay layout here. */
+
+/* Water mode shares upstream RoomScreen/SeatCard; only its mode controls differ. */
+.room-screen--mizuki .mz-home__grade{gap:12px;font-size:16px;color:#e8eeee;padding:2px 10px}
+.room-screen--mizuki .mz-home__grade select{min-height:44px;font-size:16px;padding:4px 12px;background:#172825;border:1px solid #5b8277}
+.room-screen--mizuki .mz-room-info{display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.5;max-width:240px}
+.room-screen--mizuki .mz-room-info small{font-size:12px;color:#a9bcb5}
+@media(max-width:980px),(max-height:520px){
+ .room-screen--mizuki{overflow-y:auto;touch-action:pan-y;overscroll-behavior-y:contain}
+ .room-screen--mizuki>.rs-top,.room-screen--mizuki>.rs-foot{flex-shrink:0}
+ .room-screen--mizuki>.rs-seats{flex:1 0 220px;min-height:220px}
+ .room-screen--mizuki .mz-room-info{max-width:160px;font-size:12px}
+ .room-screen--mizuki .mz-home__grade{font-size:14px;gap:8px;padding:0 6px}
+}
+
+.room-screen--mizuki .mz-room-capacity{display:flex;align-items:center;gap:10px;white-space:nowrap;font-size:14px}
+.room-screen--mizuki .mz-room-capacity select{min-height:44px;min-width:72px;background:#172825;color:#e8eeee;border:1px solid #5b8277;font:inherit;padding:4px 10px}

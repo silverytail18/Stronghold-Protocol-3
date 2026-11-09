@@ -1,3 +1,4 @@
+import {hypot as productMath_hypot} from '../../detmath.js';
 import {absoluteRangeKeys,sortEnemyTargets} from '../../targeting.js';
 import {live,allies,enemies,hurt,talent,stat,beginAttack,endAttack} from './common.js';
 import {riMember} from './engineering.js';
@@ -64,11 +65,11 @@ export function kalts2(bb,chess,def){
    const active2=sk.active&&sk.id==='skchr_kalts2_2',targets=medicalTargets(b,u);
    if(!targets.length)return;const actual=beginAttack(b,u,targets,sk.active);if(!actual?.length)return;u.mem.rmKaltsNext=b.time+interval(u);
    const amount=u.s.atk,params={...sk.bb},isSkill=sk.active,attackId=u.mem.rmAttackId;
-   for(const target of actual){b.fx('heal',{src:u.id,target:target.id,x:target.x,y:target.y});
+   for(const target of actual){if(!active2)b.fx('heal',{src:u.id,target:target.id,x:target.x,y:target.y});
     if(active2){const x=target.x,y=target.y;b.after(.25,()=>{if(!live(u))return;
      const damage=()=>{for(const e of b.foesInRadius(x,y,1.5))if(live(e)){b.dealDamage(u,e,{amount:amount*params['attack@atk_scale'],type:'true',isAttack:true,isSkill:true,isSplash:true,tags:['rm:own','rm:kalts2:s2'],attackId});if(target.side==='enemy')b.applyStatus(e,'sluggish',{duration:params['attack@sluggish'],source:u});}};
-     const heal=()=>{for(const a of b.allyUnits)if(live(a)&&a.kind==='op'&&Math.hypot(a.x-x,a.y-y)<=1.5)b.heal(u,a,amount*params['attack@heal_scale'],{ignoreNoHeal:true});};
-     if(target.side==='enemy'){damage();heal();}else{heal();damage();}b.fx('rm-ri-heat',{x,y,r:1.5});
+     const heal=()=>{for(const a of b.allyUnits)if(live(a)&&a.kind==='op'&&productMath_hypot(a.x-x,a.y-y)<=1.5)b.heal(u,a,amount*params['attack@heal_scale'],{ignoreNoHeal:true});};
+     if(target.side==='enemy'){damage();heal();}else{heal();damage();}b.fx('rm-ri-heat',{src:u.id,target:target.id,attackId,x,y,r:1.5,type:target.side==='enemy'?'damage':'heal'});
     });}else b.heal(u,target,amount,{isAttack:true,isSkill,ignoreNoHeal:true});
    }endAttack(b,u,actual,isSkill);
   },{owner:u});

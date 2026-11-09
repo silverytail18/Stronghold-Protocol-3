@@ -12,10 +12,12 @@
 //   use_equip_gain_coin_when_next_round_start {count}     见钱眼开玩偶           +count funds next round
 //   equip_destory_deployment_cnt_change {count}           人事部文档             deploy cap = count
 //   use_equip_upgrade_char / equip_round_start_upgrade_char 博士投影             promote (golden: now, normal: next round)
-//   use_equip_reward_char_chess                           拟态物质               3rd copy or a same-bond chess
+//   use_equip_reward_char_chess                           拟态物质               3rd copy (none when the pool is
+//                                                                                out), or with < 2 a same-bond chess
 //   use_equip_reward_special_goods_char_chess {refresh_cnt} 寻呼模块             offer N same-bond chess (≤ shop level)
 //   use_equip_recruit_new_char_and_give_char_to_player_most_bond {refresh_cnt} 信标 destroy target, offer N same-tier
-//                                                                                chess, gift the original next prep
+//                                                                                chess, gift the original (an elite stays
+//                                                                                elite) next prep, sender eliminated or not
 //   sell_char_count_gain_equip_owner_bond {count}         商业包装方案           every `count` sells → same-bond chess
 //   char_chess_transformation_equip                       突变细胞               after battle: holder destroyed, its equipment
 //                                                                                (the cell included — not consumed) back to
@@ -23,11 +25,11 @@
 //                                                                                operator gained into the hand
 //   trap_copy_front_char                                  画卷 (Art)            copy the chess on the tile / in front
 //   trap_create_self_choice {choice_event}                教鞭 / 神秘顾客 (Art)  add a random bounty to your next battle
-// [ASSUMED simplification, documented in docs/META.md: 教鞭/神秘顾客 pick the bounty for the player instead of opening
-//  a personal choice overlay.]
+// This builtin picks a random bounty by default; content/items/meta.js overrides Pointing Stick with a private choice.
 
 import { getData } from '../data.js';
 import { itemKey } from './gamedata.js';
+import { msg, dn } from '../../shared/i18n.js';
 
 const int = (v, d = 0) => (Number.isFinite(v) ? Math.trunc(v) : d);
 
@@ -37,10 +39,32 @@ const paramsOf = (ctx, item) => {
   return rec && rec.params && typeof rec.params === 'object' ? rec.params : {};
 };
 
+/**
+ * The item gave nothing — the copies are all owned (the shared pool, research 06 §7) or no operator shares the bond — but
+ * it is still destroyed ("装备时销毁"): say why instead of swallowing it (GitHub #401, the owner's OK of 2026-10-09).
+ */
+function toastNothing(ctx, ev, chessName = null) {
+  const who = ctx.gd.item(ev.item?.id)?.name || '';
+  ctx.toast(chessName ? msg('{who}：卡池中已没有{name}', { who: dn(who), name: dn(chessName) }) : msg('{who}：没有可获得的同盟约干员', { who: dn(who) }), 'warn');
+}
+
 /** random chess sharing at least one bond with `bonds`, tier ≤ maxTier */
 function rollSameBond(ctx, bonds, maxTier, exclude = null) {
   const set = new Set(bonds);
   return ctx.rollChess({ maxTier, filter: (id) => { const c = ctx.gd.chess(id); return !!(c && Array.isArray(c.bonds) && c.bonds.some((b) => set.has(b))) && !(exclude && exclude.includes(id)); } });
+}
+
+/** 信标: the living teammate (not the caller) with the most members of `bonds` ("相应盟约人数最多"), ties at random; null without one. */
+function mostBondMate(ctx, bonds, minCount = 0) {
+  const mates = ctx.teammates();
+  if (!mates.length) return null;
+  let best = -1;
+  let pick = [];
+  for (const t of mates) {
+    const score = bonds.reduce((s, b) => s + t.bondCount(b), 0);
+    if (score > best) { best = score; pick = [t]; } else if (score === best) pick.push(t);
+  }
+  return best >= minCount ? ctx.rng.pick(pick) || null : null;
 }
 
 const ITEM_HANDLERS = {
@@ -77,7 +101,7 @@ const ITEM_HANDLERS = {
       const n = int(paramsOf(ctx, ev.item).count, 1);
       const rec = ctx.gd.item(ev.item.id);
       ctx.addEffect({
-        id: `doll:${ev.item.uid}`, key: 'effect:builtin_round_coin', name: rec ? rec.name : '精打细算玩偶', desc: rec ? rec.desc : '',
+        id: `doll:${ev.item.uid}`, key: 'effect:builtin_round_coin', name: rec ? rec.name : '精打细算玩偶', desc: rec ? rec.desc : '', // i18n-ignore: the item's data name
         iconKind: 'item', iconId: rec ? rec.iconId || rec.id : ev.item.id, battle: false, params: { count: n },
       });
     },
@@ -86,10 +110,12 @@ const ITEM_HANDLERS = {
     onEquip(ctx, ev) {
       const n = Math.max(1, int(paramsOf(ctx, ev.item).count, 1));
       const bonds = ctx.pieceBonds(ev.target.uid);
+      let got = 0;
       for (let k = 0; k < n; k++) {
         const id = rollSameBond(ctx, bonds, ctx.shopLevel());
-        if (id) ctx.grantChess(id);
+        if (id && ctx.grantChess(id)) got++;
       }
+      if (!got) toastNothing(ctx, ev);
     },
   },
   use_equip_gain_coin_when_next_round_start: {
@@ -116,13 +142,21 @@ const ITEM_HANDLERS = {
       ctx.promote(holder.uid);
     },
   },
+  // 拟态物质 「若已拥有至少2名该初始干员，则再获得1名该初始干员；否则随机获得1名同盟约初始干员」: the 否则 is the owned < 2
+  // case only. The original experiment BV1eLXXBqEgF (3:00) distinguishes this item from pool-weighted grants:
+  // it samples eligible operator identities and can grant beyond stock. All obtained copies still occupy the pool.
   use_equip_reward_char_chess: {
     onEquip(ctx, ev) {
       const base = ctx.gd.baseIdOf(ev.target.id);
       const owned = [...ctx.board(), ...ctx.hand(), ...ctx.temp()].filter((p) => p && p.kind === 'chess' && !p.golden && ctx.gd.baseIdOf(p.id) === base).length;
-      if (owned >= 2) { if (ctx.grantChess(base)) return; }
-      const id = rollSameBond(ctx, ctx.pieceBonds(ev.target.uid), 6);
-      if (id) ctx.grantChess(id);
+      if (owned >= 2) {
+        if (!ctx.grantChess(base, { requirePool: false })) toastNothing(ctx, ev);
+        return;
+      }
+      const bonds = new Set(ctx.pieceBonds(ev.target.uid));
+      const id = ctx.rollChess({ maxTier: 6, ignoreCounts: true,
+        filter: cid => ctx.gd.chess(cid)?.bonds?.some(b => bonds.has(b)) });
+      if (!id || !ctx.grantChess(id, { requirePool: false })) toastNothing(ctx, ev);
     },
   },
   use_equip_reward_special_goods_char_chess: {
@@ -133,8 +167,15 @@ const ITEM_HANDLERS = {
       // a pick-one offer never shows one operator twice (user playtest #6 item 19); fewer cards when the pool runs out
       for (let k = 0; k < n; k++) { const id = rollSameBond(ctx, bonds, ctx.shopLevel(), ids); if (id) ids.push(id); }
       if (ids.length) ctx.offerChess(ids, { source: 'item' });
+      else toastNothing(ctx, ev);
     },
   },
+  // 信标 (act2autochess eff_acarm109 / eff_acgarm109 "装备时，目标干员和本装备销毁并进行一次特殊刷新，出现两名与携带者同等阶的
+  // 干员，免费获取其中一名 / 若在同盟模拟中且存在其他队友，下个休整期向相应盟约人数最多的队友发送1个原干员 / 相应盟约人数相同则
+  // 随机发送"; 芬 band_fang "原干员在下回合传递给对应盟约人数最多的队友"). The gift is the ORIGINAL operator: an elite carrier
+  // is sent as that elite (community report #6 after 0.1.2: it arrived as the normal card — the gift carried baseIdOf).
+  // Destroying the carrier returns its pool copies (an elite's 3) at once; the gift takes them again when it is granted
+  // (effect:builtin_gift: grantChess → acquireChess, an elite takes up to goldenCopies, as every effect grant).
   use_equip_recruit_new_char_and_give_char_to_player_most_bond: {
     onEquip(ctx, ev) {
       const target = ctx.piece(ev.target.uid);
@@ -142,7 +183,7 @@ const ITEM_HANDLERS = {
       const tier = ctx.gd.tierOf(target.id);
       const n = Math.max(1, int(paramsOf(ctx, ev.item).refresh_cnt, 2));
       const bonds = ctx.pieceBonds(target.uid);
-      const original = ctx.gd.baseIdOf(target.id);
+      const original = target.id; // the elite id for an elite (report #6)
       ctx.destroyPiece(target.uid);
       const ids = [];
       // different operators of the target's tier, topped up from the tier below like the promotion reward (item 19)
@@ -152,17 +193,11 @@ const ITEM_HANDLERS = {
         if (id) ids.push(id);
       }
       if (ids.length) ctx.offerChess(ids, { source: 'item', tier });
-      // co-op: next prep, send the original chess to the teammate with the most members of its bonds
-      const mates = ctx.teammates();
-      if (!mates.length) return;
-      let best = -1;
-      let pick = [];
-      for (const t of mates) {
-        const score = bonds.reduce((s, b) => s + t.bondCount(b), 0);
-        if (score > best) { best = score; pick = [t]; } else if (score === best) pick.push(t);
-      }
-      const to = ctx.rng.pick(pick);
-      if (to) ctx.addEffect({ id: `gift:${ev.item.uid}`, key: 'effect:builtin_gift', hidden: true, battle: false, params: { toPlayerId: to.playerId, chessId: original } });
+      // co-op: next prep, send the original chess to the teammate with the most members of its bonds — except a 自选
+      // piece (0.2.0): its DIY slot is bound to this player's roster (no teammate's shop or slot can hold that operator),
+      // so nothing is sent [ASSUMED: the official text names no 自选 case]
+      const to = ctx.chessRecord(original)?.diyFor ? null : mostBondMate(ctx, bonds);
+      if (to) ctx.addEffect({ id: `gift:${ev.item.uid}`, key: 'effect:builtin_gift', hidden: true, battle: false, params: { toPlayerId: to.playerId, chessId: original, bonds } });
     },
   },
   sell_char_count_gain_equip_owner_bond: {
@@ -175,6 +210,40 @@ const ITEM_HANDLERS = {
         ctx.setCounter(k, 0);
         const id = rollSameBond(ctx, ctx.pieceBonds(holder.uid), ctx.shopLevel());
         if (id) ctx.grantChess(id);
+      }
+    },
+  },
+  sell_char_count_gain_equip_owner_original: {
+    onSold(ctx) {
+      const { piece, holder } = ctx.source;
+      if (!piece || !holder) return;
+      const need = Math.max(1, int(paramsOf(ctx, piece).count, 8));
+      const key = `pack:${piece.uid}`;
+      if (ctx.incCounter(key) >= need) {
+        ctx.setCounter(key, 0);
+        ctx.grantChess(ctx.gd.baseIdOf(holder.id));
+      }
+    },
+  },
+  use_equip_give_char_to_player_most_bond: {
+    onEquip(ctx, ev) {
+      const target = ctx.piece(ev.target.uid);
+      if (!target) return;
+      if (ctx.chessRecord(target.id)?.diyFor) { ev.error = 'BAD_TARGET'; return; }
+      const bonds = ctx.pieceBonds(target.uid);
+      const to = mostBondMate(ctx, bonds, 1);
+      ctx.destroyPiece(target.uid);
+      if (to) ctx.addEffect({ id: `gift:${ev.item.uid}`, key: 'effect:builtin_gift', hidden: true, battle: false, params: { toPlayerId: to.playerId, chessId: target.id, bonds } });
+      else ctx.grantChess(target.id);
+    },
+  },
+  use_equip_add_goods_rule_with_refresh_shop: {
+    onEquip(ctx, ev) {
+      const bonds = ctx.pieceBonds(ev.target.uid);
+      // [ASSUMED] Special refresh replaces every slot, including frozen equipment slots; it is not a manual refresh.
+      for (let i = 0; i < ctx.shopSlots().length; i++) {
+        const id = rollSameBond(ctx, bonds, ctx.shopLevel());
+        ctx.setShopSlot(i, id ? { kind: 'chess', id } : null);
       }
     },
   },
@@ -230,18 +299,29 @@ const EFFECT_HANDLERS = {
       if (n > 0) ctx.addFunds(n, 'doll');
     },
   },
+  // 信标's gift: at the next round start (下个休整期) the original operator goes to the teammate picked at equip time. It
+  // hangs on the SENDER and runs even when the sender was eliminated in between (`afterElimination`: Match.startRound →
+  // EffectDispatcher.dispatchEliminated) — an eliminated player gets no onRoundStart, so the gift was lost (GitHub #86).
+  // A receiver eliminated meanwhile is replaced by the living teammate with the most members of the operator's bonds
+  // (ties at random) [ASSUMED]; with no teammate left alive the gift is dropped. The effect is removed only after the
+  // operator was granted: a grant that fails (no copy of it left in the shared pool, the receiver's 整备区 and temp
+  // full) keeps it for the next round start — the official text names no refund [ASSUMED].
   builtin_gift: {
+    afterElimination: true,
     onRoundStart(ctx) {
       const ref = ctx.source.ref;
-      ctx.removeEffect(ref.id);
       const p = ref.params || {};
-      const to = ctx.player(p.toPlayerId);
-      if (!to || !p.chessId) return;
-      const got = to.grantChess(p.chessId);
-      if (got) to.giftTicker(ctx.name, p.chessId);
+      const rec = p.chessId ? ctx.gd.chess(p.chessId) : null;
+      if (!rec) { ctx.removeEffect(ref.id); return; }
+      const to = ctx.player(p.toPlayerId) || mostBondMate(ctx, Array.isArray(p.bonds) ? p.bonds : rec.bonds || []);
+      if (!to) { ctx.removeEffect(ref.id); return; }
+      if (!to.grantChess(p.chessId)) return;
+      ctx.removeEffect(ref.id);
+      to.giftTicker(ctx.name, p.chessId, ctx.playerId);
     },
   },
-  // 整备: the next purchased item becomes advanced (golden)
+  // 整备: the next purchased item becomes advanced (golden). upgradeItem leaves it normal, and this
+  // charge unspent, when the shared stock has no room for the golden's second copy.
   builtin_next_buy_golden_item: {
     onBuy(ctx, ev) {
       const ref = ctx.source.ref;

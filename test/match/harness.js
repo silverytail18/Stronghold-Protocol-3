@@ -3,11 +3,15 @@
 //   const h = makeMatch({ mode: 'coop', difficulty: 'NORMAL', humans: 1, bots: 1, seed: 7, fake: true });
 //   h.start(); h.runToPhase('PREP'); const ps = h.ps('p_0'); …; h.invariants();
 //
-// Options: mode, difficulty, humans (count) | seats (explicit), bots, seed, matchNo (the room's match number: part of
-// the battleId prefix), data (default: real data/*.json),
+// Options: mode, difficulty, humans (count) | seats (explicit), bots, spectators (spectator seat ids, opts.spectators),
+// seed, matchNo (the room's match number: part of the battleId prefix), data (default: real data/*.json),
 // fake (true → test/match/fakeBattle.js as BattleClass), script (FakeBattle.script), registry, instant (virtual
 // scheduler runs battles synchronously; default true), timerScale, battleContent, botRehearsal (default 0),
-// botSliceMs (bot rehearsal slice budget; default: unbounded in virtual time).
+// botSliceMs (bot rehearsal slice budget; default: unbounded in virtual time), aiPicksLast (the room option
+// AI 队友最后选择: the drafts order every human seat before every AI seat), test (DESIGN §34.8; hostId then
+// defaults to the first human), hostId / botRehearsalDelegate /
+// botRehearsalDelegateMs (the delegated bot rehearsal, DESIGN §14: test/match/rehearsal-delegate.test.js),
+// cs / vs / requireCs (a gameplay-plugin room: host rehearsal stays off), rules (DESIGN §34.15; omitted unless set).
 // Combat mode: clientCombat (default false here: the legacy server-run mode most suites were written for; production
 // defaults to client-side combat, DESIGN §14). With clientCombat: true every human gets a scripted browser
 // (test/match/simClient.js SimClient: h.clients) unless clients: false; pace 'instant' | 'paced', perPlayer
@@ -20,11 +24,12 @@ import assert from 'node:assert/strict';
 import { Match } from '../../server/match/Match.js';
 import { VirtualScheduler } from '../../server/match/scheduler.js';
 import { getData } from '../../server/data.js';
-import { FIELD, canPlace, positionClass, tileKey } from '../../server/match/board.js';
+import { FIELD, canPlace, placeClass, positionClass, tileKey } from '../../server/match/board.js';
 import { FakeBattle } from './fakeBattle.js';
 import { GEO } from '../../shared/constants.js';
 import { collectViolations } from '../../server/match/invariants.js';
 import { attachSimClients } from './simClient.js';
+import { morphSlotPolicy, ruleOption } from '../../shared/plugins/rules.js';
 
 export const DATA = getData({ log: { warn() {}, error() {}, info() {} } });
 
@@ -41,7 +46,7 @@ export function makeMatch(o = {}) {
   }
   const sched = new VirtualScheduler({ instantCombat: o.instant !== false });
   const logs = { error: [], warn: [] };
-  const log = { info() {}, debug() {}, warn: (...a) => logs.warn.push(a.map(String).join(' ')), error: (...a) => logs.error.push(a.map(String).join(' ')) };
+  const log = { info: (...a) => o.log?.info?.(...a), debug() {}, warn: (...a) => logs.warn.push(a.map(String).join(' ')), error: (...a) => logs.error.push(a.map(String).join(' ')) };
   const h = { sent: [], bc: [], ended: null, endedCount: 0, logs, sched, frames: 0, badFrames: [], onSend: [], onBroadcast: [], clients: null };
   const captureFrames = o.captureFrames !== false;
   const checkFrame = (msg) => {
@@ -55,7 +60,8 @@ export function makeMatch(o = {}) {
     if (o.script) FakeBattle.script = o.script;
   }
   h.m = new Match({
-    roomCode: 'TEST', mode, difficulty, seats, seed: o.seed ?? 1, matchNo: o.matchNo, data: o.data ?? DATA, log,
+    ...(o.musicRules?{musicRules:o.musicRules}:{}),
+    roomCode: 'TEST', mode, difficulty, seats, spectators: o.spectators, seed: o.seed ?? 1, matchNo: o.matchNo, data: o.data ?? DATA, log,
     send: (id, msg) => {
       for (const fn of h.onSend) fn(id, msg);
       if (msg.t === 'b.snap' || msg.t === 'b.ev') { h.frames++; if (!captureFrames) return true; }
@@ -67,16 +73,40 @@ export function makeMatch(o = {}) {
     onEnd: (s) => { h.ended = s; h.endedCount++; },
     scheduler: sched,
     registry: o.registry,
+    offers: o.offers,
     BattleClass: o.fake ? FakeBattle : undefined,
     battleContent: o.battleContent,
     timerScale: o.timerScale,
     // bot layout rehearsal (extra simulated battles per bot prep) is off unless a test asks for it: it multiplies the
     // simulation work of full-match suites; test/match/bot.test.js covers it
     botRehearsal: o.botRehearsal ?? 0,
+    botStrategy: o.botStrategy,
+    botStrategySeats: o.botStrategySeats,
+    externalAI: o.externalAI,
+    externalReplay: o.externalReplay,
     botSliceMs: o.botSliceMs,
     clientCombat: o.clientCombat ?? false,
+    serverBoss: o.serverBoss === true,
     verify: o.verify ?? 'off',
     headlessSliceMs: o.headlessSliceMs,
+    aiPicksLast: o.aiPicksLast,
+    // a bot prep's layout rehearsal delegated to the room's host (DESIGN §14; test/match/rehearsal-delegate.test.js):
+    // `hostId` is the executor a task is sent to, `botRehearsalDelegateMs` its answer window
+    hostId: o.hostId !== undefined ? o.hostId : (o.test === true ? (seats.find((s) => s && !s.isBot)?.playerId ?? null) : undefined),
+    test: o.test === true,
+    botRehearsalDelegate: o.botRehearsalDelegate,
+    botRehearsalDelegateMs: o.botRehearsalDelegateMs,
+    // the server's own simulation pool for those rehearsals (server/workers/roomPool.js); absent unless a test passes
+    // one, so a harness match keeps every rehearsal on this thread (test/workers-room.test.js covers the pooled path)
+    ...(o.simPool !== undefined ? { simPool: o.simPool } : {}),
+    // a gameplay-plugin room (DESIGN §32.6): host rehearsal stays off there (match/rehearsal.js requireCs)
+    cs: o.cs,
+    vs: o.vs,
+    requireCs: o.requireCs,
+    // a modded room's 自选 list (Match.diyKitted). Omitted unless the test passes one, so a vanilla harness match
+    // still has no kitted key.
+    ...(o.kitted !== undefined ? { kitted: o.kitted } : {}),
+    ...(o.rules !== undefined ? { rules: o.rules } : {}),
   });
   const m = h.m;
   if (m.clientCombat && o.clients !== false) {
@@ -98,8 +128,7 @@ export function makeMatch(o = {}) {
   h.allTo = (id, type) => h.sent.filter(([pid, msg]) => pid === id && msg.t === type).map(([, msg]) => msg);
   h.flushAll = () => { sched.advance(200); m.flush(true); };
   /** give the human every draft decision automatically (humans otherwise wait for timers) */
-  // Enabling through the real operation also kicks untimed solo briefing/draft automation.
-  h.autoHumans = () => { for (const ps of m.players.values()) if (!ps.isBot) m.setAutoplay(ps, true); return h; };
+  h.autoHumans = () => { for (const ps of m.players.values()) if (!ps.isBot) ps.autoplay = true; return h; };
   h.invariants = () => checkInvariants(m);
   /** force the stage (tests need known geometry) */
   h.setStage = (stageId) => {
@@ -123,6 +152,7 @@ export function makeMatch(o = {}) {
           if (idx != null) m.handle(ps.playerId, { t: 'g.choice', idx });
         }
         if (ready && m.phase === 'PREP' && ps.alive && !ps.ready) {
+          if (ps.personalChoice) m.handle(ps.playerId, { t: 'g.choice', idx: 0, choiceId: ps.personalChoice.id });
           if (!ps.tempEmpty) ps.resolveTemp();
           m.handle(ps.playerId, { t: 'g.ready', ready: true });
         }
@@ -162,7 +192,7 @@ function legacyInvariants(m) {
     assert.ok(Number.isInteger(ps.funds) && ps.funds >= 0, `${ps.playerId} funds ${ps.funds}`);
     assert.ok(Number.isInteger(ps.pendingFunds) && ps.pendingFunds >= 0, `${ps.playerId} pending ${ps.pendingFunds}`);
     assert.equal(ps.hand.length, GEO.HAND_SIZE);
-    assert.equal(ps.temp.length, GEO.TEMP_SIZE);
+    assert.ok(ps.temp.length >= GEO.TEMP_SIZE, 'temp retains five visible slots and may have queued overflow');
     assert.ok(ps.shop.level >= 1 && ps.shop.level <= m.gd.maxShopLevel);
     assert.ok(ps.shop.upgradePrice >= 0);
     assert.ok(ps.shop.freeRefreshes >= 0);
@@ -171,6 +201,7 @@ function legacyInvariants(m) {
       assert.ok(ps.hand.every((x) => x == null) && ps.temp.every((x) => x == null), 'eliminated player keeps nothing');
     }
     const chessUids = new Set();
+    const diyHeld = new Map();
     const all = [...ps.board.values(), ...ps.hand.filter(Boolean), ...ps.temp.filter(Boolean)];
     for (const p of all) if (p.kind === 'chess') chessUids.add(p.uid);
     let deployed = 0;
@@ -178,9 +209,11 @@ function legacyInvariants(m) {
     for (const [k, p] of ps.board) {
       const [r, c] = k.split(',').map(Number);
       assert.ok(r >= FIELD.r0 && r <= FIELD.r1 && c >= FIELD.c0 && c <= FIELD.c1, `piece outside the board ${k}`);
-      const rec = p.kind === 'token' ? m.gd.token(p.id) : m.gd.chess(p.id);
+      const pgd = ps.gd || m.gd; // the player's data view (0.2.0 自选: its summons are data/backups.json tokens)
+      const rec = p.kind === 'token' ? pgd.token(p.id) : pgd.chess(p.id);
       assert.ok(rec, `unknown board piece ${p.id}`);
-      assert.ok(canPlace(dmap, positionClass(rec), r, c), `illegal tile ${p.id} @ ${k}`);
+      const cls = p.kind === 'chess' ? placeClass(ps, rec) : positionClass(rec);
+      assert.ok(canPlace(dmap, cls, r, c), `illegal tile ${p.id} @ ${k}`);
       assert.notEqual(p.kind, 'item', 'items never stand on the board');
       if (p.kind === 'chess') deployed++;
       if (p.kind === 'token') assert.ok(chessUids.has(p.ownerUid), `orphan token ${p.uid}`);
@@ -191,11 +224,14 @@ function legacyInvariants(m) {
       if (p.kind === 'chess') {
         const rec = m.gd.chess(p.id);
         assert.ok(rec, `unknown chess ${p.id}`);
-        assert.ok(Array.isArray(p.items) && p.items.length <= m.gd.equipPerChess, `${p.id} carries ${p.items && p.items.length} items`);
+        const slots = morphSlotPolicy(ruleOption(m.rules, 'morphPairing'), (it) => !!ps.gd.item(it?.id)?.canGiveBond);
+        assert.ok(Array.isArray(p.items) && slots.slotsUsed(p.items) <= slots.slotCap(m.gd.equipPerChess), `${p.id} carries ${p.items && p.items.length} items`);
         for (const it of p.items) { note(it); assert.equal(it.kind, 'item'); assert.ok(m.gd.item(it.id), `unknown item ${it.id}`); }
         assert.ok(Number.isInteger(p.poolCopies) && p.poolCopies >= 0);
         const base = m.gd.baseIdOf(p.id);
-        held.set(base, (held.get(base) || 0) + p.poolCopies);
+        // a 自选 piece's copies are its player's own stock (0.2.0, server/match/player/diy.js)
+        const tally = ps.diyStock && ps.diyStock.has(base) ? diyHeld : held;
+        tally.set(base, (tally.get(base) || 0) + p.poolCopies);
       } else if (p.kind === 'item') {
         assert.ok(m.gd.item(p.id), `unknown item ${p.id}`);
       } else if (p.kind === 'token') {
@@ -210,9 +246,13 @@ function legacyInvariants(m) {
       const need = m.gd.mergeCount(b);
       if (need > 1 && m.gd.goldenIdOf(b)) assert.ok(n < need, `${ps.playerId} owns ${n} copies of ${b} (merge ${need})`);
     }
+    for (const [base, e] of ps.diyStock ? ps.diyStock.entries : []) {
+      assert.equal(e.left + (diyHeld.get(base) || 0), e.cap, `${ps.playerId} 自选 stock ${base}: left ${e.left} + held ${diyHeld.get(base) || 0} != cap ${e.cap}`);
+    }
   }
   for (const [base, e] of pool.entries) {
-    assert.ok(e.left >= 0 && e.left <= e.cap, `pool ${base} left ${e.left} cap ${e.cap}`);
+    assert.ok(Number.isInteger(e.left) && e.left <= e.cap, `pool ${base} balance ${e.left} cap ${e.cap}`);
+    assert.equal(pool.left(base), Math.max(0, e.left), 'overdrawn ownership never becomes a negative shop supply');
     assert.equal(e.left + (held.get(base) || 0), e.cap, `pool accounting ${base}: left ${e.left} + held ${held.get(base) || 0} != cap ${e.cap}`);
   }
   for (const [base, n] of held) if (!pool.has(base)) assert.equal(n, 0, `non-pool chess ${base} holds copies`);
@@ -256,7 +296,7 @@ export function chessOfTier(tier, filter = () => true) {
 
 /** First legal board tile for a chess (reading order). */
 export function legalTileFor(m, ps, chessId, skip = new Set()) {
-  const pos = positionClass(m.gd.chess(chessId));
+  const pos = placeClass(ps, m.gd.chess(chessId));
   const map = ps.deployMap();
   for (let r = FIELD.r1; r >= FIELD.r0; r--) for (let c = FIELD.c0; c <= FIELD.c1; c++) {
     if (skip.has(tileKey(r, c)) || ps.board.has(tileKey(r, c))) continue;

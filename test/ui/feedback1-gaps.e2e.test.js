@@ -1,4 +1,3 @@
-import {appPage} from '../helpers/appPage.mjs';
 // The 0.1.1 gaps on screen (DESIGN §21.26), in headless Chrome (puppeteer-core + system Chrome) through the mock harness
 // (public/dev/game-mock.html ?phase=PREP&variant=funny,morph,harmony: a 标准 match, a 变形同构体 in the shop's item slot, the
 // first board operator wearing 变形同构体 + 维式重锤, 缪尔赛思 on the board). Opt-in: SP_E2E=1.
@@ -46,7 +45,7 @@ describe('0.1.1 gaps: 变形同构体 pairings and 调和\'s +1 (mock harness, h
   before(async () => {
     const { startServer } = await import('../../server/index.js');
     const puppeteer = (await import('puppeteer-core')).default;
-    srv = await startServer({ auth: false, port: 0, host: '127.0.0.1', quiet: true });
+    srv = await startServer({ port: 0, host: '127.0.0.1', quiet: true });
     base = `http://127.0.0.1:${srv.port}`;
     browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--no-sandbox'] });
     mkdirSync(OUT, { recursive: true });
@@ -59,7 +58,7 @@ describe('0.1.1 gaps: 变形同构体 pairings and 调和\'s +1 (mock harness, h
 
   for (const [name, w, h, touch] of [['1920x1080', 1920, 1080, false], ['844x390', 844, 390, true], ['756x366', 756, 366, true]]) {
     test(`${name}: the 变形同构体 card, its wearer's card and the 调和 row of the bond popup`, { timeout: 120000 }, async () => {
-      const page = await appPage(await browser.newPage());
+      const page = await browser.newPage();
       await page.setViewport({ width: w, height: h, deviceScaleFactor: 1, isMobile: touch, hasTouch: touch });
       const problems = [];
       page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));
@@ -137,7 +136,7 @@ describe('0.1.1 gaps: 变形同构体 pairings and 调和\'s +1 (mock harness, h
   // switches off read 本局禁用 on their card and in the detail pane — and can still be picked
   for (const [name, w, h, touch] of [['1920x1080', 1920, 1080, false], ['844x390', 844, 390, true]]) {
     test(`${name}: the 标准 strategy draft marks 潘格尼尼 / 克莱门莎 / 玛恩纳 本局禁用, and 潘格尼尼 can still be picked`, { timeout: 120000 }, async () => {
-      const page = await appPage(await browser.newPage());
+      const page = await browser.newPage();
       await page.setViewport({ width: w, height: h, deviceScaleFactor: 1, isMobile: touch, hasTouch: touch });
       const problems = [];
       page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));

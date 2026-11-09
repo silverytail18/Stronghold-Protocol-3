@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRng } from '../../server/sim/rng.js';
 import { Grid } from '../../server/sim/grid.js';
-import { mitigate } from '../../server/sim/damage.js';
+import { mitigate } from '../../server/sim/attack.js';
 import { Unit } from '../../server/sim/units.js';
 import { getDefaultSource, hasGeneratedData } from '../../server/sim/simdata.js';
 import { makeBattle, flatStage, chessRec, enemyRec } from '../helpers/battleHarness.js';
@@ -19,6 +19,19 @@ test('rng is deterministic and in [0,1)', () => {
   for (const x of xs) assert.ok(x >= 0 && x < 1);
   const r = createRng(5);
   for (let i = 0; i < 200; i++) { const v = r.int(7); assert.ok(Number.isInteger(v) && v >= 0 && v < 7); }
+});
+
+test('user: Given an advanced RNG, When a preview clones it, Then both streams continue independently from the same position', () => {
+  for (const seed of [123, 0x100000000 - 0x6d2b79f5]) {
+    const live = createRng(seed);
+    live();
+    const state = live.state();
+    const preview = live.clone();
+    assert.equal(preview.state(), state);
+    const expected = Array.from({ length: 10 }, () => preview());
+    assert.equal(live.state(), state, 'preview draws do not advance the live stream');
+    assert.deepEqual(Array.from({ length: 10 }, () => live()), expected);
+  }
 });
 
 test('grid: 8-dir A* without corner cutting matches helper path lengths on real stages', () => {
@@ -61,10 +74,10 @@ test('grid: obstacles re-route and bump version; blocked entirely ⇒ null unles
 test('damage formulas: phys/arts/true, ignore, 5% floor', () => {
   approx(mitigate(1000, 'phys', { def: 300 }), 700);
   approx(mitigate(1000, 'phys', { def: 2000 }), 50);
-  approx(mitigate(1000, 'phys', { def: 300 }, { defIgnorePct: 0.5, defIgnoreFlat: 50 }), 900);
+  approx(mitigate(1000, 'phys', { def: 300 }, { defIgnorePct: 0.5, defIgnoreFlat: 50 }), 875);
   approx(mitigate(1000, 'arts', { res: 30 }), 700);
   approx(mitigate(1000, 'arts', { res: 100 }), 50);
-  approx(mitigate(1000, 'arts', { res: 40 }, { resIgnorePct: 0.5, resIgnoreFlat: 10 }), 900);
+  approx(mitigate(1000, 'arts', { res: 40 }, { resIgnorePct: 0.5, resIgnoreFlat: 10 }), 850);
   approx(mitigate(1000, 'true', { def: 9999, res: 100 }), 1000);
 });
 

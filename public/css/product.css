@@ -1,0 +1,45 @@
+.product-rooms { display: grid; gap: 12px; max-height: min(65svh, 500px); overflow: auto; }
+.product-room { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px; background: var(--bg-card); border: 1px solid var(--line); }
+.product-room p { color: var(--text-lo); overflow-wrap: anywhere; margin-top: 6px; }
+.product-room__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.product-room__actions .btn { min-height: 44px; }
+.product-sponsor { color: var(--amber); }
+.product-profile { display: grid; gap: 16px; }
+.product-profile select { min-height: 44px; margin-left: 10px; background: var(--bg-0); border: 1px solid var(--line); color: var(--text); }
+.product-profile__board { max-height: 45svh; overflow: auto; }
+.product-profile table { width: 100%; border-collapse: collapse; }
+.product-profile th, .product-profile td { padding: 10px; border-bottom: 1px solid var(--line); text-align: left; overflow-wrap: anywhere; }
+@media (max-width: 800px) { .product-room { flex-direction: column; align-items: stretch; } .rs-foot__left { min-width: 0; } }
+.sp-native-client .title-assets,
+.sp-native-client [data-testid="pwa-install"] { display: none !important; }
+
+.product-content-list { display: grid; gap: 12px; max-height: 56svh; overflow: auto; }
+.product-content-row { display: flex; gap: 12px; align-items: flex-start; padding: 12px; border: 1px solid var(--line); font-size: max(14px, 12px); }
+.product-content-row > span { min-width: 0; }
+.product-content-row input { width: 24px; height: 24px; flex: none; accent-color: var(--mint-500); }
+.product-content-row small { display: block; margin-top: 6px; line-height: 1.5; overflow-wrap: anywhere; }
+.product-region-grid button { min-width: 0; padding: 2px; font-size: max(11px, 10px); overflow: hidden; }
+
+.product-gameplay{max-height:65vh;overflow:auto;display:grid;gap:20px}.product-gameplay section{border-bottom:1px solid var(--line);padding:12px 0}.product-tech-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));gap:12px}.product-tech-list article{border:1px solid var(--line);padding:12px}.product-actions{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}.product-region-grid{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:2px}.product-region-grid button{min-height:32px;color:inherit;background:#192624;border:1px solid #49635e}.product-region-grid .is-selected{background:#2b7867}.product-stock-list label{display:flex;flex-wrap:wrap;gap:10px;padding:10px;border-bottom:1px solid var(--line)}.product-gameplay input{min-width:24px;min-height:24px}.product-gameplay p{overflow-wrap:anywhere}.product-stock-list small{width:100%}
+/* Private covenant tracking stays legible without flashing. */
+.bslot{position:relative}.product-track-mark{position:absolute;right:4px;top:2px;width:7px;height:7px;border-radius:50%;background:#ff6b75;box-shadow:0 0 0 2px #172b2c;z-index:2}
+.scard.is-tracked{outline:2px solid #68e6bd;outline-offset:-2px}.scard.is-tracked .scard__bg{background:linear-gradient(140deg,rgba(60,204,153,.45),rgba(15,74,63,.6))}
+.sw-ops{--product-op-size:clamp(56px,6vw,76px);grid-template-columns:repeat(auto-fill,var(--product-op-size));grid-auto-rows:var(--product-op-size);gap:8px;max-height:calc(var(--product-op-size)*2 + 8px);overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}.sw-ops .sw-op{height:var(--product-op-size);width:var(--product-op-size)}
+.product-mastery-icon { width:20px; height:20px; vertical-align:middle; margin-right:4px; }
+.product-admin-operators { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:8px; margin:10px 0; }
+.product-admin-operators label { display:flex; justify-content:space-between; gap:8px; align-items:center; }
+
+.product-player-list{display:grid;gap:6px;margin:16px 0;max-height:32vh;overflow:auto}.product-player-link{color:var(--mint-400);background:transparent;border:1px solid var(--line);padding:8px;text-align:left;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:36px}.product-player-link:hover{border-color:var(--mint-400)}.product-player-link .is-online{color:#6ce6ac}.product-player-link .is-offline{color:var(--text-dim)}
+
+.product-panel-entries{display:flex;flex-wrap:wrap;gap:6px;max-width:min(55vw,620px)}.product-panel-entries .btn{min-height:32px;font-size:max(11px,calc(.13 * var(--t)))}
+.covenant-resources{min-width:0}.covenant-resource-gauge{margin:14px 0}.covenant-resource-gauge label{display:flex;justify-content:space-between;gap:16px}.covenant-resource-gauge progress{width:100%;height:12px;accent-color:var(--mint,#75d8b7)}.covenant-resources dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 24px}.covenant-resources dl>div{display:flex;justify-content:space-between;gap:14px;border-bottom:1px solid var(--line);padding:9px 0}.covenant-resources dt{color:var(--text-lo,#a5bbb3)}.covenant-resources dd{margin:0;font-variant-numeric:tabular-nums}.covenant-resources h3{margin-top:0}
+.product-tech-list{align-items:start}.product-tech-list:has(.product-region-grid){display:block}.product-tech-list:has(.product-region-grid) article:not(:has(.product-region-grid)){display:none}.product-tech-list article:has(.product-region-grid){border:0;padding:0}.product-tech-list article:has(.product-region-grid)>p:first-of-type,.product-tech-list article:has(.product-region-grid)>small,.product-gameplay:has(.product-region-grid) section>h3,.product-gameplay:has(.product-region-grid) section>p{display:none}
+@media(max-height:500px){.product-tech-list article:has(.product-region-grid)>p{display:none}.product-tech-list:has(.product-region-grid) .product-actions{margin:4px 0}.product-tech-list:has(.product-region-grid) .product-region-grid button{min-height:28px}}
+.bpop .covenant-resources{padding:10px 0;border-bottom:1px solid var(--line)}.bpop .covenant-resources h3{font-size:15px}.bpop .covenant-resources dl{gap:4px 16px;font-size:12px}.bpop .covenant-resource-gauge{margin:10px 0}.bpop .covenant-resources p{font-size:12px;line-height:1.5}.bpop:has(.covenant-resources){width:max(5.4rem,320px);max-width:calc(100% - 24px)}
+@media(max-height:500px){.bpop:has(.covenant-resources){top:12px;max-height:calc(100% - 24px)}}
+@media(max-width:600px){.bpop:has(.covenant-resources){left:12px;right:12px;top:12px;width:auto;max-height:calc(100% - 24px)}}
+@media(max-width:600px){.covenant-resources dl{grid-template-columns:1fr}.product-panel-entries{max-width:48vw}.product-panel-entries .btn{padding:6px 9px}}
+
+.product-profile-modal{display:flex;flex-direction:column;max-height:calc(100dvh - 24px);overflow:hidden}.product-profile-modal .modal__head,.product-profile-modal .modal__actions{flex:none}.product-profile-modal .modal__body{min-height:0;overflow:auto;overscroll-behavior:contain}.product-profile-modal .modal__actions .btn{font-size:14px;min-height:44px;height:auto;padding:8px 20px}
+
+.product-profile-modal{font-size:14px}.product-profile-modal .modal__title{font-size:20px}.product-profile-modal .modal__body{font-size:14px}.product-profile select,.product-profile .product-player-link{font:inherit}

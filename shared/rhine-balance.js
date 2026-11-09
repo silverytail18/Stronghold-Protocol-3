@@ -15,10 +15,12 @@ export const PULSE = Object.freeze({first:2,interval:1,base:120,perLayer:2,targe
 export const pulseDamage=n=>PULSE.base+PULSE.perLayer*layers(n);
 export const MARK = Object.freeze({slow:.5,linger:3,trueRatio:.1});
 export const SCAN = Object.freeze({first:2,interval:10,duration:3});
-export const BROADCAST = Object.freeze({ratio:.5,aspd:30});
+export const BROADCAST = Object.freeze({ratio:.4,aspd:30});
 export const REPAIR = Object.freeze({outside:.01,inside:.03});
 export const PARALLEL = Object.freeze({recovery:1,bonusSp:8,casters:3});
 export const EMERGENCY = Object.freeze({hpThreshold:.4,heal:.3,shield:.5,shieldDuration:8,immuneDuration:5,invulnerableDuration:2});
-export const STRUCTURE = Object.freeze({defThreshold:800,defIgnore:.6,resThreshold:40,resIgnore:25});
+export const STRUCTURE = Object.freeze({defFloor:500,defIgnore:.6,resFloor:20,resIgnore:25});
+export const structureDefIgnore=D=>Math.min(STRUCTURE.defIgnore*Math.max(0,D),Math.max(0,D-STRUCTURE.defFloor));
+export const structureResIgnore=R=>Math.min(STRUCTURE.resIgnore,Math.max(0,R-STRUCTURE.resFloor));
 export const JOINT_DAMAGE = .5;
 export const researchCooldowns=count=>({attack:count>=4?8:10,heal:count>=4?5:10});

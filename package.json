@@ -1,16 +1,16 @@
 {
-  "name": "stronghold-protocol-covenant",
-  "version": "0.5.5",
+  "name": "stronghold-protocol-alliance",
+  "version": "1.2.0",
   "private": true,
   "description": "明日方舟「卫戍协议：盟约」非官方同人联机网页复刻（1–4 人合作，Node.js 服务器 + 浏览器客户端）",
   "license": "GPL-3.0-or-later",
-  "homepage": "https://github.com/silverytail18/Stronghold-Protocol-3#readme",
+  "homepage": "https://github.com/sganggs/Stronghold-Protocol#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/silverytail18/Stronghold-Protocol-3.git"
+    "url": "git+https://github.com/sganggs/Stronghold-Protocol.git"
   },
   "bugs": {
-    "url": "https://github.com/silverytail18/Stronghold-Protocol-3/issues"
+    "url": "https://github.com/sganggs/Stronghold-Protocol/issues"
   },
   "keywords": [
     "arknights",
@@ -23,38 +23,48 @@
   "type": "module",
   "main": "server/index.js",
   "scripts": {
-    "auth:user": "node tools/auth-user.mjs",
-    "mobile:build": "node tools/build-android.mjs",
-    "mobile:offline": "node tools/build-android-offline.mjs",
-    "resources:build": "node tools/build-resource-pack.mjs",
-    "server:release": "node tools/build-server-release.mjs",
-    "windows:build": "node tools/build-windows.mjs",
-    "start": "node server/index.js",
-    "dev": "node --watch server/index.js",
-    "test": "node --test",
-    "test:ranked": "node --test test/ranked.test.js test/ranked-integration.test.js test/auth.test.js test/auth-admin.test.js",
-    "ranked:backup": "node tools/ranked-backup.mjs",
-    "ranked:benchmark": "node tools/ranked-benchmark.mjs",
+    "start": "node server/product/game-server.js",
+    "dev": "node --watch server/product/game-server.js",
+    "test": "node tools/test-run.mjs",
+    "test:guards": "node --test test/ci.test.js test/ci-shards.test.js test/test-run.test.js",
+    "golden": "node tools/golden.mjs",
+    "golden:update": "node tools/golden.mjs --update",
     "vendor": "node tools/vendor.mjs",
     "build-data": "node tools/build-data.mjs",
     "assets": "node tools/vendor.mjs && node tools/fetch-assets.mjs",
     "postinstall": "node tools/vendor.mjs",
     "setup": "node tools/setup.mjs",
     "doctor": "node tools/doctor.mjs",
-    "launch": "node scripts/launch.mjs"
+    "launch": "node scripts/launch.mjs",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit --checkJs -p jsconfig.json",
+    "check:imports": "node tools/check-imports.mjs",
+    "ci": "node tools/ci.mjs",
+    "shards": "node tools/ci-shards.mjs",
+    "package": "node tools/package.mjs",
+    "package:lite": "node tools/package.mjs --lite",
+    "test:product": "node --test test/product/*.test.js",
+    "mobile:build": "node tools/build-native.mjs android",
+    "windows:build": "node tools/build-native.mjs windows"
   },
   "engines": {
-    "node": ">=22.16.0"
+    "node": ">=22"
   },
   "dependencies": {
     "htm": "^3.1.1",
     "pixi-spine": "^4.0.6",
     "pixi.js": "^7.4.2",
     "preact": "^10.29.8",
+    "ses": "2.3.0",
     "three": "^0.186.1",
-    "ws": "^8.22.0"
+    "ws": "^8.22.0",
+    "acorn": "8.18.0"
   },
   "devDependencies": {
-    "puppeteer-core": "^25.12.0"
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.12.0",
+    "globals": "^17.13.0",
+    "puppeteer-core": "^25.12.0",
+    "typescript": "^5.9.2"
   }
 }

@@ -1,4 +1,3 @@
-import {appPage} from '../helpers/appPage.mjs';
 // Player report F5 after the 0.1.0 release in headless Chrome through the render demo (public/dev/render-demo.html,
 // real Spine models): the real sim's frames (Battle.snapshot / drainEvents, fed like the client runner's local feed) of
 // an operator that jumped onto a teammate's home tile (a 突袭 landing) and was knocked out there. Officially it goes back
@@ -27,7 +26,7 @@ describe('a knocked-out operator is drawn on the tile it lies on (real sim frame
   before(async () => {
     const puppeteer = (await import('puppeteer-core')).default;
     const { startServer } = await import('../../server/index.js');
-    srv = await startServer({ auth: false, port: 0, host: '127.0.0.1', quiet: true });
+    srv = await startServer({ port: 0, host: '127.0.0.1', quiet: true });
     browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--no-first-run'] });
     mkdirSync(OUT, { recursive: true });
   });
@@ -42,7 +41,7 @@ describe('a knocked-out operator is drawn on the tile it lies on (real sim frame
     const b = h.b;
     b.step();
     const A = h.unit('chess_char_1_18_a'), B = h.unit('chess_char_2_09_a');
-    const page = await appPage(await browser.newPage());
+    const page = await browser.newPage();
     const problems = [];
     page.on('console', (m) => { if (m.type() === 'error') problems.push(`console: ${m.text()}`); });
     page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));

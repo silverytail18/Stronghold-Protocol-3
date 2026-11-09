@@ -1,3 +1,4 @@
+import {PRODUCT_COMBAT_TIMINGS} from '../../../../shared/product-combat-timings.js';
 import {aggregateMods} from '../../buffs.js';
 import {absoluteRangeKeys} from '../../targeting.js';
 import {frontOf,dirVec} from '../../dir.js';
@@ -8,7 +9,6 @@ import {emitNote,updateNotes} from './notes.js';
 import {kalts2} from './kalts2.js';
 import {nearl} from './nearl.js';
 import {NEARL} from './data.js';
-import {ASSETS} from './assets.js';
 const tag='rm:own',interval=u=>Math.max(.1,u.s.bat*100/Math.max(1,u.s.aspd));
 const attackEvent=endAttack;
 function inspire(b,a,source,atk,def=0){
@@ -38,7 +38,7 @@ function dolris(bb,chess,def){
 function amoris(bb,chess,def){const skills=supportSkills(chess),t0=talent(def,0),t1=talent(def,1);return{skills,talents:[{install(b,u){u.profile.noAttack=true;u.mem.rmNextAttack=0;
  b.every(.05,()=>{if(!live(u)||!u.canAct||u.s.flags.disarm||b.time<u.mem.rmNextAttack)return;u.skill.onAboutToAttack();u.mem.rmNextAttack=b.time+interval(u);const active=u.skill.active,p=u.skill.bb,es=enemies(b,u,u.liveRangeGrid,false),targets=beginAttack(b,u,es.slice(0,1),active);if(!targets)return;const first=u.blocking.find(live)||targets[0];
   const s2=active&&u.skill.id==='skchr_amoris_2',hits=active?(s2?8:3):1;
-  const frames=ASSETS.chars[def.charId]?.spine.front.hits[active?(s2?'Skill_2':'Skill_1'):'Attack']||[0];
+  const frames=PRODUCT_COMBAT_TIMINGS[def.charId][active?(s2?'Skill_2':'Skill_1'):'Attack']||[0];
   for(let i=0;i<hits;i++)b.after((frames[i]||0)*interval(u)/def.stats.bat,()=>{if(!live(u)||!u.canAct)return;const e=s2?rand(b,es.filter(live)):first,scale=active?(i===0||s2&&i===4?p['attack@atk_scale_heavy']:p['attack@atk_scale_light']):1;
    const [row,col]=frontOf(u.tileR,u.tileC,u.dir),x=e?.x??col,y=e?.y??row,r=active&&!s2&&i===0?1.5:1;if(!b.grid.inRect(Math.round(y),Math.round(x)))return;
    const area=b.foesInRadius(x,y,r).filter(a=>a!==e&&!a.isFlying&&!a.s.flags.untargetable);
@@ -62,7 +62,7 @@ function mortis(bb,chess,def){const t0=talent(def,0),t1=talent(def,1),skills={};
  b.every(.05,()=>{if(!live(u))return;for(const a of girls(b,u.ownerId))if(live(a))b.addBuff(a,{key:'rm:mortis:hp',mods:{hpPct:t1.max_hp},duration:.1,source:u});},{owner:u});
  }}]};}
 function tmoris(bb,chess,def){const t0=talent(def,0),t1=talent(def,1),skills={};const expanded=def.raw.talents.find(t=>t.index===0)?.rangeGrid||def.rangeGrid;
- const cast=(b,u,p)=>{const targets=enemies(b,u,expanded,false),frames=ASSETS.chars[def.charId]?.spine.front.hits.Skill_1||[.367,.5,.633,.767,.9];for(let i=0;i<p.times;i++)b.after(frames[i],()=>{if(live(u)&&u.canAct)for(const e of targets)if(live(e))b.dealDamage(u,e,{amount:u.s.atk*p.atk_scale,type:'arts',isSkill:true,tags:[tag,'rm:tmoris:s1']});},{owner:u});};
+ const cast=(b,u,p)=>{const targets=enemies(b,u,expanded,false),frames=PRODUCT_COMBAT_TIMINGS[def.charId].Skill_1||[.367,.5,.633,.767,.9];for(let i=0;i<p.times;i++)b.after(frames[i],()=>{if(live(u)&&u.canAct)for(const e of targets)if(live(e))b.dealDamage(u,e,{amount:u.s.atk*p.atk_scale,type:'arts',isSkill:true,tags:[tag,'rm:tmoris:s1']});},{owner:u});};
  for(const s of chess.skills){const p=s.bb;skills[s.skillId]=s.index===0?{kind:'duration',duration:2.1,charges:2,targeting:{rangeGrid:expanded},flags:{disarm:true},onStart({battle,unit}){cast(battle,unit,p);}}:{kind:'duration',targeting:{rangeGrid:expanded},flags:{disarm:true},onStart({battle,unit}){unit.mem.rmTmorisPulse=0;for(const e of enemies(battle,unit,expanded,false))battle.applyStatus(e,'fear',{duration:p.fear,source:unit});},onTick({battle,unit,dt}){unit.mem.rmTmorisPulse+=dt;while(unit.mem.rmTmorisPulse+1e-9>=p['attack@interval']){unit.mem.rmTmorisPulse-=p['attack@interval'];for(const e of enemies(battle,unit,expanded,false))battle.dealDamage(unit,e,{amount:unit.s.atk*p['attack@atk_scale'],type:'arts',isSkill:true,tags:[tag]});}}};}
  return{skills,talents:[{install(b,u){if(chess.module?.active)stat(b,u,'rm:tmoris:dodge',{dodgePhys:.15,dodgeArts:.15});
  b.on('hit',({source,target,dmg})=>{if(source!==u||!live(target)||dmg.type==='element')return;const scale=u.skill.active&&u.skill.id==='skchr_tmoris_2'?u.skill.bb.talent_scale:1;if(b.rng()<t0.prob*scale)b.applyStatus(target,'sluggish',{duration:t0.sluggish,source:u});},{owner:u});
@@ -85,6 +85,9 @@ function oblvns(bb,chess,def){const t0=talent(def,0),t1=talent(def,1),skills={};
   if(u.canAct&&!u.s.flags.disarm&&b.time>=u.mem.rmNextAttack){sk.onAboutToAttack();u.mem.rmNextAttack=b.time+interval(u);const es=b.enemiesInKeys(u.rangeKeys,u,{canHitFly:true}),targets=beginAttack(b,u,es.slice(0,1),sk.active),first=targets?.[0];
    if(targets){if(sk.active&&sk.id==='skchr_oblvns_3'){const ph=es.slice().sort((a,z)=>z.s.res-a.s.res||a.id-z.id)[0],ar=es.slice().sort((a,z)=>z.s.def-a.s.def||a.id-z.id)[0];for(let i=0;i<2;i++){emitNote(b,u,ph,sk.bb['attack@atk_scale'],'phys','piano');emitNote(b,u,ar,sk.bb['attack@atk_scale'],'arts','organ');}}
    else {const tone=sk.id==='skchr_oblvns_2',n=tone&&fever?2:1;for(let i=0;i<n;i++)emitNote(b,u,first,1,tone&&u.mem.rmOrgan?'arts':'phys',tone?(u.mem.rmOrgan?'organ':'piano'):'normal');}
+   // One visual host attack per authoritative action, regardless of the
+   // number of notes. The custom scheduler bypasses the engine's normal atk
+   // event; without this fact the source Spine/UberEmitter cast never runs.
    attackEvent(b,u,targets,sk.active);}
   }
   updateNotes(b,u,.05,keys);

@@ -1,5 +1,4 @@
-import {rhineMetaApi} from '../sim/content/rhine/state.js';
-import {syncKjeragRecruit} from '../sim/content/expansion/kjerag-recruit.js';
+import {extendProductContext} from './productContext.js';
 // server/match/effectsMeta.js — registry + dispatcher of prep-phase ("SERVER_*") effects (DESIGN §6.4).
 // Full API reference with examples: docs/META.md.
 //
@@ -15,12 +14,15 @@ import {syncKjeragRecruit} from '../sim/content/expansion/kjerag-recruit.js';
 //
 // Hooks (handler methods; all optional, signature (ctx, ev)):
 //   onRoundStart onIncome onPrepStart onPrepEnd onGain onSold onRefresh onPrice onBuy onSpend onMerge onLevelUp
-//   onBattleStart onBattleResult onChoicePick onEquip onArt onDestroy onLayers
+//   onBattleStart onBattleResult onChoicePick onEquip onArt onDestroy onLayers onActiveBonds
+// (onActiveBonds: the set of active bonds changed — PlayerState.recompute, player/round.js _reportActiveBonds.)
 // Garrisons fire only on the hook of their eventType (SERVER_GAIN→onGain of the gained piece, SERVER_PREP_START→
-// onRoundStart, SERVER_PREP_FIN→onPrepEnd, SERVER_CHESS_SOLD→onSold of the sold piece, SERVER_PRICE→onPrice of the
+// onPrepStart — 「进入休整期时」, after a 机变 draft (DESIGN §35.53; the strategies' grants §35.24) —, SERVER_PREP_FIN→onPrepEnd, SERVER_CHESS_SOLD→onSold of the sold piece, SERVER_PRICE→onPrice of the
 // slot's chess, SERVER_REFRESH_SHOP→onRefresh); the dispatcher calls `handler[hook] ?? handler.run`. A handler may
 // widen that per garrison with `garrisonHooks(garrison) → hook[]` (e.g. "<进入休整期时><休整期结束时>"). Owned-piece
-// garrisons fire for board pieces, and for hand pieces unless bbStr.conditionkey is 'character_target_inboard'.
+// garrisons fire for board pieces, and for hand pieces unless bbStr.conditionkey is 'character_target_inboard'. A
+// refresh (onRefresh) runs those that stood on the board / in the hand when it happened (taken before its first
+// handler): a chess gained during its dispatch — 贾维's gift, the elite that gift completes — waits for the next refresh.
 // 投资人 (investShip) active ⇒ SERVER_GAIN garrisons run ×2 (×3 at ≥ 100 layers) — owned by the dispatcher.
 // ctx.triggerGarrisons(uid, eventType) re-runs another piece's garrisons (铃兰, "触发…的获得时效果", 特质相同).
 // Items: onEquip / onArt / onDestroy go to the item's own handler only; every other hook runs for items equipped on
@@ -35,17 +37,26 @@ import {syncKjeragRecruit} from '../sim/content/expansion/kjerag-recruit.js';
 // then hand) → equipped items → effects (insertion order); onPrice runs the priced chess's own 特质 first (购买价格为N
 // sets the price the discounts and caps of bonds / strategies then act on — user playtest #5). Every call is
 // try/catch-guarded; nested dispatch depth is capped (MAX_DEPTH) so content can never loop the server.
+// An eliminated player gets no dispatch, except the persistent effects whose handler sets `afterElimination: true`
+// (onRoundStart, EffectDispatcher.dispatchEliminated: 信标's gift — GitHub #86).
 
+import { dispatchOperatorTraits, operatorTraitHandler } from './operatorTraits.js';
 import { itemKey } from './gamedata.js';
 import { boardOrder, parseKey, tileKey } from './board.js';
 import { pieceBonds as bondsOfPiece } from './bondsMeta.js';
+import { charge } from '../sim/content/dsl/budget.js';
+import { registerExtensionMeta, extensionMetaOwner } from '../sim/content/extensions.js';
 import { registerAllMeta } from '../sim/content/index.js';
 import { registerBuiltins } from './builtinMeta.js';
+import { msg, dn } from '../../shared/i18n.js';
+import { onGiftTicker } from './botEmotes.js';
+import { previewContext } from './preview.js';
+import { deriveSeed } from '../sim/rng.js';
 
 export const HOOKS = Object.freeze([
   'onRoundStart', 'onIncome', 'onPrepStart', 'onPrepEnd', 'onGain', 'onSold', 'onRefresh', 'onPrice', 'onBuy',
   'onSpend', 'onMerge', 'onLevelUp', 'onBattleStart', 'onBattleResult', 'onChoicePick', 'onEquip', 'onArt',
-  'onDestroy', 'onLayers',
+  'onDestroy', 'onLayers', 'onActiveBonds',
 ]);
 /** Non-hook members a handler object may carry. */
 const HANDLER_EXTRAS = new Set(['run', 'garrisonHooks']);
@@ -53,7 +64,7 @@ const HANDLER_EXTRAS = new Set(['run', 'garrisonHooks']);
 /** Garrison eventType → dispatcher hook. */
 export const GARRISON_HOOK = Object.freeze({
   SERVER_GAIN: 'onGain',
-  SERVER_PREP_START: 'onRoundStart',
+  SERVER_PREP_START: 'onPrepStart',   // 「进入休整期时」: PREP opens, after the 机变 draft (DESIGN §35.53; was onRoundStart)
   SERVER_PREP_FIN: 'onPrepEnd',
   SERVER_CHESS_SOLD: 'onSold',
   SERVER_PRICE: 'onPrice',
@@ -121,6 +132,7 @@ export function createRegistry({ builtins = true, content = true, log = console 
   if (content) {
     try { registerAllMeta(reg); } catch (e) { log.error?.('[meta] registerAllMeta failed', e); }
   }
+  if (content) registerExtensionMeta(reg);
   if (reg.warnings.length) log.warn?.(`[meta] ${reg.warnings.length} handler method(s) are not hooks and will never run, e.g. ${reg.warnings.slice(0, 3).join('; ')}`);
   return reg;
 }
@@ -153,6 +165,7 @@ export class EffectDispatcher {
   }
 
   _report(key, hook, e) {
+    if (this.preview) return;
     this.errors++;
     const msg = `${key}.${hook}: ${e && e.message ? e.message : e}`;
     const rec = this.errorsByKey.get(msg);
@@ -164,11 +177,26 @@ export class EffectDispatcher {
     this.m.log.error?.(`[match ${this.m.roomCode}] meta handler error ${msg}`, e && e.stack ? e.stack.split('\n').slice(0, 4).join(' | ') : '');
   }
 
+  _allowScript(handler, hook) {
+    const pluginId = extensionMetaOwner(handler);
+    if (pluginId && this.scriptRound !== this.m.round) {
+      this.scriptRound = this.m.round;
+      // [ASSUMED] Prep shares one deterministic per-plugin counter per round across all seats.
+      this.scriptBudget = {units:[], _handlerError:(label,unit,e) => this._report(label,hook,e)};
+    }
+    return !pluginId || charge(this.scriptBudget,null,pluginId);
+  }
+
   _call(ps, key, handler, hook, source, ev, repeat = 1) {
     const fn = typeof handler[hook] === 'function' ? handler[hook] : source.kind === 'garrison' && typeof handler.run === 'function' ? handler.run : null;
     if (!fn) return;
-    const ctx = makeCtx(this.m, ps, source, hook, ev);
+    let ctx;
+    if (this.preview) {
+      try { ctx = makeCtx(this.m, ps, source, hook, ev, this.preview); }
+      catch (e) { this._report(key, hook, e); return; }
+    } else ctx = makeCtx(this.m, ps, source, hook, ev);
     for (let i = 0; i < repeat; i++) {
+      if (!this._allowScript(handler,hook)) break;
       try { fn.call(handler, ctx, ev); } catch (e) { this._report(key, hook, e); }
     }
   }
@@ -191,13 +219,32 @@ export class EffectDispatcher {
    * ev.gain, onBattleStart ev.input, …) and returned.
    */
   dispatch(ps, hook, ev = {}, { quiet = false, skipKey = null } = {}) {
+    if (ev.preview && !this.preview) {
+      // Fresh dispatcher per preview: scripts share a local budget, and errors never enter the match diagnostics.
+      // Clone the entire event, including nested effect data and spawn mods, before giving it to any handler.
+      const isolated = new EffectDispatcher(this.m, this.registry);
+      isolated.preview = { rng: this.m.rngMeta.clone(), data: new Map(), players: new Map([[ps.playerId, ps]]) };
+      const result = isolated.dispatch(ps, hook, structuredClone(ev), { quiet: true, skipKey });
+      Object.assign(ev, result);
+      return ev;
+    }
     if (!ps || this.depth >= MAX_DEPTH) {
       if (ps && !quiet) this.m.log.warn?.(`[match ${this.m.roomCode}] meta dispatch depth limit (${hook})`);
       return ev;
     }
     this.depth++;
+    // An item granted while 休整期结束 is on the stack (this hook, or onGain re-entering it — 维多利亚 pays the next
+    // milestone from the grant's onGain) is stowed and not merged until the next prep start. [ASSUMED] every such
+    // item, not only the 战栗维式重锤 (owner's decision 2026-10-04: "an item that arrives at 休整期结束").
+    const deferItems = hook === 'onPrepEnd';
+    if (deferItems) ps._deferItemMerge = (ps._deferItemMerge || 0) + 1;
     try {
       const reg = this.registry;
+      // onRefresh: the board / hand chess as they stood when the refresh happened, taken before any handler runs — a
+      // chess gained during this dispatch (贾维's gift on the 6th refresh, the elite its copy completes) was not there
+      // when it happened: its 刷新时 特质 waits for the next manual refresh (拉普兰德's "本回合首次主动刷新", PR #196);
+      // the copies that elite consumed were there, and still fire (GitHub #627)
+      const refreshed = hook === 'onRefresh' ? refreshPieces(ps) : null;
       // 0. onPrice: the priced chess's own 特质 first — 购买价格为N defines the price every other modifier acts on
       if (hook === 'onPrice') this._garrisons(ps, hook, ev);
       // 1. globals
@@ -205,7 +252,7 @@ export class EffectDispatcher {
       // 2. band
       if (ps.bandId) {
         const key = `band:${ps.bandId}`;
-        const h = reg.get(key);
+        const h = reg.get(key) ?? reg.get(`band:${this.m.gd.band(ps.bandId)?.effectRef}`);
         if (h) this._call(ps, key, h, hook, { kind: 'band', key, bandId: ps.bandId, band: this.m.gd.band(ps.bandId) }, ev);
       }
       // 3. bonds
@@ -214,8 +261,9 @@ export class EffectDispatcher {
         const h = reg.get(key);
         if (h) this._call(ps, key, h, hook, { kind: 'bond', key, bondId, bond: ps.bonds[bondId] ?? null }, ev);
       }
+      dispatchOperatorTraits(this, ps, hook, ev);
       // 4. garrisons (onPrice: already run as step 0)
-      if (hook !== 'onPrice') this._garrisons(ps, hook, ev);
+      if (hook !== 'onPrice') this._garrisons(ps, hook, ev, refreshed);
       // 5. equipped items (not for the item-specific hooks): every [holder, item] pair of the owned chess, taken before
       // the first item runs; each runs only while still equipped on its still-owned holder — handlers move / destroy
       // pieces (header). Taking the pairs per holder as the walk reached it ran an item equipped meanwhile onto a later
@@ -224,7 +272,7 @@ export class EffectDispatcher {
         const pairs = [];
         for (const holder of ownedChess(ps)) for (const it of holder.items || []) pairs.push([holder, it]);
         for (const [holder, it] of pairs) {
-          const key = `item:${itemKey(it.id)}`;
+          const key = `item:${itemKey(this.m.gd.item(it.id)?.effectRef ?? it.id)}`;
           const h = reg.get(key);
           if (h && stillEquipped(ps, holder, it)) this._call(ps, key, h, hook, { kind: 'item', key, piece: it, holder, item: this.m.gd.item(it.id) }, ev);
         }
@@ -234,6 +282,27 @@ export class EffectDispatcher {
         if (!ref || typeof ref.key !== 'string' || ref.key === skipKey) continue;
         const h = reg.get(ref.key);
         if (h) this._call(ps, ref.key, h, hook, { kind: 'effect', key: ref.key, ref }, ev);
+      }
+    } finally {
+      if (deferItems) ps._deferItemMerge--;
+      this.depth--;
+    }
+    return ev;
+  }
+
+  /**
+   * `hook` for an ELIMINATED player (Match.startRound: onRoundStart): only its persistent effects whose handler sets
+   * `afterElimination: true` run — 信标's gift still reaches the teammate when its sender is out (builtinMeta.js
+   * builtin_gift, GitHub #86). Nothing else of an eliminated player is dispatched.
+   */
+  dispatchEliminated(ps, hook, ev = {}) {
+    if (!ps || ps.alive || this.depth >= MAX_DEPTH) return ev;
+    this.depth++;
+    try {
+      for (const ref of ps.effects.slice()) {
+        if (!ref || typeof ref.key !== 'string') continue;
+        const h = this.registry.get(ref.key);
+        if (h && h.afterElimination === true) this._call(ps, ref.key, h, hook, { kind: 'effect', key: ref.key, ref }, ev);
       }
     } finally {
       this.depth--;
@@ -252,8 +321,15 @@ export class EffectDispatcher {
     return [GARRISON_HOOK[g.eventType]];
   }
 
-  _garrisons(ps, hook, ev) {
-    const gd = this.m.gd;
+  /**
+   * Run the owned chess's garrisons of `hook`. `refreshed` (onRefresh): the board / hand chess taken when the dispatch
+   * began (refreshPieces) — each runs if it is still on the board or in the hand (where it stands now), or, consumed by
+   * a merge during this dispatch (`mergedInto`: 贾维's gift completing the elite), where it stood — it witnessed the
+   * refresh (GitHub #627: two 拉普兰德 merged by the round's first refresh still add their layers); a chess gained
+   * meanwhile does not run, nor one that left otherwise (sold, moved to the 临时整备区).
+   */
+  _garrisons(ps, hook, ev, refreshed = null) {
+    const gd = ps.gd || this.m.gd;
     const run = (piece, where) => {
       const rec = gd.chess(piece.id);
       if (!rec || !Array.isArray(rec.garrisonIds)) return;
@@ -276,7 +352,15 @@ export class EffectDispatcher {
       if (ev && ev.slot && ev.slot.kind === 'chess') run({ uid: 0, kind: 'chess', id: ev.slot.id, items: [] }, 'shop');
       return;
     }
-    if (hook !== 'onRoundStart' && hook !== 'onPrepEnd' && hook !== 'onRefresh') return;
+    if (hook !== 'onPrepStart' && hook !== 'onRoundStart' && hook !== 'onPrepEnd' && hook !== 'onRefresh') return;
+    if (refreshed) {
+      for (const { piece, area } of refreshed) {
+        const loc = ps.find(piece.uid);
+        if (loc && loc.piece === piece && (loc.area === 'board' || loc.area === 'hand')) run(piece, loc.area);
+        else if (!loc && piece.mergedInto != null) run(piece, area);
+      }
+      return;
+    }
     for (const { piece } of boardOrder(ps.board)) if (piece.kind === 'chess') run(piece, 'board');
     for (const p of ps.hand) if (p && p.kind === 'chess') run(p, 'hand');
   }
@@ -287,7 +371,7 @@ export class EffectDispatcher {
    * SERVER_GAIN. SERVER_PRICE cannot be triggered. Returns the number of garrison handlers run.
    */
   triggerGarrisons(ps, piece, eventType, { asPiece = null, triggeredBy = null } = {}) {
-    const gd = this.m.gd;
+    const gd = ps.gd || this.m.gd;
     const hook = eventType === 'SERVER_PRICE' ? null : GARRISON_HOOK[eventType];
     const rec = piece && piece.kind === 'chess' ? gd.chess(piece.id) : null;
     if (!hook || !rec || !Array.isArray(rec.garrisonIds) || this.depth >= MAX_DEPTH) return 0;
@@ -299,7 +383,8 @@ export class EffectDispatcher {
         const g = gd.garrison(gid);
         if (!g || g.eventType !== eventType) continue;
         const key = `garrison:${g.effectKey}`;
-        const h = this.registry.get(key);
+        const h = g.operatorTrait && eventType === 'SERVER_GAIN'
+          ? operatorTraitHandler(g.operatorTrait, hook) : this.registry.get(key);
         if (!h) continue;
         const ev = hook === 'onGain' ? { piece: self, kind: 'chess', source: 'trigger' }
           : hook === 'onSold' ? { piece: self, gain: 0 }
@@ -308,7 +393,8 @@ export class EffectDispatcher {
         const repeat = hook === 'onGain' ? this.investRepeat(ps) : 1;
         const loc = ps.find(self.uid);
         const where = loc ? (loc.area === 'board' ? 'board' : loc.area) : 'trigger';
-        this._call(ps, key, h, hook, { kind: 'garrison', key, piece: self, garrisonId: gid, garrison: g, bb: g.bb || {}, bbStr: g.bbStr || {}, where, trigger: true, triggeredBy }, ev, repeat);
+        this._call(ps, key, h, hook, { kind: 'garrison', key, piece: self, copiedFrom: asPiece ? piece : null,
+          garrisonId: gid, garrison: g, bb: g.bb || {}, bbStr: g.bbStr || {}, where, trigger: true, triggeredBy }, ev, repeat);
         n++;
       }
     } finally {
@@ -320,7 +406,7 @@ export class EffectDispatcher {
   /** Item-specific hook (onEquip / onArt / onDestroy) for one item piece. */
   dispatchItem(ps, item, holder, hook, ev) {
     if (!item || this.depth >= MAX_DEPTH) return ev;
-    const key = `item:${itemKey(item.id)}`;
+    const key = `item:${itemKey(this.m.gd.item(item.id)?.effectRef ?? item.id)}`;
     const h = this.registry.get(key);
     if (!h) return ev;
     this.depth++;
@@ -342,7 +428,7 @@ export class EffectDispatcher {
     this.depth++;
     try {
       const ctx = makeCtx(this.m, ps, { ...source, key }, hook, ev);
-      try { fn.call(h, ctx, ev); } catch (e) { this._report(key, hook, e); }
+      try { if (this._allowScript(h,hook)) fn.call(h, ctx, ev); } catch (e) { this._report(key, hook, e); }
     } finally {
       this.depth--;
     }
@@ -355,6 +441,14 @@ function ownedChess(ps) {
   for (const { piece } of boardOrder(ps.board)) if (piece.kind === 'chess') out.push(piece);
   for (const p of ps.hand) if (p && p.kind === 'chess') out.push(p);
   for (const p of ps.temp) if (p && p.kind === 'chess') out.push(p);
+  return out;
+}
+
+/** The board chess (reading order) then the hand chess, with where each stood — the pieces whose 刷新时 特质 a refresh runs (onRefresh). */
+function refreshPieces(ps) {
+  const out = [];
+  for (const { piece } of boardOrder(ps.board)) if (piece.kind === 'chess') out.push({ piece, area: 'board' });
+  for (const p of ps.hand) if (p && p.kind === 'chess') out.push({ piece: p, area: 'hand' });
   return out;
 }
 
@@ -386,6 +480,11 @@ export function offerLabel(gd, source) {
   return null;
 }
 
+/** Who a grantChess toast names: the same speaker as an offer label, or the choice card's name. */
+function grantSpeaker(gd, source) {
+  return offerLabel(gd, source) || (source && source.kind === 'choice' && source.card && source.card.name) || '';
+}
+
 /**
  * @param {import('./Match.js').Match} m
  * @param {import('./PlayerState.js').PlayerState} ps
@@ -393,9 +492,22 @@ export function offerLabel(gd, source) {
  * @param {string} hook
  * @param {object|null} [ev] the event being dispatched (onPrice: ctx.modifyPrice / ctx.setPrice edit ev.price)
  */
-export function makeCtx(m, ps, source, hook, ev = null) {
-  const gd = m.gd;
+export function makeCtx(m, ps, source, hook, ev = null, preview = null) {
+  // the player's view of the data: its slotted 自选 slots are its operators (0.2.0, player/diy.js) — chessRecord,
+  // pieceBonds, a strategy's / 特质's bond and tier reads see the operator; the match's GameData for everyone else
+  const gd = ps.gd || m.gd;
+  const rng = preview?.rng ?? m.rngMeta;
+  // The roll helpers only read pools/data; shadow their RNG receiver without replacing the live match stream.
+  const rolls = preview ? Object.assign(Object.create(m), { rngMeta: rng }) : m;
   const view = (p) => (p ? ps.pieceView(p) : null);
+  // the piece whose per-round counters a handler reads: an owned one, or the handler's own source copy that a merge
+  // consumed during this refresh dispatch — it still witnessed the refresh (EffectDispatcher._garrisons, GitHub #627)
+  const counted = (uid) => {
+    const l = ps.find(uid);
+    if (l) return l.piece;
+    const p = source && source.piece;
+    return p && p.uid === uid && p.mergedInto != null ? p : null;
+  };
   const ctx = {
     hook,
     source,
@@ -410,7 +522,12 @@ export function makeCtx(m, ps, source, hook, ev = null) {
     isCoop: !m.isSolo,
     data: gd.raw,
     gd,
-    rng: m.rngMeta,
+    rng,
+    /**
+     * A uint32 derived from the match seed and `salt`: the same for every player, dispatch and preview, consuming no
+     * stream — for a draw that every player of a round must share (鸭爵's swaps, GitHub #839: createRng(seedFor(…))).
+     */
+    seedFor: (salt) => deriveSeed(m.seed, `meta:${String(salt)}`),
     log: (msg) => m.log.info?.(`[meta ${m.roomCode}] ${ps.playerId}: ${msg}`),
 
     // ---- reads
@@ -418,6 +535,7 @@ export function makeCtx(m, ps, source, hook, ev = null) {
     lp: () => ps.lp,
     alive: () => ps.alive,
     bandId: () => ps.bandId,
+    teamMedicGranted: () => m.teamMedicGranted(),
     shopLevel: () => ps.shop.level,
     bond: (id) => (ps.bonds[id] ? { ...ps.bonds[id] } : null),
     bonds: () => Object.fromEntries(Object.entries(ps.bonds).map(([k, v]) => [k, { ...v }])),
@@ -442,7 +560,11 @@ export function makeCtx(m, ps, source, hook, ev = null) {
     pieceAt: (row, col) => { const p = Number.isInteger(row) && Number.isInteger(col) ? ps.board.get(tileKey(row, col)) : null; return p ? ps.pieceView(p, [row, col]) : null; },
     chessRecord: (id) => gd.chess(id),
     /** Bonds a chess piece counts for: its own + those granted by 变形同构体 pairings. */
-    pieceBonds: (uid) => { const l = ps.find(uid); return l && l.piece.kind === 'chess' ? bondsOfPiece(gd, l.piece) : []; },
+    pieceBonds: (uid, fallbackPiece = null) => {
+      const piece = ps.find(uid)?.piece || (source?.piece?.uid === uid ? source.piece : null)
+        || (fallbackPiece?.uid === uid ? fallbackPiece : null);
+      return piece?.kind === 'chess' ? bondsOfPiece(gd, piece, ps.m?.rules) : [];
+    },
     /** 特质 of a chess piece: [{ garrisonId, effectKey, eventType, bb, bbStr, desc }]. */
     garrisonsOf: (uid) => {
       const l = ps.find(uid);
@@ -456,15 +578,13 @@ export function makeCtx(m, ps, source, hook, ev = null) {
     shopSlots: () => ps.shop.slots.map((s) => (s ? { kind: s.kind, id: s.id, basePrice: s.basePrice, sold: !!s.sold, frozen: !!s.frozen } : null)),
 
     // ---- counters (player scope, persistent)
-    rhine: rhineMetaApi(ps),
-    kazdelDonationIds: () => [...(ps.kazdelDonationIds||[])],
     counter: (k) => (Number.isFinite(ps.counters[k]) ? ps.counters[k] : 0),
     setCounter: (k, v) => { if (typeof k === 'string' && Number.isFinite(v)) ps.counters[k] = v; return ps.counters[k] ?? 0; },
     incCounter: (k, n = 1) => { if (typeof k !== 'string' || !Number.isFinite(n)) return 0; ps.counters[k] = (Number.isFinite(ps.counters[k]) ? ps.counters[k] : 0) + n; return ps.counters[k]; },
-    /** Per-piece counter of the current round (0 in a new round / for a new piece; an elite merged this round keeps the
-     *  highest of its copies' — PlayerState.pieceRoundCount). */
-    pieceCounter: (uid, k) => { const l = ps.find(uid); return l ? ps.pieceRoundCount(l.piece, k) : 0; },
-    incPieceCounter: (uid, k, n = 1) => { const l = ps.find(uid); return l ? ps.bumpPieceRoundCount(l.piece, k, n) : 0; },
+    /** Per-piece counter of the current round (0 in a new round / for a new piece, an elite merged this round included —
+     *  PlayerState.pieceRoundCount). */
+    pieceCounter: (uid, k) => { const p = counted(uid); return p ? ps.pieceRoundCount(p, k) : 0; },
+    incPieceCounter: (uid, k, n = 1) => { const p = counted(uid); return p ? ps.bumpPieceRoundCount(p, k, n) : 0; },
 
     // ---- economy
     addFunds: (n, reason = '') => ps.addFunds(finiteInt(n), { reason }),
@@ -486,30 +606,57 @@ export function makeCtx(m, ps, source, hook, ev = null) {
       if (opts.golden) id = gd.goldenIdOf(chessId) || chessId;
       if (!gd.chess(id)) return null;
       const base = gd.baseIdOf(id);
-      // "some effects fail when the cap is hit" (research 06 §7): by default a chess of the pool needs a free copy
-      if (opts.requirePool !== false && m.pool.has(base) && m.pool.left(base) < 1) return null;
+      // "some effects fail when the cap is hit" (research 06 §7): by default a chess of the pool needs a free copy (a
+      // 自选 piece: one of the player's own stock — player/diy.js poolOf)
+      const pool = typeof ps.poolOf === 'function' ? ps.poolOf(base) : m.pool;
+      if (opts.requirePool !== false && pool.has(base) && pool.left(base) < 1) return null;
       const p = ps.acquireChess(id, { source: opts.source || source.key || 'effect', toTemp: !!opts.toTemp, fromPool: opts.fromPool !== false });
+      // 「歌蕾蒂娅：获得斯卡蒂」 — every silent grantChess (a 特质, 余 SERVER_MOST_BOND, a band, an item, a choice).
+      // opts.toast === false skips it. A caller that already says the same thing should pass that.
+      if (p && opts.toast !== false) {
+        const got = gd.chess(p.id);
+        const name = got && got.name;
+        if (name) {
+          const who = grantSpeaker(gd, source);
+          m.toast(ps, 'info', who ? msg('{who}：获得{name}', { who: dn(who), name: dn(name) }) : msg('获得{name}', { name: dn(name) }));
+        }
+      }
       return p ? view(p) : null;
     },
     grantItem: (itemId, opts = {}) => {
       if (!ps.alive || !gd.item(itemId)) return null;
-      const p = ps.acquireItem(itemId, { source: opts.source || source.key || 'effect', toTemp: !!opts.toTemp });
+      const p = ps.acquireItem(itemId, {
+        source: opts.source || source.key || 'effect',
+        toTemp: !!opts.toTemp,
+        deferMerge: ps._deferItemMerge > 0,
+        requirePool: opts.requirePool !== false,
+      });
       return p ? view(p) : null;
     },
-    /** Random chess id from the shared pool (copy-weighted). opts: { maxTier, tier, bond, filter(id) } */
+    /**
+     * Random chess id from the shared pool (copy-weighted) — and the player's own 自选 stock (player/diy.js
+     * diyStockEntries, 0.2.0: 「自选干员放入后模拟中的补给池随机范围也将被相应扩大」). opts: { maxTier, tier, bond, filter(id) };
+     * bonds are read through the player's data view (a slotted slot: its operator's).
+     */
     rollChess: (opts = {}) => {
       const f = (id) => {
         if (opts.bond) { const c = gd.chess(id); if (!c || !Array.isArray(c.bonds) || !c.bonds.includes(opts.bond)) return false; }
         return typeof opts.filter === 'function' ? !!opts.filter(id) : true;
       };
-      return m.pool.roll(m.rngMeta, { maxTier: Number.isInteger(opts.maxTier) ? opts.maxTier : 6, tier: Number.isInteger(opts.tier) ? opts.tier : null, filter: f });
+      const extra = typeof ps.diyStockEntries === 'function' ? ps.diyStockEntries() : null;
+      return (ps.pool || m.pool).roll(rng, { maxTier: Number.isInteger(opts.maxTier) ? opts.maxTier : 6, tier: Number.isInteger(opts.tier) ? opts.tier : null, filter: f, extra, ignoreCounts: opts.ignoreCounts === true });
     },
-    rollItem: (opts = {}) => m.rollItemId(opts),
+    rollItem: (opts = {}) => rolls.rollItemId(opts),
     /**
      * Roll a choices.json pool: equip pools → { kind: 'item', id }; chess pools (items / weighted / shopEligible with
      * tier, minTier, bond, golden) → { kind: 'chess', id, golden } (a pool chess needs a free copy). null when empty.
      */
-    rollPool: (poolId, opts = {}) => m.rollPool(poolId, { shopLevel: ps.shop.level, ...opts }),
+    rollPool: (poolId, opts = {}) => rolls.rollPool(poolId, {
+      shopLevel: ps.shop.level, chessPool: ps.pool || m.pool,
+      // a shared-pool draw also takes the player's 自选 stock, its bonds read through the player's view (rollChess)
+      extra: typeof ps.diyStockEntries === 'function' ? ps.diyStockEntries() : null, chessOf: (id) => gd.chess(id),
+      ...opts,
+    }),
     /**
      * Run another owned chess's 特质 of `eventType` now (SERVER_GAIN / SERVER_PREP_START / SERVER_PREP_FIN /
      * SERVER_CHESS_SOLD / SERVER_REFRESH_SHOP). opts.asUid: run them as if they belonged to that piece. Returns the
@@ -546,16 +693,19 @@ export function makeCtx(m, ps, source, hook, ev = null) {
       ps._detach(l);
       if (l.piece.kind === 'chess') {
         ps.removeTokensOf(l.piece.uid);
-        for (const it of l.piece.items || []) ps.stow(it, { allowTemp: true });
+        const lost = [];
+        for (const it of l.piece.items || []) {
+          if (!ps.stow(it, { allowTemp: true })) lost.push(it);
+        }
         l.piece.items = [];
         ps.returnCopies(l.piece);
         ps.checkItemMerges(); // the returned equipment auto-merges like any gain
-      }
+        for (const it of lost) ps.releaseItemStock(it);
+      } else if (l.piece.kind === 'item') ps.releaseItemStock(l.piece);
       ps.recompute();
       return true;
     },
     /** Queue a free pick-one offer of chess (shop.rewardOffer; `label` defaults to offerLabel(source), the bar's header). */
-    syncKjeragRecruit: () => syncKjeragRecruit(ps),
     offerChess: (ids, opts = {}) => !!ps.pushRewardOffer(opts.source || source.key || 'effect', { ids, tier: opts.tier ?? null, label: opts.label ?? offerLabel(gd, source) }),
     /** Queue a free pick-one offer of items (shop.rewardOffer with slots of kind 'item'). */
     offerItems: (ids, opts = {}) => !!ps.pushItemOffer(ids, { source: opts.source || source.key || 'effect', tier: opts.tier ?? null, label: opts.label ?? offerLabel(gd, source) }),
@@ -591,16 +741,33 @@ export function makeCtx(m, ps, source, hook, ev = null) {
 
     // ---- bounties / choices
     addBounty: (card) => m.addBounty(ps, card),
+    offerBountyChoice: (cards, sourceItemId) => m.offerBountyChoice(ps, cards, sourceItemId),
 
     // ---- messaging
-    toast: (text, kind = 'info') => m.toast(ps, kind, String(text)),
-    ticker: (text) => m.tickerText(String(text)),
-    /** CHAR_GIFT broadcast to this player: "{0}博士给你赠送了{1}". */
-    giftTicker: (fromName, chessId) => { const c = gd.chess(chessId); m.tickerFor('CHAR_GIFT', [String(fromName), c ? c.name : String(chessId)], { to: ps.playerId }); },
+    // a string or a shared/i18n.js msg(msgid, params)
+    toast: (text, kind = 'info') => m.toast(ps, kind, text && typeof text === 'object' ? text : String(text)),
+    ticker: (text) => m.tickerText(text && typeof text === 'object' ? text : String(text)),
+    /**
+     * CHAR_GIFT broadcast to this player: "{0}博士给你赠送了{1}" — named as this player sees the gift (a chess it fields as
+     * its 补位 stand-in by the stand-in's name: 0.2.0, the owner's recall of the official mode, 2026-10-06).
+     */
+    giftTicker: (fromName, chessId, fromPlayerId = null) => {
+      const c = gd.chess(chessId);
+      const shown = c && typeof ps.fieldRecord === 'function' ? ps.fieldRecord(c) || c : c;
+      m.tickerFor('CHAR_GIFT', [String(fromName), shown ? shown.name : String(chessId)], { to: ps.playerId });
+      // the recipient bot thanks the sender when the gift was a real player's CHAR_GIFT (enabled by default; SP_BOT_EMOTES=0 silences it)
+      onGiftTicker(m, ps, fromPlayerId);
+    },
 
     // ---- team
     teammates: () => m.alivePlayers().filter((p) => p !== ps).map((p) => makeCtx(m, p, source, hook, null)),
     player: (playerId) => { const p = m.players.get(playerId); return p && p.alive ? makeCtx(m, p, source, hook, null) : null; },
   };
-  return ctx;
+  extendProductContext(ctx,m,ps);
+  if (!preview) return ctx;
+  const forPlayer = (p) => makeCtx(m, preview.players.get(p.playerId) || p, source, hook, null, preview);
+  return previewContext(ctx, preview, {
+    teammates: () => m.alivePlayers().filter((p) => p.playerId !== ps.playerId).map(forPlayer),
+    player: (id) => { const p = m.players.get(id); return p?.alive ? forPlayer(p) : null; },
+  });
 }

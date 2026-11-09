@@ -1,5 +1,3 @@
-import {ITEMS as RHINE_ITEMS} from '../rhine/data.js';
-import {CORE as KAZDEL,ITEMS as KAZDEL_ITEMS} from '../kazdel/data.js';
 // server/sim/content/support/index.js — shared helpers of content wave B (bonds, garrisons, items, bands, choices).
 //
 // Battle side and prep side read the same frozen game data (server/data.js). Everything here is pure and deterministic;
@@ -20,10 +18,11 @@ import {CORE as KAZDEL,ITEMS as KAZDEL_ITEMS} from '../kazdel/data.js';
 //     `PlayerBattleInput.contentInfo`, written by the `global:contentb_info` meta handler (support/meta.js).
 
 import { getData } from '../../../data.js';
+import { grantedBondsByMorph } from '../../../../shared/plugins/rules.js';
+import { RECORD_MAPS } from '../../../../shared/plugins/dataUtils.js';
 import { COLS, DIRECT_BONUS_STACKING } from '../../constants.js';
 import { frontOf, offsetTile } from '../../dir.js';
-import { bodyInKeys, bodyDist, bodyInRadius, bodyOnTile, bodyTileReach } from '../../body.js';
-import {RHODES_ITEMS,RHODES_CORE} from '../rhodes-mujica/content-text.js';
+import { bodyInKeys, bodyDist, bodyInRadius, bodyOnTile, bodyTileReach, bodyInRange } from '../../body.js';
 
 export { COLS };
 /** Where an enemy can be hit (a huge enemy's whole hit rectangle, sim/body.js) — for every range test on enemies. */
@@ -46,18 +45,97 @@ export function gameData() {
   return DATA;
 }
 /** Tests only: swap the data object (null → reload the singleton). Also drops derived caches. */
-export function setGameData(d) { DATA = d ?? null; CORE = null; }
+export function setGameData(d) { DATA = d ?? null; CORE = null; EFFECT_ITEMS = new WeakMap(); }
 
-export const bondRecord = (id) => own(gameData().bonds, id) || (id===RHODES_CORE.bondId?RHODES_CORE:id===KAZDEL?{bondId:KAZDEL,isCore:true}:id==='rhineShip'?{bondId:id,isCore:true}:null);
-export const itemRecord = (id) => own(gameData().items, id) || own(RHODES_ITEMS,id) || own(KAZDEL_ITEMS,id) || own(RHINE_ITEMS,id);
+export const bondRecord = (id) => own(gameData().bonds, id);
+export const itemRecord = (id) => own(gameData().items, id);
 export const garrisonRecord = (id) => own(gameData().garrisons, id);
 export const bandRecord = (id) => own(gameData().bands, id);
+/** Behaviour identity, while the concrete record still supplies all numbers. */
+export const bandEffectId = id => bandRecord(id)?.effectRef ?? id;
 export const effectRecord = (id) => own(gameData().effects, id);
 export const chessRecord = (id) => own(gameData().chess, id);
 /** Registry key of an item: id without the `_a` / `_b` suffix (Arts have none). */
-export const itemKeyOf = (id) => String(id ?? '').replace(/_[ab]$/, '');
+export const itemKeyOf = (id) => String(itemRecord(id)?.effectRef ?? id ?? '').replace(/_[ab]$/, '');
 /** True for golden (进阶) items / elite chess ids. */
 export const isGoldenId = (id) => /_b$/.test(String(id ?? ''));
+
+/**
+ * Whether `data` (default: the loaded data) is another official version's build (config.version, data/versions/*;
+ * DESIGN §35.22.3). Only such data finds hand-written behaviour by charId / effectId: the default data and the plugin
+ * content sets built on it carry no config.version and keep the by-id lookups of before versions M0, so a plugin that
+ * patches an official record's charId or effectId changes that record, not which kit or item behaviour runs.
+ */
+export const isVersionData = (data = gameData()) => !!(data && typeof data === 'object' && data.config?.version);
+
+/** Historical season-one semantics; absent version metadata always means today's rules. */
+export const isFirstPeriod = (data = gameData()) => isVersionData(data) && data.config.season === 'act1autochess';
+
+/**
+ * Whether `id` names an official record of data file `file` (`chess`, `items` …), not a plugin's namespaced one
+ * (shared/plugins/dataUtils.js RECORD_MAPS: chess_x_ / item_x_ …).
+ */
+export const isOfficialId = (file, id) => !String(id ?? '').startsWith(`${RECORD_MAPS[file]?.[0] ?? '\0'}_`);
+
+/**
+ * The behaviour of an item is named by the normal record's effectId (versions M0, docs/SIM.md §7.2): another official
+ * version reuses item ids for other effects, while an effectId keeps its meaning. A golden record (effectId
+ * eff_acgarmNNN) counts as its normal one (baseId); a plugin record follows its effectRef; a plugin record without one
+ * (item_x_) has no official behaviour (null). itemKeyOf stays the item's identity (combo partners, buff keys, labels).
+ * The dispatchers use it on another version's build only (isVersionData); the default data keeps the item key.
+ */
+export function itemEffectKey(id) {
+  let rec = itemRecord(id);
+  if (!rec) return null;
+  if (rec.effectRef != null) rec = itemRecord(rec.effectRef);
+  else if (!isOfficialId('items', rec.id ?? id)) return null;
+  if (rec && rec.baseId && rec.baseId !== rec.id) rec = itemRecord(rec.baseId);
+  return typeof rec?.effectId === 'string' ? rec.effectId : null;
+}
+
+/**
+ * Ids of the official item records of `items` ({ id: record }) whose behaviour is `effectId` (itemEffectKey), in data
+ * order: no plugin record (item_x_, or one that carries an effectRef — it copies its base's effectId). `normalOnly`
+ * drops the golden records.
+ */
+export function officialItemIdsWithEffect(items, effectId, { normalOnly = false } = {}) {
+  const out = [];
+  if (!items || typeof items !== 'object' || typeof effectId !== 'string') return out;
+  for (const [id, rec] of Object.entries(items)) {
+    if (!rec || typeof rec !== 'object' || rec.effectRef != null || !isOfficialId('items', id)) continue;
+    const golden = !!rec.baseId && rec.baseId !== id;
+    if (golden ? !normalOnly && own(items, rec.baseId)?.effectId === effectId : rec.effectId === effectId) out.push(id);
+  }
+  return out;
+}
+
+let EFFECT_ITEMS = new WeakMap();
+/** officialItemIdsWithEffect over the loaded data (gameData()), cached per data object. */
+export function itemIdsWithEffect(effectId, { normalOnly = false } = {}) {
+  const d = gameData();
+  let m = EFFECT_ITEMS.get(d);
+  if (!m) { m = new Map(); EFFECT_ITEMS.set(d, m); }
+  const k = `${normalOnly ? 'n' : 'a'}:${effectId}`;
+  if (!m.has(k)) m.set(k, Object.freeze(officialItemIdsWithEffect(d.items, effectId, { normalOnly })));
+  return m.get(k);
+}
+
+/** 突变细胞's effect: 凯瑟琳's one-cell allowance (bands/meta.js, server/match/player/prep.js) counts its normal records. */
+export const MUTATION_CELL_EFFECT = 'eff_acarm072';
+/** 突变细胞's normal record in the default data: data without config.version (isVersionData) counts it by this id. */
+export const MUTATION_CELL_ID = 'chess_item_5_08_e_a';
+/**
+ * The 突变细胞 ids 凯瑟琳's one-cell allowance counts in `data`: MUTATION_CELL_ID, or on another version's build the
+ * official normal records of MUTATION_CELL_EFFECT (上半: chess_item_6_08_e_a).
+ */
+export const mutationCellIds = (data = gameData()) => (isVersionData(data)
+  ? officialItemIdsWithEffect(data.items, MUTATION_CELL_EFFECT, { normalOnly: true }) : [MUTATION_CELL_ID]);
+/** Whether item `id` is a 突变细胞 the allowance counts (mutationCellIds). */
+export function isMutationCell(id, data = gameData()) {
+  if (!isVersionData(data)) return id === MUTATION_CELL_ID;
+  const rec = own(data.items, id);
+  return !!rec && rec.effectRef == null && isOfficialId('items', id) && rec.effectId === MUTATION_CELL_EFFECT;
+}
 
 /**
  * Buffs of a data record (bond / item / band / effect / garrison-like) as `{ key, bbKey, p }` where `key` is the
@@ -86,9 +164,6 @@ let CORE = null;
 export function coreBondIds() {
   if (!CORE) {
     CORE = new Set();
-    CORE.add(RHODES_CORE.bondId);
-    CORE.add(KAZDEL);
-    CORE.add('rhineShip');
     for (const [id, b] of Object.entries(gameData().bonds || {})) if (b && b.isCore) CORE.add(id);
   }
   return CORE;
@@ -135,11 +210,11 @@ export function contentInfo(battle, pid) {
   const ci = player(battle, pid)?.input?.contentInfo;
   return ci && typeof ci === 'object' ? ci : {};
 }
-/** Band ids of every alive player of the match (own first); falls back to this battle's players. */
+/** Alive players' bands (own first), plus a retained Touch team grant; falls back to this battle's players. */
 export function matchBands(battle, pid) {
   const mb = contentInfo(battle, pid).matchBands;
-  if (Array.isArray(mb) && mb.length) return mb;
-  return (battle.players || []).map((p) => p.bandId).filter(Boolean);
+  if (Array.isArray(mb) && mb.length) return mb.map(bandEffectId);
+  return (battle.players || []).map((p) => bandEffectId(p.bandId)).filter(Boolean);
 }
 
 // =====================================================================================================================
@@ -157,10 +232,16 @@ export function tierOf(u) {
   if (u.ownerUnit) return tierOf(u.ownerUnit);
   return 1;
 }
-/** Operator standing on a ground (LOW, not elevated) tile — "地面干员" (engine flag set at deployment). */
-export const isGroundOp = (u) => isOp(u) && u.ground === true;
+/**
+ * "地面干员": a melee-position (地面位, deploy class MELEE) operator, whatever tile it stands on — the official vocabulary
+ * names the deploy class, not the tile (game data: this mode's map card 「可以部署高台干员和地面干员的地面」, 「可将高台干员
+ * 部署于其上」, 「所有地面干员阻挡数+2」; PRTS corrected 琴柳's 地面干员 to 地面位干员). Read by 不屈, the 战栗维式重锤 proc and
+ * 休谟斯 回收利用 (community report 「不屈盟约效果高台干员也错误的吃到了」, 0.1.3). The tile (`unit.ground`) stays what the
+ * enemies' 地面单位 targeting reads.
+ */
+export const isGroundOp = (u) => isOp(u) && u.def?.position === 'MELEE';
 /** Base (normal) chess id of an operator (normal and elite share it). */
-export const baseChessId = (u) => String(u?.def?.baseId ?? u?.defId ?? '').replace(/_b$/, '_a');
+export const baseChessId = (u) => u?.def?.raw?.productSourceId ?? u?.def?.baseId ?? String(u?.defId ?? '').replace(/_b$/, '_a');
 
 /** Equipment ids carried by a unit (golden ids when merged). */
 export const itemsOf = (u) => (u && Array.isArray(u.items) ? u.items : EMPTY);
@@ -174,22 +255,17 @@ const BONDS = new WeakMap();
  */
 export function unitBonds(u) {
   if (!isOp(u)) return EMPTY;
+  const productRaw=u.skill?.battle?.data?.raw?.config?.productContent?.ids?.length?u.skill.battle.data.raw:null;
   const cached = BONDS.get(u);
   const items = itemsOf(u);
-  const visitor=!!u.player?.input?.units?.find(v=>v.uid===u.uid&&v.kind!=='token')?.rhineIdentity;
-  const key = items.join('|')+'|rhine:'+visitor;
+  const plus = u.player?.morphPairing === 'plus';
+  // The official key stays items.join('|'), so a cached official result is unchanged.
+  const key = (plus ? 'plus|' : '') + items.join('|');
   if (cached && cached.key === key) return cached.bonds;
   const out = [...(Array.isArray(u.def?.bonds) ? u.def.bonds : Array.isArray(u.def?.raw?.bonds) ? u.def.raw.bonds : [])];
-  if (items.length >= 2) {
-    const recs = items.map((id) => itemRecord(id)).filter(Boolean);
-    if (recs.some((r) => r.canGiveBond)) {
-      for (const r of recs) {
-        if (r.canGiveBond) continue;
-        if (typeof r.giveBondId === 'string' && bondRecord(r.giveBondId) && !out.includes(r.giveBondId)) out.push(r.giveBondId);
-      }
-    }
+  for (const b of grantedBondsByMorph(items, (id) => productRaw?.items?.[id]||itemRecord(id), { mode: plus ? 'plus' : 'official', bondOk: (id) => !!(productRaw?.bonds?.[id]||bondRecord(id)) })) {
+    if (!out.includes(b)) out.push(b);
   }
-  if(visitor&&!out.includes('rhineShip'))out.push('rhineShip');
   const bonds = Object.freeze(out);
   BONDS.set(u, { key, bonds });
   return bonds;
@@ -203,7 +279,7 @@ export function unitBonds(u) {
 export function isMember(battle, u, bondId) {
   const own = unitBonds(u);
   if (own.includes(bondId)) return true;
-  return isCoreBond(bondId) && own.includes('maniShip') && bondActive(battle, u.ownerId, 'maniShip');
+  return (battle.data.raw.config?.productContent?.ids?.length?battle.data.raw.bonds?.[bondId]?.isCore:isCoreBond(bondId)) && own.includes('maniShip') && bondActive(battle, u.ownerId, 'maniShip');
 }
 
 /**
@@ -267,7 +343,7 @@ export const tileKey = (u) => (u.side === 'ally' ? u.tileR * COLS + u.tileC : Ma
 /** Is `target` on a tile of `keys` (Set or array)? An ally: its tile; an enemy: its body (a huge one: every tile). */
 export const onKeys = (target, keys) => {
   if (!target || !keys) return false;
-  if (target.side !== 'ally') return bodyInKeys(target, keys);
+  if (target.side !== 'ally') return bodyInRange(target, keys);
   const k = tileKey(target);
   return keys instanceof Set ? keys.has(k) : keys.includes(k);
 };
@@ -299,6 +375,11 @@ export function directMods({ atk = 0, def = 0, hp = 0 } = {}, extra = null) {
 /** Match-long passive buff (survives death/redeploy; re-adding the same key replaces it — idempotent). */
 export function passiveBuff(battle, u, key, mods, extra = {}) {
   return battle.addBuff(u, { key, mods, persist: true, allowDead: true, refresh: 'replace', ...extra });
+}
+
+/** Emi content recipient isolation; a loop iteration does not add a nested event frame. */
+export function isolateContentCallback(battle, fn, label, owner = null) {
+  try { return fn(); } catch (error) { battle._handlerError(label, owner, error); return undefined; }
 }
 
 /** Client VFX anchored on a unit: `battle.fx(kind, { x, y, id, src, key, …extra })`. */

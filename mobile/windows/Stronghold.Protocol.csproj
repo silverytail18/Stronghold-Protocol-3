@@ -1,10 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <OutputType>WinExe</OutputType><TargetFramework>net8.0-windows</TargetFramework><UseWindowsForms>true</UseWindowsForms>
-    <Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings><AssemblyName>Stronghold.Protocol</AssemblyName>
-    <Version>0.5.3</Version><ApplicationManifest>app.manifest</ApplicationManifest>
-  </PropertyGroup>
+  <PropertyGroup><OutputType>WinExe</OutputType><TargetFramework>net8.0-windows</TargetFramework><UseWindowsForms>true</UseWindowsForms><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings><AssemblyName>Stronghold.Protocol</AssemblyName><Version>1.2.0</Version></PropertyGroup>
   <ItemGroup><PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2903.40" /></ItemGroup>
   <Target Name="RemoveUnusedWpfReference" BeforeTargets="ResolveAssemblyReferences"><ItemGroup><Reference Remove="@(Reference)" Condition="$([System.String]::Copy('%(Reference.Identity)').EndsWith('Microsoft.Web.WebView2.Wpf.dll'))" /></ItemGroup></Target>
 </Project>
-

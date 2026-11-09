@@ -11,10 +11,11 @@ import { fileURLToPath } from 'node:url';
 import { checkLoadout, MODULE_NONE } from '../../shared/protocol.js';
 import { PHASE } from '../../shared/constants.js';
 import {
-  parseStored, toStored, chessOptions, effectiveChoice, setChoice, resetChoice, sanitizeEntries, rosterOf, filterRoster,
+  parseStored, parseStoredByChar, toStored, toStoredV1, chessOptions, effectiveChoice, setChoice, resetChoice, sanitizeEntries, rosterOf, filterRoster,
   changedCount, moduleBadge, attrRows, skillTags, skillLabel, selectedSkill, selectedModule, recordsOf,
+  exportPayload, serializeExport, parseImport, LOADOUT_EXPORT_KIND, LOADOUT_VERSION, LOADOUT_IMPORT_MAX_BYTES,
 } from '../../public/js/ui/loadoutModel.js';
-import { installLoadoutSync, SYNC_DEBOUNCE_MS, RETRY_MS } from '../../public/js/ui/loadoutSync.js';
+import { installLoadoutSync, SYNC_DEBOUNCE_MS, RETRY_MS, applyLoadoutEntries, setEntries, loadoutStore } from '../../public/js/ui/loadoutSync.js';
 import { createStore } from '../../public/js/store.js';
 import { shouldAutoClose } from '../../public/js/screens/loadout.js';
 
@@ -35,8 +36,88 @@ test('parseStored: tolerant of junk, keeps structurally valid entries; toStored 
   assert.deepEqual(parseStored({ v: 1, entries: { [INSIDE]: { skill: 0, module: 'none', junk: 1 }, 'bad id': { skill: 1 }, [SWIRE]: { skill: -1 } } }),
     { [INSIDE]: { skill: 0, module: 'none' } });
   assert.deepEqual(parseStored({ [INSIDE]: { skill: 1 } }), { [INSIDE]: { skill: 1 } }, 'bare map (older build)');
-  const e = { [INSIDE]: { skill: 0 } };
-  assert.deepEqual(parseStored(JSON.parse(JSON.stringify(toStored(e)))), e);
+  // v2 (DESIGN §35.23): by operator — parseStoredByChar reads it back; parseStored (by chess id) reads only v1 / bare maps
+  const e = { char_2023_ling: { skill: 0 } };
+  assert.deepEqual(parseStoredByChar(JSON.parse(JSON.stringify(toStored(e)))), e);
+  assert.deepEqual(parseStored(toStored(e)), {}, 'a v2 store has no chess-id entries');
+  assert.deepEqual(parseStored(toStoredV1({ [INSIDE]: { skill: 0 } })), { [INSIDE]: { skill: 0 } }, 'the v1 form a store waiting for its migration writes');
+});
+
+test('exportPayload / serializeExport: versioned envelope (v2: by operator), entries copied; parseImport round trip', () => {
+  const entries = { char_101_sora: { skill: 0 }, char_350_surtr: { module: SWIRE_ALT } };
+  const p = exportPayload(entries, { now: Date.UTC(2026, 9, 3, 4, 5, 6) });
+  assert.deepEqual(Object.keys(p).sort(), ['byChar', 'count', 'exportedAt', 'kind', 'ops', 'v'], 'exactly the envelope (0.2.2: + the 潜能 / 练度 ops; 0.3.2: byChar), no unused field');
+  assert.deepEqual(p.ops, {}, 'no settings: an empty map (an import then resets the settings to the defaults)');
+  assert.equal(p.kind, LOADOUT_EXPORT_KIND);
+  assert.equal(p.v, LOADOUT_VERSION);
+  assert.equal(p.count, 2);
+  assert.equal(p.exportedAt, '2026-10-03T04:05:06.000Z');
+  assert.equal(LOADOUT_VERSION, 2);
+  assert.deepEqual(p.byChar, entries);
+  assert.notEqual(p.byChar, entries, 'a copy — later edits must not mutate an already-built payload');
+  assert.notEqual(p.byChar.char_101_sora, entries.char_101_sora);
+  assert.equal(exportPayload(null).count, 0);
+
+  const back = parseImport(serializeExport(entries, { now: 0 }));
+  assert.equal(back.ok, true);
+  assert.deepEqual(back.byChar, entries);
+  assert.equal('entries' in back, false, 'a v2 payload gives byChar (the caller maps it to the data on screen)');
+});
+
+test('parseImport: accepts the envelope, the stored form, a bare map and text; refuses junk, newer data and hostile keys', () => {
+  const entries = { [INSIDE]: { skill: 0 } };
+  assert.deepEqual(parseImport({ kind: LOADOUT_EXPORT_KIND, v: 1, entries }).entries, entries, 'a v1 envelope (第二期下半 chess ids)');
+  assert.deepEqual(parseImport(toStoredV1(entries)).entries, entries, 'stored { v: 1, entries }');
+  assert.deepEqual(parseImport(exportPayload({ char_x: { skill: 0 } })).byChar, { char_x: { skill: 0 } }, 'a v2 envelope');
+  assert.deepEqual(parseImport(entries).entries, entries, 'bare map (hand-written / older build)');
+  assert.deepEqual(parseImport(JSON.stringify({ kind: LOADOUT_EXPORT_KIND, v: 1, entries })).entries, entries, 'serialised text');
+  assert.deepEqual(parseImport(`\n  ${JSON.stringify(entries)}  \n`).entries, entries, 'padded text');
+
+  for (const junk of ['', '   ', 'not a payload', '{', 42, null, undefined, [], true]) {
+    assert.equal(parseImport(junk).ok, false, `${JSON.stringify(junk)} is refused`);
+  }
+  const newer = parseImport({ v: LOADOUT_VERSION + 1, entries });
+  assert.equal(newer.ok, false, 'a NEWER payload is refused, never mis-read');
+  assert.match(newer.error, /请先更新游戏/, 'the player is told to update the game');
+  assert.equal(parseImport({ kind: 'some.other.tool', entries }).ok, false, "another tool's payload");
+  assert.equal(parseImport({ v: 1, entries: {} }).ok, false, 'nothing to import');
+  assert.equal(parseImport({ v: 1, entries: { 'bad id': { skill: 0 } } }).ok, false, 'no structurally valid entry');
+  assert.equal(parseImport({ v: LOADOUT_VERSION, byChar: {} }).ok, false, 'nothing to import (v2)');
+  assert.equal(parseImport({ v: LOADOUT_VERSION, byChar: { 'bad id': { skill: 0 } } }).ok, false, 'no structurally valid entry (v2)');
+  assert.equal(parseImport('x'.repeat(LOADOUT_IMPORT_MAX_BYTES + 1)).ok, false, 'an oversized payload is refused before parsing');
+
+  // hostile keys: JSON.parse keeps `__proto__` as an own key, and assigning it would rewrite an object's prototype
+  const hostile = JSON.parse(`{"entries":{"__proto__":{"skill":0},"constructor":{"skill":0},"prototype":{"skill":0},"${INSIDE}":{"skill":0}}}`);
+  assert.deepEqual(Object.keys(hostile.entries), ['__proto__', 'constructor', 'prototype', INSIDE], 'fixture: parsed as own keys');
+  const safe = parseImport(hostile);
+  assert.deepEqual(safe.entries, { [INSIDE]: { skill: 0 } }, 'only the real chess survives');
+  assert.equal(Object.getPrototypeOf(safe.entries), Object.prototype, 'the entry map keeps a clean prototype');
+  assert.equal({}.skill, undefined, 'Object.prototype was not polluted');
+});
+
+test('applyLoadoutEntries: sanitises against the loaded data and reports what was dropped', () => {
+  const before = loadoutStore.get().entries;
+  try {
+    const res = applyLoadoutEntries({ [INSIDE]: { skill: 0 }, chess_nope_999: { skill: 0 } }, get);
+    assert.deepEqual(res, { applied: 1, dropped: 1 }, 'the unknown chess is dropped, the real one applied');
+    assert.deepEqual(loadoutStore.get().entries, { [INSIDE]: { skill: 0 } }, 'the store got the sanitised entries');
+  } finally {
+    setEntries(before);
+  }
+});
+
+test('applyLoadoutEntries: an import that keeps nothing changes nothing (review: it used to wipe the loadout)', () => {
+  setEntries({ [INSIDE]: { skill: 0 } });
+  const before = loadoutStore.get().entries;
+  try {
+    assert.deepEqual(applyLoadoutEntries({ chess_nope_999: { skill: 0 } }, get), { applied: 0, dropped: 1 }, 'every chess unknown');
+    assert.equal(loadoutStore.get().entries, before, 'the current loadout is untouched (not even replaced by an equal one)');
+    const def = IB.skills.find((s) => s.isDefault).index;
+    assert.deepEqual(applyLoadoutEntries({ [INSIDE]: { skill: def } }, get), { applied: 0, dropped: 1 }, 'every choice already the default');
+    assert.equal(loadoutStore.get().entries, before, 'still untouched');
+  } finally {
+    setEntries(before);
+  }
 });
 
 test('options: skill records at Lv4 (normal) and Lv7 (elite); modules + 不装备 with defaults flagged', () => {
@@ -183,6 +264,22 @@ function fakeTimers() {
 }
 const syncStore = (entries = {}) => createStore({ entries, open: false, from: null, sel: null, filters: {}, sync: 'idle' });
 
+test('prep sync sends explicit defaults when a live skill/module or cultivation choice is reset', async () => {
+  const net = fakeNet(), timers = fakeTimers(), target = syncStore();
+  const charId = SB.charId;
+  const sync = installLoadoutSync({ net, timers, target, lookupChess: get,
+    getChessReady: async () => CHESS, getBackupsReady: async () => ({}), operatorIds: () => new Set([charId]),
+    matchState: () => ({ room: { content: { rules: { prepLoadout: 'prep' } } }, match: {
+      public: { phase: PHASE.PREP }, private: { loadout: { [SWIRE]: { skill: 0, module: SWIRE_ALT } }, ops: { [charId]: { potential: 1, cultivate: 0 } } },
+    } }),
+  });
+  await sync.flush();
+  const opts = chessOptions(SB, SG);
+  assert.deepEqual(net.sent[0].entries, { [SWIRE]: { skill: opts.defaultSkill, module: opts.defaultModule } });
+  assert.deepEqual(net.sent[0].ops, { [charId]: { potential: 6, cultivate: 3 } });
+  sync.dispose();
+});
+
 test('sync: welcome sends the sanitised loadout; edits are debounced; identical content is not resent', async () => {
   const net = fakeNet();
   const T = fakeTimers();
@@ -190,7 +287,7 @@ test('sync: welcome sends the sanitised loadout; edits are debounced; identical 
   const s = installLoadoutSync({ net, timers: T, target, getChessReady: async () => CHESS, lookupChess: get });
   net.emit('welcome', {});
   await T.advance(100);
-  assert.deepEqual(net.sent, [{ t: 'room.loadout', entries: { [INSIDE]: { skill: 0 } } }], 'stale entry dropped');
+  assert.deepEqual(net.sent, [{ t: 'room.loadout', entries: { [INSIDE]: { skill: 0 } }, ops: {} }], 'stale entry dropped (no 潜能 / 练度 set: ops {})');
   assert.equal(target.get().sync, 'synced');
   target.set({ entries: { [INSIDE]: { skill: 0 }, [SWIRE]: { module: SWIRE_ALT } } });
   target.set({ entries: { [INSIDE]: { skill: 0 }, [SWIRE]: { module: MODULE_NONE } } });
@@ -287,6 +384,9 @@ test('overlay auto-close: briefing entry closes when INFO_CHECK ends; lobby / ro
   assert.equal(shouldAutoClose(open('room'), null, true, false), true);
   assert.equal(shouldAutoClose(open('lobby'), PHASE.INFO_CHECK, true, true), false, 'reopened during the briefing from elsewhere');
   assert.equal(shouldAutoClose({ open: false, from: 'briefing' }, PHASE.PREP, true, true), false);
+  assert.equal(shouldAutoClose(open('prep'), PHASE.PREP, true, true, false), false, 'prep entry stays open until ready');
+  assert.equal(shouldAutoClose(open('prep'), PHASE.PREP, true, true, true), true, 'pressing 准备 closes it');
+  assert.equal(shouldAutoClose(open('prep'), PHASE.COMBAT, true, true, false), true, 'leaving 休整期 closes it');
 });
 
 test('untimed phases show no countdown: the "无倒计时" placeholder of Countdown is hidden (user playtest #11)', () => {
@@ -408,7 +508,7 @@ test('sync: an empty loadout is sent without loading chess.json (no 1.6 MB downl
   const s = installLoadoutSync({ net, timers: T, target, getChessReady: async () => { loads++; return CHESS; }, lookupChess: get, notify: () => {} });
   net.emit('welcome', {});
   await T.advance(100);
-  assert.deepEqual(net.sent, [{ t: 'room.loadout', entries: {} }]);
+  assert.deepEqual(net.sent, [{ t: 'room.loadout', entries: {}, ops: {} }]);
   assert.equal(loads, 0);
   await net.reply();
   target.set({ entries: { [INSIDE]: { skill: 0 } } });

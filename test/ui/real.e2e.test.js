@@ -1,4 +1,3 @@
-import {appPage} from '../helpers/appPage.mjs';
 // Real-server browser E2E (DESIGN §11 "Browser E2E"): the real server (server/index.js on a free port) and headless
 // Chrome clients driving the real UI with real clicks, keys and canvas drags — no net.request shortcuts.
 //
@@ -17,11 +16,13 @@ import {appPage} from '../helpers/appPage.mjs';
 // Every page must finish with zero console errors, page errors, failed requests or HTTP errors.
 // Screenshots: test/e2e/out/real-*.png.
 
+import { seedReleaseRead } from '../helpers/releaseNotes.js';
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { aimedDrag } from '../e2e/client.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const OUT = path.join(ROOT, 'test/e2e/out');
@@ -39,20 +40,28 @@ const CHROME_ARGS = ['--no-sandbox', '--no-first-run', '--autoplay-policy=no-use
  */
 class Client {
   constructor(puppeteer, base, label, { w = 1920, h = 1080 } = {}) {
-    Object.assign(this, { puppeteer, base, label, w, h, problems: [], log: [], shots: 0 });
+    Object.assign(this, { puppeteer, base, label, w, h, problems: [], log: [], shots: 0, hashed: { spine: 0, media: 0, other: 0 } });
   }
 
   async open(query = '') {
     this.browser = await this.puppeteer.launch({ executablePath: CHROME, headless: true, args: CHROME_ARGS, protocolTimeout: 60000 });
     const [first] = await this.browser.pages();
-    const page = await appPage(first || await this.browser.newPage());
+    const page = first || await this.browser.newPage();
     this.page = page;
     await page.setViewport({ width: this.w, height: this.h });
     page.on('console', (m) => { if (m.type() === 'error') this.problems.push(`console: ${m.text()}`); });
     page.on('pageerror', (e) => this.problems.push(`pageerror: ${e.message}`));
-    page.on('requestfailed', (r) => this.problems.push(`requestfailed: ${r.url()} ${r.failure()?.errorText}`));
-    page.on('response', (r) => { if (r.status() >= 400) this.problems.push(`http ${r.status()}: ${r.url()}`); });
+    page.on('requestfailed', (r) => { if (!/fonts\.(googleapis|gstatic)/.test(r.url())) this.problems.push(`requestfailed: ${r.url()} ${r.failure()?.errorText}`); });
+    page.on('response', (r) => {
+      if (r.status() >= 400) this.problems.push(`http ${r.status()}: ${r.url()}`);
+      // the served manifest's content-hashed URLs (docs/ASSETS.md): Spine files, audio through /media/~<hash>/, the rest
+      const p = new URL(r.url()).pathname;
+      if (r.status() === 200 && /^\/(?:assets|media)\/~[0-9a-f]{16}\//.test(p)) {
+        this.hashed[/\.(?:skel|atlas)$|\/spine\//.test(p) ? 'spine' : p.startsWith('/media/') ? 'media' : 'other']++;
+      }
+    });
     page.on('dialog', (d) => d.dismiss().catch(() => {}));
+    await seedReleaseRead(page);
     await page.goto(`${this.base}/${query}`, { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => !!globalThis.__SP__ && !!document.querySelector('.screen'), { timeout: 30000 });
   }
@@ -139,12 +148,22 @@ class Client {
   viewKind() { return this.page.evaluate(() => globalThis.__SP_VIEW__?.kind ?? null); }
   viewStats() { return this.page.evaluate(() => { try { return globalThis.__SP_VIEW__?.raw?.stats?.() ?? null; } catch { return null; } }); }
 
-  /** Client point to grab a prep piece. */
-  piecePoint(uid) {
-    return this.page.evaluate((uid) => {
+  /** Client point to grab a prep piece. Waits (up to 2.5 s) until the piece is drawn and holds still: a piece bought
+   *  this frame has no rect yet, and one still sliding to its tile would be grabbed over a neighbouring tile. */
+  async piecePoint(uid) {
+    const read = () => this.page.evaluate((uid) => {
       const r = globalThis.__SP_VIEW__?.pieceScreenRect(uid);
-      return r && r.width > 0 ? { x: r.left + r.width / 2, y: r.top + r.height * 0.72 } : null;
+      if (!r || !(r.width >= 4)) return null;
+      const x = r.left + r.width / 2, y = r.top + r.height * 0.72;
+      return x >= 0 && y >= 0 && x <= innerWidth && y <= innerHeight ? { x, y } : null;
     }, uid);
+    let last = null;
+    for (const end = Date.now() + 2500; Date.now() < end; await sleep(80)) {
+      const p = await read();
+      if (p && last && Math.abs(p.x - last.x) < 1.5 && Math.abs(p.y - last.y) < 1.5) return p;
+      last = p;
+    }
+    return last;
   }
 
   /** Client point of a board tile centre (top face). */
@@ -160,13 +179,9 @@ class Client {
     }, row, col);
   }
 
+  /** Press, move in steps, release — re-aimed after the pickup: the deploy fold zooms the board (GitHub #602, e2e/client.mjs aimedDrag). */
   async drag(from, to, steps = 14) {
-    const m = this.page.mouse;
-    await m.move(from.x, from.y);
-    await m.down();
-    for (let i = 1; i <= steps; i++) { await m.move(from.x + ((to.x - from.x) * i) / steps, from.y + ((to.y - from.y) * i) / steps); await sleep(14); }
-    await sleep(120);
-    await m.up();
+    await aimedDrag(this.page, from, to, { steps, settle: 120 });
   }
 
   /** An empty legal tile for a hand piece (mirrors the deploy rules: melee on melee tiles, ranged anywhere). */
@@ -372,7 +387,11 @@ class Client {
       await sleep(150);
     }
     assert.ok(after.funds !== s.funds || now.free !== before.free || now.ids !== before.ids, `${this.label}: R refreshed the shop`);
-    if (s.refreshPrice > 0) assert.equal(after.funds, s.funds - s.refreshPrice, `${this.label}: refresh cost`);
+    // a free refresh (a 机变 card's) is used before any funds — which card the draft offers depends on the run
+    if (before.free > 0) {
+      assert.equal(now.free, before.free - 1, `${this.label}: a free refresh used`);
+      assert.equal(after.funds, s.funds, `${this.label}: a free refresh costs nothing`);
+    } else if (s.refreshPrice > 0) assert.equal(after.funds, s.funds - s.refreshPrice, `${this.label}: refresh cost`);
     this.note(`refresh (${s.refreshPrice ? `funds ${s.funds} → ${after.funds}` : `free ${before.free} → ${now.free}`}, slots ${before.ids === now.ids ? 'same ids' : 'rerolled'})`);
     return true;
   }
@@ -414,7 +433,18 @@ class Client {
   async ready() {
     if (!(await this.isEditable())) return;
     await this.click('.readybtn');
+    await this.confirmFundsLeft();
     await this.waitFor((s) => s.ready || s.phase !== 'PREP', 'ready', 8000);
+  }
+
+  /** 准备 with funds left asks first (剩余资金, DESIGN §23.11): confirm it, as a player who means to start the fight does. */
+  async confirmFundsLeft() {
+    await sleep(250);
+    const asked = await this.page.evaluate(() => {
+      const t = document.querySelector('.modal__title');
+      return !!(t && t.textContent.includes('剩余资金'));
+    });
+    if (asked) await this.click('.modal__actions button', '准备就绪', { timeout: 4000 });
   }
 }
 
@@ -432,7 +462,9 @@ describe('real server + real browsers', { skip: !ENABLED && 'set SP_REAL_E2E=1 (
   before(async () => {
     const { startServer } = await import('../../server/index.js');
     puppeteer = (await import('puppeteer-core')).default;
-    srv = await startServer({ auth: false, port: 0, host: '127.0.0.1', quiet: true });
+    srv = await startServer({ port: 0, host: '127.0.0.1', quiet: true });
+    // the content-hash index first, so the pages load the served manifests' /assets/~<hash>/… URLs like a player's
+    await srv.assetIndex?.whenReady();
     base = `http://127.0.0.1:${srv.port}`;
     mkdirSync(OUT, { recursive: true });
   });
@@ -449,10 +481,14 @@ describe('real server + real browsers', { skip: !ENABLED && 'set SP_REAL_E2E=1 (
       // ---- lobby & room --------------------------------------------------------------------------------------------
       await host.open();
       await host.enter('凯尔希');
+      // 创建同盟 creates the room at once (标准 in a fresh browser); the host changes the difficulty in the room
       await host.click('.mode-card', '同盟模拟');
-      await host.click('.diff-card', '险境模拟');
-      await host.click('.create-box button', '创建同盟');
+      await host.click('[data-testid="alliance-create"]');
       const room = (await host.waitFor((s) => !!s.room?.code, 'room created')).room;
+      await host.click('.rs-pill__diff');
+      await host.click('.modal__box.proto .diff-card', '险境模拟');
+      await host.click('.modal__box.proto .proto-start', '确认');
+      await host.page.waitForFunction(() => globalThis.__SP__.store.get().room?.difficulty === 'NORMAL' && !document.querySelector('.modal__box.proto'), { timeout: 10000 });
       await host.click('button', '添加 AI 队友');
       await guest.open(`?room=${room.code}`);
       await guest.enter('阿米娅');
@@ -481,10 +517,17 @@ describe('real server + real browsers', { skip: !ENABLED && 'set SP_REAL_E2E=1 (
           if (s.phase !== 'BAND_DRAFT' || picked.has(c.label) || s.draft?.turn !== s.me) continue;
           if (!shotDraft) { await sleep(600); await c.shot('draft'); shotDraft = true; }
           if (c === guest && !guestSkipped) {
-            await c.click('.draft-detail__btns .btn', '跳过');
             guestSkipped = true;
-            c.note('skipped once');
-            continue;
+            // one skip — only while someone is left to pass to: the last player still to pick sees 跳过 disabled (PR #546)
+            // (PR #828: 跳过选择 sits in the step header's turn line, .dturn .draft-skip, on the player's own turn)
+            const canSkip = await c.page.evaluate(() => [...document.querySelectorAll('.dturn .draft-skip')]
+              .some((b) => b.textContent.includes('跳过') && !b.disabled));
+            if (canSkip) {
+              await c.click('.dturn .draft-skip', '跳过');
+              c.note('skipped once');
+              continue;
+            }
+            c.note('跳过 disabled (the last player still to pick)');
           }
           await c.click('.dband:not(.is-taken)', null, { nth: c === host ? 3 : 7 });
           await c.click('.draft-detail__btns .btn--primary', '确认选择');
@@ -536,7 +579,7 @@ describe('real server + real browsers', { skip: !ENABLED && 'set SP_REAL_E2E=1 (
             await c.deployFromHand(2);
             const s2 = await c.st();
             if (s2.temp > 0) c.note(`temp not empty (${s2.temp}) — ready blocked`);
-            if (c === guest) { await c.page.keyboard.press('Space'); await c.waitFor((x) => x.ready || x.phase !== 'PREP', 'ready (Space)', 8000); } else await c.ready();
+            if (c === guest) { await c.page.keyboard.press('Space'); await c.confirmFundsLeft(); await c.waitFor((x) => x.ready || x.phase !== 'PREP', 'ready (Space)', 8000); } else await c.ready();
           }
         } else if (hs.phase === 'SP_DRAFT') {
           for (const c of both) {
@@ -618,6 +661,10 @@ describe('real server + real browsers', { skip: !ENABLED && 'set SP_REAL_E2E=1 (
       assert.ok(did.inspected && did.bond, 'detail panel + bond popup');
       assert.ok(did.emote, 'emote bubble reached the teammate');
       assert.ok(did.enemies >= 0, 'enemy drawer opened');
+      if (srv.assetIndex) {
+        host.note(`content-hashed responses: ${JSON.stringify(host.hashed)}`);
+        assert.ok(host.hashed.spine > 0 && host.hashed.media > 0 && host.hashed.other > 0, `Spine, audio and art through hashed URLs: ${JSON.stringify(host.hashed)}`);
+      }
       await assertClean(both);
     } finally {
       console.log([...host.log, ...guest.log].join('\n'));

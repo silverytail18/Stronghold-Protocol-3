@@ -1,7 +1,7 @@
 // Generated from pinned GameData by tools/build-kazdel.mjs.
 export const OVERLAY = {
   "id": "kazdel-expansion-v1",
-  "version": "kazdel-test-8",
+  "version": "kazdel-test-13",
   "chess": {
     "chess_kz_vigna_a": {
       "chessId": "chess_kz_vigna_a",

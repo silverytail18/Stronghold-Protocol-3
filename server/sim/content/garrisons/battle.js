@@ -5,8 +5,9 @@
 //
 //   ADD_BOND            grants `give_garrison_id` to other operators before the first deployment (targets parsed from
 //                       the text: 身前一格 / 身前一格【X】/ 自身和身前一格 / 同一行最右边 / 所有【X】). A unit owns a garrison id
-//                       at most once (耀骑士临光 already carries the 144/159 it grants to itself). The 华法琳-granted trait
-//                       (garrison_95) is capped 12 / 24 per battle instead of the data's 7 / 14 (research 02 Addendum 1).
+//                       at most once (耀骑士临光 already carries the 144/159 it grants to itself). A granted trait keeps
+//                       its data cap like a native one: 华法琳's garrison_95 stops at 7 / 14 layers per battle (PRTS 下半
+//                       3月27日更新#2: 「从 初始12/精锐24 降低至 初始7/精锐14」; GitHub #175, PR #192 by @kukiC).
 //   layer events        act1autochess_gar_event_useskill (skillStart) · _selfkillenemy (kill, every check_cnt) ·
 //                       _selfdead (death 'killed'; texts with 替身 also on every substitute ⇄ body swap, read from the
 //                       dollkeeper flag unit.trait.doll) · _consume_ammo (ammoUsed; range_id 0-1 self, 1-1 front tile,
@@ -14,10 +15,13 @@
 //                       'freeze', × prob) · act2autochess_gar_event_onstart (every deploy) ·
 //                       act2autochess_gar_event_allyenemy_sleepstun_inrange (an enemy or operator in range ENTERS
 //                       sleep / stun). "进入…时": re-applying a running status (a refresh) is not a new entry
-//                       (engine statusApplied ctx.entered). Targets: bond_by_id / bond_self (own active bonds) / bond_actived_maxstack;
+//                       (engine statusApplied ctx.entered) — except a pulse that re-applies its own short status as a
+//                       fresh one (applyStatus `reenter`: 缇缇 S2's sleep ward, DESIGN §24.8).
+//                       Targets: bond_by_id / bond_self (own active bonds) / bond_actived_maxstack;
 //                       amounts: by_count / by_charcount_samerow / by_charlevel; conditions character_same_row /
 //                       character_same_col (≥ check_count incl. self). Gains go through support.gainLayers with
-//                       reason 'garrison', source = the trait's owner, cap = max_add_count_per_battle per (instance, bond).
+//                       reason 'garrison', source = the trait's owner, cap = max_add_count_per_battle per (instance, bond)
+//                       — per instance for bond_actived_maxstack (塑心: the highest bond may change, the cap does not).
 //   act1autochess_gar_event_addition_cnt (魔王)  layerGain: a 'garrison' gain whose source stands on the tile in front
 //                       of 魔王 (range_id 1-1) — or was knocked out there this instant (幽灵鲨 "被击倒时"; engine ctx.tile)
 //                       — gets +extra_cnt per bond (the extra does not count toward the source's per-battle cap).
@@ -33,15 +37,12 @@
 //                       ignore and dealt/taken multipliers; a tie keeps the type).
 //   NONE                风丸 "2 copies merge" — prep rule (chess.upgradeNum 2), nothing in battle.
 //
-// Hooks: priority 0, except 弱点伤害 (hit, WEAKNESS_PRIORITY −10: decided on the final amount after the ATK
+// Hooks: priority 0, except 弱点伤害 (damageCalculate, WEAKNESS_PRIORITY −10: decided on the final amount after the ATK
 // multipliers). install() registers nothing when no operator carries an IN_BATTLE garrison.
 
 import * as S from '../support/index.js';
-import { mitigate } from '../../damage.js';
+import { mitigate, attackInput } from '../../attack.js';
 import { frontOf } from '../../dir.js';
-
-/** 华法琳's granted trait: per-battle cap override (research 02 Addendum 1: PRTS 3/27 "初始7/精锐14 → 初始12/精锐24"). */
-export const GRANTED_CAP_OVERRIDE = Object.freeze({ garrison_95_a: 12, garrison_95_b: 24 });
 
 const ids = (s) => String(s ?? '').split(',').map((x) => x.trim()).filter(Boolean);
 const EMPTY = Object.freeze([]);
@@ -53,12 +54,37 @@ function garrisonIdsOf(u) {
   return Array.isArray(list) ? list : EMPTY;
 }
 
+/** 远牙: the trait its own traits grant also gains on body / substitute switches (act2autochess_gar_event_onstart). */
+const FAR_TOOTH_CHAR = 'char_430_fartth';
+let FAR_TOOTH = null;
+let FAR_TOOTH_DATA = null;
+const FAR_TOOTH_DEFAULT = Object.freeze(new Set(['garrison_108_a', 'garrison_108_b']));
+/**
+ * The garrison ids 远牙's own traits grant (bbStr.give_garrison_id): garrison_108_a/b (granted by garrison_148_a/b), or
+ * on another version's build (S.isVersionData) the grants found by charId over its official chess records — garrison
+ * and chess ids are season-local.
+ */
+function farToothGrants() {
+  const d = S.gameData();
+  if (!S.isVersionData(d)) return FAR_TOOTH_DEFAULT;
+  if (FAR_TOOTH_DATA !== d) {
+    FAR_TOOTH_DATA = d;
+    FAR_TOOTH = new Set();
+    for (const [id, c] of Object.entries(d.chess || {})) {
+      if (c?.charId !== FAR_TOOTH_CHAR || !S.isOfficialId('chess', id) || !Array.isArray(c.garrisonIds)) continue;
+      for (const gid of c.garrisonIds) {
+        const give = S.garrisonRecord(gid)?.bbStr?.give_garrison_id;
+        if (typeof give === 'string' && give) FAR_TOOTH.add(give);
+      }
+    }
+  }
+  return FAR_TOOTH;
+}
+
 // ---------------------------------------------------------------------------------------------------------------------
 // install
 
 export function install(battle) {
-  // RI additions belong to this match's data, rather than the fixed baseline singleton.
-  const record = (gid) => (gid?.startsWith('rm_old_')||gid?.startsWith('kz_personal_')) ? battle.data.rawGarrison(gid) : S.garrisonRecord(gid);
   const all = [];
   const owned = new Map(); // unit → Set(garrisonId)
   const add = (unit, g, grantedBy = null) => {
@@ -67,8 +93,7 @@ export function install(battle) {
     if (set.has(g.garrisonId)) return null;
     set.add(g.garrisonId);
     const bb = g.bb || {};
-    const override = grantedBy ? GRANTED_CAP_OVERRIDE[g.garrisonId] : undefined;
-    const cap = override ?? (S.num(bb.max_add_count_per_battle, 0) > 0 ? S.num(bb.max_add_count_per_battle) : Infinity);
+    const cap = S.num(bb.max_add_count_per_battle, 0) > 0 ? S.num(bb.max_add_count_per_battle) : Infinity;
     const it = {
       unit, g, gid: g.garrisonId, key: g.effectKey, bb, bbStr: g.bbStr || {}, grantedBy,
       cap, capKey: `gar:${g.garrisonId}:${unit.id}`, cnt: 0, k: -1,
@@ -79,7 +104,7 @@ export function install(battle) {
   for (const u of battle.allyUnits) {
     if (!S.isOp(u)) continue;
     for (const gid of garrisonIdsOf(u)) {
-      const g = record(gid);
+      const g = S.garrisonRecord(gid);
       if (g && g.eventType === 'IN_BATTLE') add(u, g);
     }
   }
@@ -87,8 +112,8 @@ export function install(battle) {
 
   const grants = [];
   for (const it of all.slice()) {
-    if (it.key !== 'ADD_BOND') continue;
-    const g2 = record(it.bbStr.give_garrison_id);
+    if (it.key !== 'ADD_BOND' && it.g.battleRuneKey !== 'give_garrion_to_front') continue;
+    const g2 = S.garrisonRecord(it.bbStr.give_garrison_id ?? it.bbStr.give_garrion_id);
     if (!g2 || g2.eventType !== 'IN_BATTLE') continue;
     for (const t of grantTargets(battle, it)) {
       const got = add(t, g2, it);
@@ -191,10 +216,20 @@ export function fireGain(battle, it) {
   if (!conditionMet(battle, it)) return 0;
   const bonds = targetBonds(battle, it);
   if (!bonds.length) return 0;
-  const n = amountOf(battle, it);
+  let n = amountOf(battle, it);
+  // bond_actived_maxstack (塑心 garrison_90 "当前已激活且层数最多的盟约层数+1（每场作战至多10层）"): the cap is the instance's
+  // own over the battle, whichever bond is the highest at each gain — per (instance, bond) a change of the highest bond
+  // granted a fresh 10 (PR #178 review). The base amount counts toward it (魔王's extra does not, as in gainLayers).
+  const whole = it.bbStr.bond_type === 'bond_actived_maxstack' && Number.isFinite(it.cap);
+  if (whole) {
+    n = Math.min(Math.floor(n), Math.max(0, Math.floor(it.cap) - (it.wholeUsed ?? 0)));
+    if (!(n > 0)) return 0;
+  }
   const added = S.gainLayers(battle, {
-    playerId: it.unit.ownerId, bonds, n, requireActive: true, source: it.unit, reason: 'garrison', cap: it.cap, capKey: it.capKey,
+    playerId: it.unit.ownerId, bonds, n, requireActive: true, source: it.unit, reason: 'garrison',
+    cap: whole ? Infinity : it.cap, capKey: whole ? null : it.capKey,
   });
+  if (whole && added > 0) it.wholeUsed = (it.wholeUsed ?? 0) + n;
   if (added > 0) S.fxOn(battle, 'garrison', it.unit, `gar:${it.gid}`, it.key, { n: added });
   return added;
 }
@@ -233,6 +268,18 @@ function ammoScope(it, u) {
 }
 
 const INSTALLERS = {
+  act1autochess_gar_event_recoverhp_enemy_abflag_inrange(battle, list) {
+    battle.on('statusApplied', ({ target, status, entered }) => {
+      if (!entered || target?.side !== 'enemy') return;
+      for (const it of list) {
+        if (status !== (AB_FLAG_STATUS[S.num(it.bb.check_ab_flag, 16)] ?? 'freeze') || !S.onField(it.unit) || !S.inRange(it.unit, target)) continue;
+        // [ASSUMED] The text only says "数次". One pulse immediately, then two at one-second intervals.
+        for (let i = 0; i < 3; i++) battle.after(i, () => {
+          if (S.onField(it.unit)) battle.heal({ source: it.unit, target: it.unit, amount: it.unit.s.maxHp * S.num(it.bb.hp_ratio) });
+        });
+      }
+    });
+  },
   act1autochess_gar_event_useskill(battle, list) {
     const m = byUnit(list);
     battle.on('skillStart', ({ unit }) => {
@@ -306,6 +353,14 @@ const INSTALLERS = {
     const m = byUnit(list);
     battle.on('deploy', ({ unit }) => {
       const arr = m.get(unit);
+      if (arr) for (const it of arr) fireGain(battle, it);
+    });
+    // Player-confirmed: 远牙's granted trait also gains on each body / substitute switch (DESIGN §28.5).
+    // Restrict this extra trigger to that trait; use its existing amounts, active-bond checks and battle cap.
+    const granted = farToothGrants();
+    const farTooth = byUnit(list.filter((it) => granted.has(it.gid)));
+    if (farTooth.size) battle.on('dollSwap', ({ unit }) => {
+      const arr = farTooth.get(unit);
       if (arr) for (const it of arr) fireGain(battle, it);
     });
   },
@@ -392,7 +447,10 @@ function applyReader(battle, it) {
       else battle.removeBuff(u, key);
       break;
     case 'act1autochess_gar_eff_respawnTimeByBond':
-      if (k > 0) S.passiveBuff(battle, u, key, { redeployMul: Math.max(0.05, 1 + S.num(it.bb.respawn_time, 0) * k) });
+      // 耀骑士临光's 144: −1.5 % / −3 % per 3 卡西米尔 layers with no minimum in the blackboard (divide_num, respawn_time
+      // only) — clamped at 0 like every other redeploy multiplier, so a knock-out timer can reach 0 s (GitHub #370;
+      // until 0.2.1 a 0.05 floor kept it at 5 % of the base time from 192 layers, 96 for the elite)
+      if (k > 0) S.passiveBuff(battle, u, key, { redeployMul: Math.max(0, 1 + S.num(it.bb.respawn_time, 0) * k) });
       else battle.removeBuff(u, key);
       break;
     case 'act2autochess_gar_eff_attrByBond_add_onstart': {
@@ -450,15 +508,17 @@ export function weaknessType(source, target, dmg) {
     resIgnorePct: S.num(dmg.resIgnorePct, 0) + (ss ? S.num(ss.resIgnorePct, 0) : 0),
     resIgnoreFlat: S.num(dmg.resIgnoreFlat, 0) + (ss ? S.num(ss.resIgnoreFlat, 0) : 0),
   };
-  const ph = mitigate(dmg.amount, 'phys', target.s, ign) * (ss ? S.num(ss.physDealtMul, 1) : 1) * S.num(target.s.physTakenMul, 1);
-  const ar = mitigate(dmg.amount, 'arts', target.s, ign) * (ss ? S.num(ss.artsDealtMul, 1) : 1) * S.num(target.s.artsTakenMul, 1);
+  const ts = target.s;
+  // Native weakness theory includes ATK/scales/additions/penetration, not source damage or injury multipliers.
+  const ph = mitigate(attackInput(dmg.amount, 'phys', ts), 'phys', ts, ign);
+  const ar = mitigate(attackInput(dmg.amount, 'arts', ts), 'arts', ts, ign);
   if (ar > ph + 1e-9) return 'arts';
   if (ph > ar + 1e-9) return 'phys';
   return dmg.type;
 }
 const bound = (t) => !!(t.s && t.s.flags && t.s.flags.bind) || !!t.findBuff('bind');
 
-/** Priority of the 弱点伤害 conversion: after every default-priority hit modifier, so the final amount decides. */
+/** Priority of the 弱点伤害 conversion: after default-priority source calculation modifiers, so the scaled input decides. */
 export const WEAKNESS_PRIORITY = -10;
 
 function installHitMods(battle, by) {
@@ -490,7 +550,7 @@ function installHitMods(battle, by) {
   }
   const chaos = new Set((by.get('act1autochess_gar_eff_chaos') ?? EMPTY).map((it) => it.unit));
   if (chaos.size) {
-    battle.on('hit', ({ source, target, dmg }) => {
+    battle.on('damageCalculate', ({ source, target, dmg }) => {
       if (!source || !chaos.has(source) || !target || target.side !== 'enemy' || !dmg) return;
       if (dmg.type === 'phys' || dmg.type === 'arts') dmg.type = weaknessType(source, target, dmg);
     }, { priority: WEAKNESS_PRIORITY });

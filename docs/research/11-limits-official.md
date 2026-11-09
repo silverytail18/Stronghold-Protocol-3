@@ -203,7 +203,7 @@ line is lost rather than clamped.
 | | Remake before (master 7094892) | Remake now (§6) | Official |
 |---|---|---|---|
 | Layers | uncapped: `PlayerState.addLayers` (prep), `Match.js` settle (`ps.layers[b] += layerGains`), `Battle.addLayers` (live in-battle copy) | per bond `min(L + n, 999)` at every writer (`layerGainRoom`) | per bond `min(L + n, 999)` |
-| Boss hits | no limit (`sim/damage.js dealDamage` → `applyHpLoss` → `bossPool.damage`) | leader hit in a 'boss' / 'hidden' battle with `ceil(d) ≥ 300000` → cancelled, 0 (`leaderHitCancelled`) | leader hit with `ceil(d) ≥ 300000` → 0 |
+| Boss hits | no limit (`sim/attack/hit.js resolveDamage` → `attack/health.js applyHpDecrease` → `bossPool.damage`) | leader hit in a 'boss' / 'hidden' battle with `ceil(d) ≥ 300000` → cancelled, 0 (`leaderHitCancelled`) | leader hit with `ceil(d) ≥ 300000` → 0 |
 
 ## 5. Proposal (as written before the implementation; §6 is what was built)
 
@@ -220,14 +220,14 @@ line is lost rather than clamped.
 - `shared/constants.js`: `BOND_LAYER_CAP = 999` and `BOSS_HIT_LIMIT = 300000` (0 / Infinity = off), plus
   `layerGainRoom(before, n)` = min(n, cap − before), never negative.
 - Layers: every writer clamps with it — `PlayerState.addLayers` (every prep-side gain: 特质, items, bands, 机变 cards,
-  bonds), the settle of the in-battle gains (`Match.js`), `Battle.addLayers` (the live in-battle copy, after the
+  bonds), the settle of the in-battle gains (`Match.settle`, `server/match/match/settle.js`), `Battle.addLayers` (the live in-battle copy, after the
   `layerGain` hook, as the client's `AddBondCount`); a gain at the cap adds 0 (no onLayers, no 'layer' event, no hook),
   so the per-N milestones (远见, 奇迹, 维多利亚 …) stop with the count; the client-result check (`fields.js`) bounds a
   reported gain by the room left from the bond's starting layers; `invariants.js` flags a bond above the cap. The dev
   tools write through the same helper: `tools/matchrun.mjs --layers N` (a raw boost, no milestones) and
   `tools/balance.mjs applyBoard` (any `--profile`) stop at 999 too.
-- 限伤: `sim/damage.js leaderHitCancelled` in `dealDamage` (after DEF / RES and every multiplier, before shields) and in
-  `Battle.loseHp` (losses passed on to a leader): a leader (`isBoss`, the tag-'boss' units = §2.3) in a 'boss' / 'hidden'
+- 限伤: `sim/attack/health.js leaderHitCancelled` in `attack/hit.js resolveDamage` (after DEF / RES and every multiplier,
+  before the ordered injury effects — shields, barriers, dodges) and in `Battle.dealHPLose` (losses passed on to a leader): a leader (`isBoss`, the tag-'boss' units = §2.3) in a 'boss' / 'hidden'
   battle with `ceil(amount) ≥ 300000` → the hit returns 0 before shields (阿利斯泰尔's 5000 `boss:vest` barrier stays
   untouched; 再生's hit blocks act earlier, in the `hit` step, §2.2), HP / pool loss, stats, the damage number, the
   `damaged` / `fatal` hooks and the kill; what ran before it (the attack, its SP, the `hit` hook, separate element 损伤

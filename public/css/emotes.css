@@ -30,7 +30,7 @@
    its own box right of the chevron (x ≥ 57 %), so a font clamped up by a browser minimum font size (CJK Chrome: 12 px)
    or a small root can never run into the icon; the button never shrinks below 72 px (96 px on touch screens). */
 .ewheel__btn.has-sprite {
-  --ewb-w: max(1.51rem, 72px);
+  --ewb-w: max(1.51rem, 32px, calc(72px * var(--sp-ui, 1)));
   width: var(--ewb-w); height: calc(var(--ewb-w) * 55 / 151); min-width: 0; padding: 0; display: block;
   background: var(--ewheel-btn) left bottom / 100% 100% no-repeat; border: 0; border-radius: 0; color: #f2f2f2;
 }
@@ -138,10 +138,42 @@
 @keyframes emo-page-from-right { from { opacity: .2; transform: translateX(45%); } }
 @keyframes emo-page-from-left { from { opacity: .2; transform: translateX(-45%); } }
 @keyframes emo-bubble-pop { 0% { opacity: 0; scale: .35; } 60% { opacity: 1; scale: 1.1; } 100% { opacity: 1; scale: 1; } }
+
+/* ---- 官方 / 个性化 / 卫戍协议 tabs ---------------------------------------------------------------- */
+.ewheel__tabs {
+  position: absolute; left: .15rem; top: .07rem; width: 2.82rem; height: .24rem;
+  display: flex; align-items: stretch; gap: .04rem; z-index: 2;
+}
+.ewheel__tab {
+  flex: 1 1 0; min-width: 0; padding: 0 .04rem; border: 0; border-bottom: 2px solid transparent;
+  background: transparent; color: rgba(228, 240, 234, .55); font: 600 .13rem/1 var(--font-ui, sans-serif);
+  letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: color var(--t-fast), border-color var(--t-fast), background-color var(--t-fast);
+}
+.ewheel__tab:hover { color: rgba(255, 255, 255, .9); }
+.ewheel__tab.is-on { color: #eaffee; border-bottom-color: var(--mint-400, #59f4ca); background: rgba(89, 244, 202, .08); }
+.ewheel__viewport { top: .36rem; height: 1.61rem; }
+.ewheel__page { grid-template-columns: repeat(3, .78rem); grid-auto-rows: .78rem; gap: .05rem; }
+.ewheel__item { width: .78rem; height: .78rem; padding: .05rem; }
+.ewheel__item.is-empty { background: rgba(255, 255, 255, .06); border: 1px dashed rgba(255, 255, 255, .2); }
+.ewheel__empty { width: 100%; height: 100%; display: grid; place-items: center; align-content: center; gap: .02rem; color: rgba(210, 230, 220, .45); }
+.ewheel__empty > span { font-size: .24rem; line-height: .8; }
+.ewheel__empty > small { font-size: .09rem; line-height: 1; letter-spacing: .04em; }
+.ewheel__empty-state { grid-column: 1 / -1; align-self: center; margin: 0; color: rgba(210, 230, 220, .5); font-size: .13rem; text-align: center; }
+.eart--empty { display: grid; place-items: center; color: rgba(210, 230, 220, .35); font-size: .24rem; line-height: 1; }
+.eart--empty > span { transform: translateY(-.01rem); }
+.eart--sticker { object-fit: contain; }
+
+@media (max-width: 520px) {
+  .ewheel__tab { font-size: .115rem; }
+  .ewheel__viewport { height: 1.55rem; }
+  .ewheel__page { grid-auto-rows: .75rem; }
+  .ewheel__item { width: .75rem; height: .75rem; }
+}
 @keyframes emo-bubble-out { to { opacity: 0; scale: .92; } }
 
 @media (pointer: coarse) {
-  .ewheel__btn.has-sprite { --ewb-w: max(1.51rem, 96px); }
+  .ewheel__btn.has-sprite { --ewb-w: max(1.51rem, 32px, calc(96px * var(--sp-ui, 1))); }
 }
 
 @media (prefers-reduced-motion: reduce) {

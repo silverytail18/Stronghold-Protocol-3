@@ -5,7 +5,7 @@
 // (AutoChessBattleConst.MAX_BATTLE_DAMAGE) is cancelled: 0 damage, nothing credited to the shared pool.
 //
 // This file: the switches (shared/constants.js), the in-battle layer copy (Battle.addLayers / support.gainLayers) and
-// the hit limit in the damage pipeline (server/sim/damage.js leaderHitCancelled: dealDamage, Battle.loseHp).
+// the hit limit in the damage pipeline (server/sim/attack/health.js leaderHitCancelled: Battle.dealDamage, Battle.dealHPLose).
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -19,8 +19,8 @@ import { buildBossWave, setupMatchWaves } from '../../server/match/waves.js';
 import { createRng } from '../../server/sim/rng.js';
 import { GEO } from '../../shared/constants.js';
 import { getData } from '../../server/data.js';
-import { leaderHitCancelled } from '../../server/sim/damage.js';
-import { abOf } from '../../server/sim/content/enemies.js';
+import { leaderHitCancelled } from '../../server/sim/attack/health.js';
+import { grantHitShield } from '../../server/sim/content/enemies/helpers.js';
 
 const DATA = getData({ log: { warn() {}, error() {}, info() {} } });
 const LIMIT = BOSS_HIT_LIMIT;
@@ -332,7 +332,7 @@ for (const [bossId, hidden] of [['boss_1', false], ['boss_5', false], ['boss_8',
   });
 }
 
-test('限伤 vs the real leader defences [ASSUMED order]: 阿利斯泰尔\'s 5000 vest barrier stays under a cancelled hit; a 再生 block acts first', () => {
+test('限伤 vs the real leader defences [ASSUMED order]: 阿利斯泰尔\'s 5000 vest barrier stays under a cancelled hit; both native barrier and count shield are preserved by the pre-injury cap', () => {
   // boss_6: the kit's own 莫非王土 animates a shield equipment lying on the field → the `boss:vest` HP shield (5000)
   const pool6 = new SharedBossPool(gd.boss('boss_6').bloodPoint.HARD);
   const { b: b6 } = realBossField('boss_6', false, pool6);
@@ -355,28 +355,32 @@ test('限伤 vs the real leader defences [ASSUMED order]: 阿利斯泰尔\'s 500
   assert.equal(pool6.hp, before - 294999);
   assert.equal(lion.findBuff('boss:vest'), null, 'the barrier is spent');
 
-  // boss_10 (hidden): a 假想敌：再生 aura block (`hit` step) negates the hit before the limit sees it
+  // [ASSUMED] Keep the shared pre-injury cap policy for the native ordinary-priority aura shield too.
   const pool10 = new SharedBossPool(gd.boss('boss_10').bloodPoint.HARD);
   const { b: b10 } = realBossField('boss_10', true, pool10);
   const pipe = b10.enemies.find((e) => e.alive && e.isBoss);
-  abOf(b10, pipe).hitShield = 1;
+  grantHitShield(b10, pipe, 1);
   const caps10 = [];
   const fx10 = b10.fx.bind(b10);
   b10.fx = (k, p) => { if (k === 'hitCap') caps10.push(p.id); return fx10(k, p); };
   const before10 = pool10.hp;
   assert.equal(b10.dealDamage(null, pipe, { amount: 2e6, type: 'phys', ignoreSleep: true }), 0);
-  assert.equal(abOf(b10, pipe).hitShield, 0, 'the block is spent');
-  assert.deepEqual(caps10, [], 'the limit never saw the hit');
+  assert.equal(pipe.findBuff('ab:hitShield').shieldHits, 1, 'the cap cancels before consuming an injury shield');
+  assert.deepEqual(caps10, [pipe.id]);
   assert.equal(b10.dealDamage(null, pipe, { amount: 2e6, type: 'phys', ignoreSleep: true }), 0);
-  assert.deepEqual(caps10, [pipe.id], 'the next one is cancelled by the limit');
+  assert.deepEqual(caps10, [pipe.id, pipe.id], 'the next over-limit hit also preserves the layer');
+  assert.equal(pipe.findBuff('ab:hitShield').shieldHits, 1);
+  assert.equal(b10.dealDamage(null, pipe, { amount: 1, type: 'arts', ignoreSleep: true }), 0);
+  assert.equal(pipe.findBuff('ab:hitShield'), null, 'an under-limit hit reaches and consumes the layer');
   assert.equal(pool10.hp, before10);
 });
 
-test('限伤 vs 【死亡集群】 (real kit): a drone killed by an operator costs the leader 2 % of the pool max — a loss that lands up to a 14999950 pool and is cancelled above it (ceil)', () => {
+test('限伤 vs 【死亡集群】 (real kit): a drone killed by an operator costs the leader 2 % of the pool max — a share, no hit: it lands past the 300000 line too (DESIGN §25.13.4)', () => {
   // boss_1 / boss_8 skill 2: bb hp_ratio 0.02; the leader's max HP is the shared pool's max (Battle syncs it), so the
-  // loss is 0.02 × pool max. Today's largest drone pool is boss_8 ABYSS 7.2M → 144000; a pool above 14999950 (≈ 2.08 ×
-  // that), where ceil(0.02 × max) reaches 300000, would make every drone kill a cancelled hit — kept in view for any
-  // change to the pool size (research 11 §6).
+  // loss is 0.02 × pool max. With the pool per player alive (the owner's decision of 2026-10-06, PR #209) boss_8 ABYSS
+  // reaches 21.6M / 28.8M at 3 / 4 players: 432000 / 576000 per drone, past the line where ceil(0.02 × max) ≥ 300000 —
+  // until 0.2.0 the link was cancelled there like a hit; it is a share of the pool and lands (Battle.loseHp noHitLimit
+  // [ASSUMED], research 11 §6).
   assert.equal(gd.enemy('enemy_9013_acstmk').skills.find((s) => s.prefabKey === '2').bb.hp_ratio, 0.02);
   assert.equal(gd.enemy('enemy_9013_acstmk_2').skills.find((s) => s.prefabKey === '2').bb.hp_ratio, 0.02);
   const withOp = [{ ...PAIR[0], units: [{ uid: 1, chessId: 'chess_char_1_01_a', row: 10, col: 2 }] }, PAIR[1]];
@@ -399,16 +403,16 @@ test('限伤 vs 【死亡集群】 (real kit): a drone killed by an operator cos
     assert.equal(drone.alive, false, 'the drone died');
     return { lost: before - pool.hp, caps, id: L.id };
   };
-  const today = run(7200000);
-  assert.equal(today.lost, 144000, 'boss_8 ABYSS-sized pool: the loss lands');
-  assert.deepEqual(today.caps, []);
+  const solo = run(7200000);
+  assert.equal(solo.lost, 144000, 'boss_8 ABYSS-sized pool (one player): the loss lands');
+  assert.deepEqual(solo.caps, []);
   const under = run(14999950);
   assert.equal(under.lost, 299999, 'just under the line: lands');
   assert.deepEqual(under.caps, []);
-  for (const m of [14999951, 15000000]) {
+  for (const [m, want] of [[14999951, 299999.02], [15000000, 300000], [21600000, 432000], [28800000, 576000]]) {
     const over = run(m);
-    assert.equal(over.lost, 0, `${m}: ceil(0.02 × max) = 300000, one hit at the line: cancelled`);
-    assert.deepEqual(over.caps.map((c) => c[0]), [over.id]);
+    assert.ok(Math.abs(over.lost - want) < 1e-6, `${m}: the share lands past the line (${over.lost})`);
+    assert.deepEqual(over.caps, [], `${m}: no cancelled hit`);
   }
 });
 

@@ -1,4 +1,3 @@
-import {appPage} from '../helpers/appPage.mjs';
 // test/render/playtest6-enemies.browser.test.js — user playtest #6 items 9 and 13 in headless Chrome: the real sim runs
 // in the page (the client runner's loadBrowserSim) and feeds the render demo's field view with the real Spine models.
 //   #9  威龙 (enemy_1005_yokai_3) is drawn at its official prefab scale: its body is ≈ 1.08× as wide as a 妖怪's on screen
@@ -39,7 +38,7 @@ describe('enemy model sizes and the 萨科塔 flutter (headless Chrome, real sim
   before(async () => {
     const puppeteer = (await import('puppeteer-core')).default;
     const { startServer } = await import('../../server/index.js');
-    srv = await startServer({ auth: false, port: 0, host: '127.0.0.1', quiet: true });
+    srv = await startServer({ port: 0, host: '127.0.0.1', quiet: true });
     browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--no-first-run'] });
     mkdirSync(OUT, { recursive: true });
   });
@@ -49,7 +48,7 @@ describe('enemy model sizes and the 萨科塔 flutter (headless Chrome, real sim
   });
 
   test('威龙 ≈ 1.08× a 妖怪 on screen; the feared bird turns left and right inside its tile', async () => {
-    const page = await appPage(await browser.newPage());
+    const page = await browser.newPage();
     const problems = [];
     page.on('console', (m) => { if (m.type() === 'error') problems.push(`console: ${m.text()}`); });
     page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));

@@ -1,61 +1,24 @@
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
-using System.Net;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Nodes;
-
 namespace Stronghold.Protocol;
-static class Program
+static class Program{[STAThread]static void Main(){ApplicationConfiguration.Initialize();Application.Run(new GameWindow());}}
+sealed class GameWindow:Form
 {
-    [STAThread] static void Main(){ApplicationConfiguration.Initialize();Application.Run(new GameWindow());}
-}
-sealed class GameWindow : Form
-{
-    private readonly WebView2 web=new(){Dock=DockStyle.Fill};
-    private readonly TextBox address=new(){Width=300};
-    private readonly Button connect=new(){Text="连接服务器",AutoSize=true};
-    private readonly Label status=new(){Text="填写服务器地址后连接",AutoSize=true,Padding=new Padding(8)};
-    private readonly string home=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"StrongholdProtocol");
-    private Uri? server;private ResourceCache? cache;private bool ready,preparing;
-    public GameWindow(){Text="卫戍协议：盟约";Width=1400;Height=900;MinimumSize=new Size(960,640);
-        var bar=new FlowLayoutPanel(){Dock=DockStyle.Top,AutoSize=true,Padding=new Padding(8)};bar.Controls.AddRange([address,connect,status]);Controls.Add(web);Controls.Add(bar);
-        Directory.CreateDirectory(home);var settings=Path.Combine(home,"server.txt");if(File.Exists(settings))address.Text=File.ReadAllText(settings);
-        connect.Click+=async(_,_)=>await Connect();Shown+=async(_,_)=>{try{await web.EnsureCoreWebView2Async(await CoreWebView2Environment.CreateAsync(null,Path.Combine(home,"webview")));
-            web.CoreWebView2.Settings.UserAgent+=" "+ResourceCache.Agent;web.CoreWebView2.Settings.AreHostObjectsAllowed=false;
-            web.CoreWebView2.AddWebResourceRequestedFilter("*",CoreWebView2WebResourceContext.All);
-            web.CoreWebView2.WebResourceRequested+=ResourceRequested;web.CoreWebView2.NavigationStarting+=NavigationStarting;
-            if(address.Text.Length>0)await Connect();
-        }catch(Exception e){status.Text="无法启动 WebView2";MessageBox.Show("请安装 Microsoft Edge WebView2 Runtime 后重试。\n"+e.Message,Text);}};
-    }
-    private async Task Connect(){
-        if(preparing)return;
-        try{if(!Uri.TryCreate(address.Text.Trim(),UriKind.Absolute,out var selected)||selected.Scheme is not ("http" or "https")||selected.UserInfo.Length>0||selected.Query.Length>0||selected.Fragment.Length>0||selected.AbsolutePath!="/")throw new IOException("请填写 http://公网IP:端口 或 HTTPS 地址，不要附加页面路径。");
-            if(web.CoreWebView2==null){status.Text="正在初始化客户端…";return;}
-            if(server!=null&&!ResourceCache.SameOrigin(server,selected)){if(MessageBox.Show("更换服务器会断开当前对局连接，是否继续？",Text,MessageBoxButtons.YesNo)!=DialogResult.Yes)return;web.CoreWebView2.Stop();web.CoreWebView2.CookieManager.DeleteAllCookies();}
-            server=selected;cache=new ResourceCache(server,Path.Combine(home,"resources"));File.WriteAllText(Path.Combine(home,"server.txt"),server.AbsoluteUri);ready=false;
-            web.CoreWebView2.Navigate(new Uri(server,"login?next=%2F").AbsoluteUri);status.Text="登录后准备本地资源";
-        }catch(Exception e){status.Text=e.Message;}
-        await Task.CompletedTask;
-    }
-    private static bool Account(string path){var p=Uri.UnescapeDataString(path).Replace('\\','/').ToLowerInvariant();return p.StartsWith("/admin")||p.StartsWith("/account")||p.StartsWith("/auth/admin/")||p=="/auth/password"||p=="/js/account.js"||p=="/js/ranked-admin.js"||p=="/css/account.css";}
-    private async void NavigationStarting(object? sender,CoreWebView2NavigationStartingEventArgs e){
-        if(server==null||!Uri.TryCreate(e.Uri,UriKind.Absolute,out var target)||!ResourceCache.SameOrigin(server,target)||Account(target.AbsolutePath)||target.AbsolutePath is not ("/" or "/index.html" or "/login")){e.Cancel=true;return;}
-        if(target.AbsolutePath=="/login")return;
-        if(ready){ready=false;return;}
-        e.Cancel=true;if(preparing||cache==null)return;preparing=true;connect.Enabled=false;web.Visible=false;
-        try{await Cookies();await cache.Prepare(message=>{if(!IsDisposed)status.Text=message;},AppContext.BaseDirectory);status.Text="资源已就绪";ready=true;web.Visible=true;web.CoreWebView2.Navigate(target.AbsoluteUri);}
-        catch(HttpRequestException error) when(error.StatusCode==HttpStatusCode.Unauthorized){web.Visible=true;web.CoreWebView2.Navigate(new Uri(server,"login?next=%2F").AbsoluteUri);status.Text="请重新登录";}
-        catch(Exception error){web.Visible=true;status.Text="资源准备失败";if(MessageBox.Show(error.Message+"\n\n点击重试重新检查资源。",Text,MessageBoxButtons.RetryCancel)==DialogResult.Retry)BeginInvoke(new Action(()=>web.CoreWebView2.Navigate(target.AbsoluteUri)));}
-        finally{preparing=false;connect.Enabled=true;}
-    }
-    private async Task Cookies(){if(cache==null||server==null)return;var cookies=await web.CoreWebView2.CookieManager.GetCookiesAsync(server.AbsoluteUri);cache.SetCookie(string.Join("; ",cookies.Select(c=>c.Name+"="+c.Value)));}
-    private CoreWebView2WebResourceResponse Response(Stream body,string mime,long size,int code=200) => web.CoreWebView2.Environment.CreateWebResourceResponse(body,code,code==200?"OK":"Resource error",$"Content-Type: {mime}\r\nContent-Length: {size}\r\nCache-Control: no-store\r\nX-Stronghold-Resource: local");
-    private async void ResourceRequested(object? sender,CoreWebView2WebResourceRequestedEventArgs e){
-        using var deferred=e.GetDeferral();if(server==null||cache==null)return;
-        try{var target=new Uri(e.Request.Uri);if(!ResourceCache.SameOrigin(server,target)||Account(target.AbsolutePath)){var body=Encoding.UTF8.GetBytes("账号管理请使用浏览器访问");e.Response=Response(new MemoryStream(body),"text/plain; charset=utf-8",body.Length,403);return;}
-            if(e.Request.Method is not ("GET" or "HEAD"))return;
-            if(target.AbsolutePath=="/app/resource-manifest"&&cache.Version.Length>0){await Cookies();var state=JsonNode.Parse(await cache.Read("/app/resource-manifest",65536))!;state["installedPack"]=cache.Version;var bytes=Encoding.UTF8.GetBytes(state.ToJsonString());e.Response=Response(new MemoryStream(bytes),"application/json",bytes.Length);return;}
-            var local=cache.Local(target,e.Request.Method=="HEAD");if(local!=null)e.Response=Response(local.Value.body,local.Value.mime,local.Value.size);
-        }catch(Exception error){var bytes=Encoding.UTF8.GetBytes(error.Message);e.Response=Response(new MemoryStream(bytes),"text/plain; charset=utf-8",bytes.Length,503);}
-    }
+    readonly WebView2 web=new(){Dock=DockStyle.Fill};readonly ClientConnectionPanel entry=new();
+    TextBox address=>entry.Address;Button connect=>entry.Connect;
+    readonly string home=Environment.GetEnvironmentVariable("SP_CLIENT_PROFILE") is {Length:>0} profile ? Path.GetFullPath(profile) : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"StrongholdProtocol");
+    ResourceStore? resources;Uri? server;bool busy;
+    public GameWindow(){Text="卫戍协议：盟约";Width=1400;Height=900;MinimumSize=new Size(960,540);BackColor=Color.FromArgb(12,15,14);Controls.Add(web);Controls.Add(entry);AcceptButton=connect;Directory.CreateDirectory(home);if(File.Exists(Path.Combine(home,"server.txt")))address.Text=File.ReadAllText(Path.Combine(home,"server.txt"));connect.Click+=async(_,_)=>await Connect();Shown+=async(_,_)=>await Initialize();FormClosed+=(_,_)=>resources?.Dispose();}
+    void Progress(string text,long completed=-1,long total=0){if(!IsDisposed)BeginInvoke(()=>{entry.SetProgress(text,completed,total);if(web.CoreWebView2!=null&&server!=null&&Uri.TryCreate(web.Source?.AbsoluteUri,UriKind.Absolute,out var source)&&Same(server,source)&&source.AbsolutePath=="/product/login.html")web.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(new{type="resource-progress",label=text,completed,total}));});}
+    async Task Initialize(){try{connect.Enabled=false;resources=new ResourceStore(AppContext.BaseDirectory,Path.Combine(home,"resources-v2"));await Task.Run(()=>resources.Initialize(Progress));await web.EnsureCoreWebView2Async(await CoreWebView2Environment.CreateAsync(null,Path.Combine(home,"webview")));web.CoreWebView2.Settings.UserAgent+=" "+resources.Agent;web.CoreWebView2.Settings.AreHostObjectsAllowed=false;web.CoreWebView2.AddWebResourceRequestedFilter("*",CoreWebView2WebResourceContext.All);web.CoreWebView2.WebResourceRequested+=Request;web.CoreWebView2.NavigationStarting+=Navigate;web.CoreWebView2.NavigationCompleted+=(_,e)=>{if(!busy&&server!=null&&Uri.TryCreate(web.Source?.AbsoluteUri,UriKind.Absolute,out var source)&&Same(server,source)&&source.AbsolutePath=="/product/login.html"){if(e.IsSuccess)entry.SetIdle("服务器已连接，请登录账号");else entry.SetProgress("无法连接服务器，请检查地址后重试",error:true);}};web.CoreWebView2.WebMessageReceived+=Message;entry.SetProgress("本地资源已校验",1,1);connect.Enabled=true;if(address.Text.Length>0)await Connect();}catch(Exception error){entry.SetProgress("客户端启动失败",error:true);MessageBox.Show(error.Message,Text);}}
+    static bool Same(Uri a,Uri b)=>a.Scheme==b.Scheme&&a.Host==b.Host&&a.Port==b.Port;
+    static bool Account(string p)=>p.StartsWith("/account",StringComparison.OrdinalIgnoreCase)||p.StartsWith("/admin",StringComparison.OrdinalIgnoreCase)||p.StartsWith("/auth/admin/",StringComparison.OrdinalIgnoreCase)||p=="/auth/password";
+    async Task Connect(){if(busy||web.CoreWebView2==null)return;try{if(!Uri.TryCreate(address.Text.Trim(),UriKind.Absolute,out var target)||target.Scheme is not("http" or "https")||target.UserInfo!=""||target.Query!=""||target.Fragment!=""||target.AbsolutePath!="/")throw new IOException("请填写服务器根地址，例如 http://公网IP:3000");if(server!=null&&!Same(server,target)){if(MessageBox.Show("切换服务器将断开当前对局。继续？",Text,MessageBoxButtons.YesNo)!=DialogResult.Yes)return;web.CoreWebView2.Stop();web.CoreWebView2.CookieManager.DeleteAllCookies();}server=target;File.WriteAllText(Path.Combine(home,"server.txt"),target.AbsoluteUri);await web.CoreWebView2.Profile.ClearBrowsingDataAsync(CoreWebView2BrowsingDataKinds.ServiceWorkers|CoreWebView2BrowsingDataKinds.CacheStorage);entry.Visible=true;entry.Compact(true);entry.SetProgress("正在连接服务器…");web.CoreWebView2.Navigate(new Uri(server,"/product/login.html").AbsoluteUri);}catch(Exception error){entry.SetProgress(error.Message,error:true);}await Task.CompletedTask;}
+    void Navigate(object? sender,CoreWebView2NavigationStartingEventArgs e){if(server==null||!Uri.TryCreate(e.Uri,UriKind.Absolute,out var uri)||!Same(server,uri)||Account(uri.AbsolutePath)||uri.AbsolutePath is not("/" or "/index.html" or "/product/login.html"))e.Cancel=true;else if(uri.AbsolutePath=="/product/login.html"){entry.Visible=true;entry.Compact(true);}}
+    async void Message(object? sender,CoreWebView2WebMessageReceivedEventArgs e){if(server==null||resources==null||!Uri.TryCreate(e.Source,UriKind.Absolute,out var source)||!Same(server,source)||source.AbsolutePath!="/product/login.html"&&source.AbsolutePath!="/"&&source.AbsolutePath!="/index.html")return;JsonNode? request=null;try{request=JsonNode.Parse(e.WebMessageAsJson);var id=(int?)request?["id"]??throw new IOException("请求无效");object result;if((string?)request?["method"]=="status")result=resources.Status();else if((string?)request?["method"]=="enter"){if(source.AbsolutePath=="/product/login.html")throw new IOException("请从游戏页面进入");entry.Visible=false;result=new{action="ready"};}else if((string?)request?["method"]=="prepare"){if(busy||source.AbsolutePath!="/product/login.html")throw new IOException("请在登录页面更新资源");busy=true;connect.Enabled=false;try{var cookies=await web.CoreWebView2.CookieManager.GetCookiesAsync(server.AbsoluteUri);result=await resources.Prepare(server,string.Join("; ",cookies.Select(c=>c.Name+"="+c.Value)),Progress);var current=web.CoreWebView2.Settings.UserAgent;web.CoreWebView2.Settings.UserAgent=current[..current.IndexOf("StrongholdProtocolApp/",StringComparison.Ordinal)]+resources.Agent;}finally{busy=false;connect.Enabled=true;}}else throw new IOException("不支持的客户端操作");web.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(new{id,result}));}catch(Exception error){entry.SetProgress(error.Message,error:true);web.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(new{id=(int?)request?["id"],error=error.Message}));}}
+    async void Request(object? sender,CoreWebView2WebResourceRequestedEventArgs e){using var deferral=e.GetDeferral();try{if(server==null||resources==null)return;if(e.Request.Uri.StartsWith("data:")||e.Request.Uri.StartsWith("blob:"))return;var uri=new Uri(e.Request.Uri);if(!Same(server,uri)||Account(uri.AbsolutePath)){Respond(e,403,[],"text/plain");return;}if(!ResourceStore.Fixed(uri.AbsolutePath))return;var item=await resources.Read(uri.AbsolutePath);if(item==null){Respond(e,404,[],"text/plain");return;}var bytes=item.Value.Bytes;long start=0,end=bytes.LongLength-1;var code=200;var extra="";var range=e.Request.Headers.Contains("Range")?e.Request.Headers.GetHeader("Range"):"";if(range.Length>0){var m=System.Text.RegularExpressions.Regex.Match(range,"^bytes=(\\d*)-(\\d*)$");if(!m.Success||m.Groups[1].Value==""&&m.Groups[2].Value=="")throw new IOException("无效 Range");if(m.Groups[1].Value=="")start=Math.Max(0,bytes.LongLength-long.Parse(m.Groups[2].Value));else{start=long.Parse(m.Groups[1].Value);if(m.Groups[2].Value!="")end=Math.Min(end,long.Parse(m.Groups[2].Value));}if(start>end){Respond(e,416,[],item.Value.Mime,$"Content-Range: bytes */{bytes.LongLength}\r\n");return;}code=206;extra=$"Content-Range: bytes {start}-{end}/{bytes.LongLength}\r\n";}var body=e.Request.Method=="HEAD"?[]:bytes.AsSpan((int)start,(int)(end-start+1)).ToArray();Respond(e,code,body,item.Value.Mime,extra+"Accept-Ranges: bytes\r\n",end-start+1);}catch{Respond(e,503,[],"text/plain");}}
+    void Respond(CoreWebView2WebResourceRequestedEventArgs e,int code,byte[] bytes,string mime,string extra="",long? length=null){e.Response=web.CoreWebView2.Environment.CreateWebResourceResponse(new MemoryStream(bytes),code,code==200?"OK":code==206?"Partial Content":"Resource unavailable",$"Content-Type: {mime}\r\nContent-Length: {length??bytes.LongLength}\r\nCache-Control: no-store\r\nX-Stronghold-Resource: local\r\n"+extra);}
 }

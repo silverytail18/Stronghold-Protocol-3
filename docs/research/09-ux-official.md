@@ -67,7 +67,7 @@ Evidence was extracted to the scratchpad `research2/`: guide pages, video frames
 | Moving a deployed unit | Drag the unit to any legal tile, **including its own tile**. The same diamond opens. The original stays visible until confirmed; cancelling leaves the unit and its facing unchanged. Re-orienting in place = drag the unit onto its own tile and swipe a new direction. | WIKI + ASSUMED (own-tile case) |
 | Tap a deployed unit | Opens the selection diamond (underframe) around the unit and shows its **attack range tiles** on the board (orange). Buttons on the diamond: **撤退** (red runner icon, upper-left; unit returns to the bench) and **出售 +1** (coin badge, upper-right). The left side shows the detail card: portrait, tier, LV, ATK/DEF/RES/block/cost, an "攻击范围" mini-grid, bond icons, and tabs 特质/技能/特性/天赋/装备. You cannot rotate from this menu. | DATA + WIKI |
 | Default facing | Every player-initiated placement goes through the wheel, so there is no silent default. Server-created board units (effects such as 外勤医疗 or 预备干员, bots, and back-compat) default to **RIGHT**, toward the gates. | ASSUMED |
-| Persistence | Facing is stored with the position and survives round changes. At combat start units auto-deploy on their tiles **with their facing**, in order **top→bottom, then left→right** (盟约下). | DATA (positions) + COMM (order) |
+| Persistence | Facing is stored with the position and survives round changes. At combat start units auto-deploy on their tiles **with their facing**, in order **从上到下>从左到右** (盟约下): down each column, the columns left to right (research 01 §4.3). | DATA (positions) + COMM (order) |
 | Melee, ranged, medic | All use the same wheel. The range preview uses the unit's own rangeGrid (heal range for medics). Blocking and "front" logic use the facing vector. | DATA |
 | Summons (tokens) | Each summon is its own bench card ("干员及其召唤物会自动加入整备区"), placed and moved freely with the same wheel. Retreating the owner also retreats its summons. | WIKI |
 | Equipment | Dragged onto a unit (board or bench). No direction step. A third item opens the equip-replace dialog (`UseEquipUp { charChessInstId, equipChessInstId, isChangeEquip, unloadInstId }`). | DATA |
@@ -289,6 +289,8 @@ All in `StreamingAssets/AB/Windows/ui/emoticon/theme/`:
 
 The autochess **room** pics (pic_hello, pic_question, pic_waiting, pic_working, pic_sorry_2, …) are **not** in any local bundle. Keep room emotes out of scope, or reuse the battle glyphs.
 
+The public mirror (ArknightsAssets2 `cn`, `ui/emoticon/theme/[uc]<themeId>/icon/<picId>.png`) has the same 36 battle sprites, at the same sizes (checked 2026-10-03); since v0.1.2 `tools/fetch-assets.mjs` downloads them and the client uses them when the local art is absent (DESIGN §22.5, GitHub issue #42).
+
 ---
 
 ## 5. Other prep interactions we may have missed
@@ -316,7 +318,7 @@ The autochess **room** pics (pic_hello, pic_question, pic_waiting, pic_working, 
    - `g.move {uid, to:{area:'board',row,col}, dir}` with `dir ∈ 'UP'|'RIGHT'|'DOWN'|'LEFT'`; the server defaults to `'RIGHT'` when absent, for bots and old clients.
    - `g.art {itemUid,row,col,dir}`.
    - Broadcast `dir` in the board state (public and private views, snapshot `UnitInfo.dir`).
-2. **`server/match/PlayerState.js`.**
+2. **`server/match/PlayerState.js`** (the methods named here: `server/match/player/placement.js`, `items.js`).
    - Store `piece.dir`, preserved across rounds.
    - In `_moveChessToBoard` and `_moveTokenToBoard`, `if (occ === piece) return OK;` must become "update `piece.dir`, recompute, OK". This is the in-place re-orient.
    - Swaps keep each piece's own dir.
@@ -330,7 +332,7 @@ The autochess **room** pics (pic_hello, pic_question, pic_waiting, pic_working, 
      - `professions.js` front checks (the `(x − unit.x)·facing` tests)
      - `skills.js` trigger grids
      - `tokens.js` placement grids and Mech/device helpers
-     - kits tier3 (`displace` direction, 薄绿 pull tile) and tier4 device placement
+     - the tier-3 kits (`displace` direction, 薄绿 pull tile) and tier-4 device placement (server/sim/content/kits/ops/)
      - `content/devices.js` blower relation: `equal` if the operator dir == blower dir, `opposite` if reversed, otherwise none. Today only fx is compared, so the DOWN blowers never buff anyone.
      - Items 叙拉古正装 (perpendicular pair), 歌利亚头盔 (front tile), 画卷 `1-1`.
 4. **`server/match/finalAssault.js`.** The right-side mirror becomes col `c→20−c` with dir RIGHT↔LEFT; UP and DOWN are kept (not a flat `facing=−1`). FA prep on the right half shows the mirrored layout, and moves there go through the wheel in mirrored coordinates.
@@ -361,7 +363,7 @@ The autochess **room** pics (pic_hello, pic_question, pic_waiting, pic_working, 
 4. Prep: the same avatar → 前往查看 flow (read-only board + pen).
 5. 联防 and FA fields: the ‹ › pill cycles LEFT half / 全景 / RIGHT half, with captions "你自己" / "👁 name#" / "全景". Non-helpers are auto-moved to the 联防 field as observers. In FA the other pair's field is not selectable.
 6. Eliminated players: a dialog offers 继续观战 (auto-observe the first live field, free switching) or 退出.
-7. `server/match/Match.js watch()` must enforce the same rules (prep: any teammate; combat: only if your own field finished; FA: own pair only; dead: anything).
+7. `Match.watch()` (`server/match/match/watch.js`) must enforce the same rules (prep: any teammate; combat: only if your own field finished; FA: own pair only; dead: anything).
 
 ### 6.4 Combat computation model (user item 5, architecture) [proposal based on §3.2]
 

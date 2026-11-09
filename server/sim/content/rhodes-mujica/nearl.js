@@ -1,3 +1,4 @@
+import {hypot as productMath_hypot} from '../../detmath.js';
 import * as S from '../support/index.js';
 import {live,talent} from './common.js';
 import {riMember,livingRhodes} from './engineering.js';
@@ -9,7 +10,7 @@ export function nearl(bb,chess,def){
   else skills[s.skillId]={kind:'duration',trigger:{rule:'SKILL_RANGE',grid:s.rangeGrid,allies:true,hpAtMost:.999},mods:{atkPct:p.atk,batPct:p.base_attack_time},targeting:{rangeGrid:s.rangeGrid},attack:{dmgType:'heal',heal:{mode:'single'},projectile:'none'}};
  }
  return{skills,talents:[{install(b,u){
-  const active=()=>live(u)&&b.getPlayer(u.ownerId)?.bonds?.[RI]?.active&&riMember(b,u)&&(u.blocking||[]).some(live)&&livingRhodes(b,u.ownerId).some(a=>a!==u&&Math.hypot(a.x-u.x,a.y-u.y)<=N.reach);
+  const active=()=>live(u)&&b.getPlayer(u.ownerId)?.bonds?.[RI]?.active&&riMember(b,u)&&(u.blocking||[]).some(live)&&livingRhodes(b,u.ownerId).some(a=>a!==u&&productMath_hypot(a.x-u.x,a.y-u.y)<=N.reach);
   const i=chess.isGolden?1:0;u.mem.rmNearlLast=-Infinity;
   const pressure=({source,target,dmg,dealt,absorbed})=>{if(target===u&&source?.side==='enemy'&&(u.blocking||[]).includes(source)&&active()&&(dealt>0||absorbed>0)&&!dmg?.tags?.includes('hpLoss'))u.mem.rmNearlLast=b.time;};
   b.on('damageResolved',pressure,{owner:u});b.on('damageAbsorbed',pressure,{owner:u});

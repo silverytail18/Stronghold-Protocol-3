@@ -30,9 +30,8 @@
 // units, FX and hit-testing use, so both layers agree on every height. No meshes, Graphics props or anim sprites
 // are built; switching back (WebGL context lost, art missing) rebuilds the 2D board.
 
-import {markStyle} from '../../../shared/rhine-visual.js';
 import { tileAtlas, fxAtlas, rng, groundTexture } from './textures.js';
-import { GLYPH, TILEKEY_GLYPH, TILE_H, COLORS } from './style.js';
+import { GLYPH, TILEKEY_GLYPH, TILE_H, COLORS, ORIGINIUM } from './style.js';
 import { parsePenRect, PEN_RECT } from './pen.js';
 
 /**
@@ -194,6 +193,9 @@ function variantMat(t) {
     case 'roadN': return h < 4 ? 'roadN' : 'roadN2';
     case 'floor': return h < 4 ? 'floor' : 'floor2';
     case 'forbid': return h < 4 ? 'forbid' : 'forbid2';
+    // 活性源石: the same material twice (the second mirrored), so a field of it does not repeat one pattern
+    // (textures.js originiumOverlay — the palette and recipe match the 3D board's shader, GitHub #184)
+    case 'infection': return h < 4 ? 'infection' : 'infection2';
     default: return t.mat;
   }
 }
@@ -203,7 +205,7 @@ const DEVICE_ROLES = new Set(['crate', 'platform', 'mound', 'blower', 'turret', 
 /** Textured box props: role → { size (tiles), height, top / side materials }. */
 export const DEVICE_BOX = Object.freeze({
   crate: { size: 0.84, height: 0.74, top: 'crateTop', side: 'crateSide' },
-  platform: { size: 0.94, height: 0.26, top: 'platformTop', side: 'forbidSide' },
+  platform: { size: 0.94, height: TILE_H.platform, top: 'platformTop', side: 'forbidSide' },
   waterPlatform: { size: 0.94, height: 0.2, top: 'platformTop', side: 'lowSide' },
   sealedFloor: { size: 0.92, height: 0.05, top: 'sealed', side: 'forbidSide' },
   blower: { size: 0.86, height: 0.28, top: 'blowerTop', side: 'forbidSide' },
@@ -342,7 +344,8 @@ export class TileField {
     for (const d of this._stageDevices()) {
       const t = this.grid[d.pos[0]]?.[d.pos[1]];
       if (!t) continue;
-      if (d.role === 'platform' || d.role === 'mound') t.devH = TILE_H.platform;
+      if (d.role === 'platform') t.devH = TILE_H.platform;
+      else if (d.role === 'mound') t.devH = TILE_H.mound;
       else if (d.role === 'waterPlatform') t.devH = DEVICE_BOX.waterPlatform.height;
     }
     const hs = new Set([0]);
@@ -532,16 +535,14 @@ export class TileField {
     this._drawHighlights();
   }
 
-  setRhineMarks(marks,paused=false){this.rhineHighlights=(marks||[]).map(m=>({tiles:[[m.row,m.col]],style:markStyle(m.id,paused||m.paused)}));this._drawHighlights();}
-
   _drawHighlights() {
     this.hlGfx.clear();
     for (const s of this.rowSurfaces.values()) if (s._hl) s._hl.clear();
     const cam = this.cam;
-    if (!cam) return;
+    if (!cam || !this.highlights.size) return;
     const p = this._p;
     const inset = 0.05;
-    for (const { tiles, style } of [...(this.rhineHighlights||[]),...this.highlights.values()]) {
+    for (const { tiles, style } of this.highlights.values()) {
       for (const [r, c] of tiles) {
         const h = this.heightAt(r, c);
         let g = this.hlGfx;
@@ -566,13 +567,6 @@ export class TileField {
         g.beginFill(style.color, style.fill);
         g.drawPolygon(pts);
         g.endFill();
-        if(style.rhine){
-          const point=(x,y)=>{const q={};cam.project(c+x,r+y,z+.005,q);return[q.x,q.y];};
-          const stroke=(points,closed=false)=>{const ps=points.map(([x,y])=>point(x,y));g.lineStyle(Math.max(1,sc*.025),style.color,style.stampAlpha,.5);g.moveTo(...ps[0]);for(const p of ps.slice(1))g.lineTo(...p);if(closed)g.lineTo(...ps[0]);};
-          stroke([[0,.32],[.28,.16],[.28,-.16],[0,-.32],[-.28,-.16],[-.28,.16]],true);
-          stroke([[-.1,-.18],[-.1,.18],[.045,.18],[.12,.12],[.12,.04],[.045,-.02],[-.1,-.02]]);
-          stroke([[.045,-.02],[.15,-.18]]);
-        }
         if (style.stripes) drawStripes(g, cam, r, c, z, inset, Math.max(1.5, sc * 0.05), p);
       }
     }
@@ -660,7 +654,7 @@ export class TileField {
       switch (t.glyph) {
         case 'g': add('smog', 'smoke', P.BLEND_MODES.NORMAL, 0xb8c4c0, 2); break;
         case 'd': add('sea', 'soft', P.BLEND_MODES.ADD, 0x5fe0ff, 1); break;
-        case 'i': add('infect', 'glow', P.BLEND_MODES.ADD, 0xff6a3d, 1); break;
+        case 'i': add('infect', 'glow', P.BLEND_MODES.ADD, ORIGINIUM.glow, 1); break;
         case 'm': add('mire', 'dot', P.BLEND_MODES.ADD, 0xc8d890, 2); break;
         case 'I': case 'O': add('tel', 'ring', P.BLEND_MODES.ADD, 0xb36bff, 1); break;
         case 'S': if (r <= 12) add('gateGlow', 'glow', P.BLEND_MODES.ADD, COLORS.gateRed, 1); break;
@@ -726,7 +720,8 @@ export class TileField {
     for (const b of this.boxes) b.g.destroy();
     this.boxes = [];
     // the field's gates / objectives, and the enemy preview pen's two gates (the red cubes behind which the next
-    // round's enemies wait, also while the pen is dim scenery behind the prep board)
+    // round's enemies wait) whenever the pen's rows are drawn — the prep and pen cameras (render/app/view.js bandFor),
+    // also as dim scenery
     const pen = parsePenRect(this.stage?.config?.enemy_place_rect) || PEN_RECT;
     for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
       const tile = this.grid[r][c];

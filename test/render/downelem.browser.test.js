@@ -1,4 +1,3 @@
-import {appPage} from '../helpers/appPage.mjs';
 // test/render/downelem.browser.test.js — user playtest #4 items 8 and 9 in headless Chrome through the render demo
 // (public/dev/render-demo.html, real Spine models): frames fed to the field view like the client runner does (local
 // feed) with b.snap `down` / `elem` — a knocked-out operator stays on its tile in its held Die pose under a redeploy
@@ -43,7 +42,7 @@ function installFeed() {
     state() {
       const out = {};
       for (const [id, x] of v.debug.views) {
-        out[id] = { alive: x.alive, down: x.down ? x.down.state : null, ring: !!x._downRing?.root?.visible, label: x._downRing?.text?.text ?? null,
+        out[id] = { alive: x.alive, down: x.down ? x.down.state : null, ring: !!x._downRing?.root?.visible, label: x._downRing?.label ?? null,
           el: x._elBar?.root?.visible ? x.el : null, spine: !!x.spineReady, dieClip: x.actor?.current ?? null, alpha: +(x.alpha ?? 0).toFixed(2) };
       }
       return out;
@@ -56,7 +55,7 @@ describe('knocked-out operators and element gauges in headless Chrome', { skip }
   before(async () => {
     const puppeteer = (await import('puppeteer-core')).default;
     const { startServer } = await import('../../server/index.js');
-    srv = await startServer({ auth: false, port: 0, host: '127.0.0.1', quiet: true });
+    srv = await startServer({ port: 0, host: '127.0.0.1', quiet: true });
     browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--no-first-run'] });
     mkdirSync(OUT, { recursive: true });
   });
@@ -66,7 +65,7 @@ describe('knocked-out operators and element gauges in headless Chrome', { skip }
   });
 
   test('down ring countdown → DP → redeploy; element icons; summons and enemies still vanish', async () => {
-    const page = await appPage(await browser.newPage());
+    const page = await browser.newPage();
     const problems = [];
     page.on('console', (m) => { if (m.type() === 'error') problems.push(`console: ${m.text()}`); });
     page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));

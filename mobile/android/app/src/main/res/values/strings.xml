@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">卫戍协议：盟约</string>
+    <string name="landscape_required">请横屏游玩</string>
+    <string name="landscape_help">请将设备旋转为横屏。如果系统强制竖屏，请关闭强制竖屏后继续。</string>
 </resources>

@@ -130,6 +130,28 @@ describe('2: 机变 cards take two taps (select → confirm), like buying in the
     assert.match(textOf(lone.find((n) => hasClass(n, 'spov__sub'))), /无时间限制/);
   });
 
+  test('教鞭 ChoiceView: personal heading, no global order or turn; timing follows PREP deadline', () => {
+    const s = sp({ name: '教鞭 · 战术特训', desc: '请选择一项战术特训', cards: sp().cards.slice(0, 2) });
+    for (const [solo, deadline] of [[false, 0], [true, 123456]]) {
+      let confirmed = false;
+      const v = ChoiceView({ pub: { players: [{ playerId: 'me', name: 'Me' }, { playerId: 'p2', name: 'P2' }], deadline }, sp: s,
+        ...me, solo, personal: true, armed: 0, total: 74, onConfirm: () => { confirmed = true; } });
+      const nodes = [...walk(v)];
+      assert.equal(v.props['aria-label'], '教鞭选择');
+      assert.ok(!nodes.some((n) => hasClass(n, 'spov__order')));
+      assert.doesNotMatch(textOf(v), /机变阶段|当前轮到|正在决策/);
+      const clock = nodes.find((n) => n.type?.name === 'Countdown');
+      assert.equal(!!clock, deadline > 0);
+      if (clock) { assert.equal(clock.props.deadline, deadline); assert.equal(clock.props.total, 74); }
+      assert.match(textOf(nodes.find((n) => hasClass(n, 'spov__sub'))), deadline ? /休整期结束时未选择将自动选定/ : /无时间限制/);
+      const btn = nodes.find((n) => n.type === Button);
+      btn.props.onClick();
+      assert.ok(confirmed);
+      assert.match(btn.props.title, /确认选择「A」/);
+      assert.match(nodes.find((n) => hasClass(n, 'spcard')).props.title, /^A\na$/);
+    }
+  });
+
   test('the overlay keeps the selection itself and drops it on Esc / a tap elsewhere (source contract)', () => {
     const src = read('public/js/ui/choiceOverlay.js');
     assert.match(src, /export function ChoiceOverlay\(props\) \{[\s\S]*useState\(null\)[\s\S]*armedCard\(sel, sp/);
@@ -219,12 +241,11 @@ describe('7: the detail card shows live stats against the base', () => {
     const src = read('public/js/screens/game.js');
     assert.match(src, /net\.on\('m\.unitStats'/);
     assert.match(src, /msg\.seq !== statsSeqRef\.current/, 'only the newest request\'s answer');
-    assert.match(src, /const seq = statsSeqRef\.current/);
-    assert.match(src, /net\.request\('g\.unitStats', \{ seq \}\)/);
+    assert.match(src, /net\.request\('g\.unitStats', \{ seq: statsSeqRef\.current \}\)/);
     assert.match(src, /battleRunner\.unitStats\(uid, fid\)/);
     assert.match(src, /live=\$\{liveStats\}/);
     const panel = read('public/js/ui/detailPanel.js');
-    assert.match(panel, /useTicker\(detail && getter \? 250 : 0\)/, 'a getter is re-read 4× a second');
+    assert.match(panel, /useTicker\(detail && \(getter \|\| bondTimers\) \? 250 : 0\)/, 'a getter is re-read 4× a second');
     // an own board piece's card opened in prep and left open into the battle turns live (its unit found by uid)
     assert.match(src, /battleRunner\.unitIdOf\(pieceUid, myId, fid\)/);
   });

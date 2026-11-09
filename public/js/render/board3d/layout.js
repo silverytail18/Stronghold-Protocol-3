@@ -3,8 +3,13 @@
 // the buckets into merged BufferGeometries).
 //
 //   const board = buildBoard(stage, { uv: resolveUvTable(tiles), crate?: objMesh, area?: AREAS.normal })
-//   → { grid, buckets: { board, decal, pipe }, gates: [{ r, c, kind: 'start'|'end' }], devices: [...],
+//   → { grid, buckets: { board, decal, pipe, glass, raised, raisedDecal }, gates: [{ r, c, kind: 'start'|'end' }], devices: [...],
 //       terrain: { water, mire, smog, infection: [[r,c]…] }, edges: [...cyan field edge strips], bounds, stats }
+// `raised` / `raisedDecal` repeat only the device slabs — 射击台, 特制水上平台, 封印的地面 — with their side faces
+// reaching below the ground: those are runtime devices that an official scene (scene.js) does not contain, so they are
+// drawn on it (GitHub #569). The 'h' high ground is part of the scenes (act2 m01 / m02 model it) and is not repeated.
+// With `platformMesh` the 射击台 get no slab at all: scene.js draws the official model (trap_1106_achplat) on both
+// boards; the slab stays the fallback without the local art.
 // `devices` = the active stage devices standing on a built tile — separator walls included (act2 m01's blowers: the
 // row-13 ones at the top edge of the normal / 联防 field, the row-6 ones at its bottom edge and at the top edge of the
 // Final Assault field — user playtest #5 item 6 and its follow-up).
@@ -40,6 +45,8 @@ export const CLIFF = 0.75;
 export const BEVEL = Object.freeze({ low: [0.035, 0.018], block: [0.04, 0.035] });
 /** Deep-sea basins: floor depth below the ground. */
 export const BASIN = 0.14;
+/** How far below the ground the device slabs' side faces reach on an official scene (its ground sits about z 0). */
+export const RAISED_FOOT = 0.08;
 
 const CONTENT_OF = (g) => g !== '#' && g !== 'X';
 
@@ -74,6 +81,15 @@ export function unionAreas(...sets) {
   const seen = new Set();
   for (const s of sets) for (const a of s || []) { const k = `${a.r0},${a.r1},${a.c0},${a.c1}`; if (!seen.has(k)) { seen.add(k); out.push(a); } }
   return out;
+}
+
+/** Whether two area sets cover the same rectangles (a union allocates a new array, so identity is not enough). */
+function sameAreas(a, b) {
+  if (a === b) return true;
+  if (!a || !b || a.length !== b.length) return false;
+  const key = (x) => `${x.r0},${x.r1},${x.c0},${x.c1}`;
+  const ka = a.map(key).sort(), kb = b.map(key).sort();
+  return ka.every((k, i) => k === kb[i]);
 }
 const hash2 = (r, c) => ((r * 73856093) ^ (c * 19349663)) >>> 0;
 
@@ -312,7 +328,8 @@ function sideFace(g, uvTable, surfName, dir, x0, x1, y0, y1, zb, zt, colBottom, 
 /**
  * Build the whole board of a stage.
  * @param {any} stage data/stages.json entry
- * @param {{ uv?: object, devices?: boolean }} [opts] uv = resolveUvTable(tiles.json) (defaults to the built-in table)
+ * @param {{ uv?: object, devices?: boolean, platformMesh?: boolean }} [opts] uv = resolveUvTable(tiles.json) (defaults
+ *   to the built-in table); platformMesh: the 射击台 are drawn with the official model (scene.js), so they get no slab
  */
 export function buildBoard(stage, opts = {}) {
   const uvTable = opts.uv || null;
@@ -321,7 +338,20 @@ export function buildBoard(stage, opts = {}) {
   const at = (r, c) => grid[r]?.[c] || null;
   const topZ = (t) => (t.glyph === 'd' ? -BASIN : t.h);
   const board = new Geom(), decal = new Geom(), pipe = new Geom(), glass = new Geom();
+  const raised = new Geom(), raisedDecal = new Geom();
   const gates = [], terrain = { water: [], mire: [], smog: [], infection: [] };
+  // S / E gates come from the whole grid, not from the drawn tiles: the enemy half's start gate sits outside the
+  // current area and the `t.drawn` filter below would drop it, so watching one half lost the other side's red gate.
+  // A boss field is framed on its own arena, where the other gates would sit on top of the arena's own, so there
+  // only the gates inside `AREAS.boss` are collected.
+  const areaSet = opts.area || null;
+  const bossField = !!areaSet && sameAreas(areaSet, AREAS.boss);
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    const g = grid[r][c].glyph;
+    if (g !== 'S' && g !== 'E') continue;
+    if (bossField && !areaSet.some((a) => r >= a.r0 && r <= a.r1 && c >= a.c0 && c <= a.c1)) continue;
+    gates.push({ r, c, kind: g === 'S' ? 'start' : 'end', z: 0 });
+  }
   let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
 
   for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
@@ -365,8 +395,7 @@ export function buildBoard(stage, opts = {}) {
     }
     // per-glyph extras
     switch (t.glyph) {
-      case 'S': gates.push({ r, c, kind: 'start', z: 0 }); break;
-      case 'E': gates.push({ r, c, kind: 'end', z: 0 }); break;
+      // S / E were collected over the whole grid above (the area filter must not drop the other half's gate).
       case 'I': case 'O': {
         const surf = UVT[t.glyph === 'I' ? 'arrowDown' : 'arrowUp'];
         if (surf) {
@@ -441,12 +470,16 @@ export function buildBoard(stage, opts = {}) {
 
   const devices = opts.devices === false ? [] : stageDevices(stage, grid);
   for (const d of devices) {
-    if (d.kind === 'platform' || d.kind === 'sealedFloor' || d.kind === 'waterPlatform') slabDevice(board, decal, UVT, d, grid);
+    if (d.kind === 'platform' && opts.platformMesh) continue;
+    if (d.kind === 'platform' || d.kind === 'sealedFloor' || d.kind === 'waterPlatform') {
+      slabDevice(board, decal, UVT, d, grid);
+      slabDevice(raised, raisedDecal, UVT, d, grid, RAISED_FOOT);
+    }
   }
 
   return {
     grid, gates, devices, terrain, edges,
-    buckets: { board: board.finish(), decal: decal.finish(), pipe: pipe.finish(), glass: glass.finish() },
+    buckets: { board: board.finish(), decal: decal.finish(), pipe: pipe.finish(), glass: glass.finish(), raised: raised.finish(), raisedDecal: raisedDecal.finish() },
     bounds: { x0: minX, x1: maxX, y0: minY, y1: maxY },
     stats: { tiles: grid.flat().filter((t) => t.drawn).length, vertices: board.vertexCount + decal.vertexCount + pipe.vertexCount },
   };
@@ -513,17 +546,18 @@ export function stageDevices(stage, grid) {
 /** Device heights on their tile (platform tops are standing surfaces: tiles.js heightAt adds them). */
 export const DEVICE_H = Object.freeze({ platform: TILE_H.platform, sealedFloor: 0.05, waterPlatform: 0.2 });
 
-function slabDevice(board, decal, UVT, d, grid) {
+/** `foot` lowers the side faces' bottom (the scene-board copy reaches under an official scene's ground). */
+function slabDevice(board, decal, UVT, d, grid, foot = 0) {
   const size = d.kind === 'sealedFloor' ? 0.92 : 0.94;
   const h = DEVICE_H[d.kind] || 0.2;
-  const z0 = grid[d.r][d.c].h, zt = z0 + h;
+  const zt = grid[d.r][d.c].h + h, z0 = grid[d.r][d.c].h - foot;
   const a = size / 2, x0 = d.c - a, x1 = d.c + a, y0 = d.r - a, y1 = d.r + a;
   const topSurf = d.kind === 'sealedFloor' ? null : UVT.plateS;
   if (topSurf) board.quad([[x0, y0, zt], [x1, y0, zt], [x1, y1, zt], [x0, y1, zt]], surfaceUV(topSurf), [0, 0, 1], [1.02, 1.02, 1.02]);
   else decal.quad([[x0, y0, zt], [x1, y0, zt], [x1, y1, zt], [x0, y1, zt]], surfaceUV(UVT.hazardX), [0, 0, 1], [1, 1, 1]);
   const side = UVT.graySide;
   for (const dir of ['S', 'E', 'N', 'W']) {
-    const uv = surfaceUV(side, sideRect(side, size, h));
+    const uv = surfaceUV(side, sideRect(side, size, h + foot));
     board.quad(sideCorners(dir, x0, x1, y0, y1, z0, zt), uv, NRM[dir], [[0.5, 0.53, 0.56], [0.5, 0.53, 0.56], [0.85, 0.88, 0.9], [0.85, 0.88, 0.9]]);
   }
 }
@@ -546,8 +580,8 @@ export function objToBoard(obj, s = 1) {
 
 /**
  * Box-project UVs of a (board-space) mesh onto atlas surfaces: faces pointing up take `top`, the others `side`
- * (mapped across the face's horizontal extent × height). Used for the official crate mesh (s_common_box_01), whose
- * own material is assigned at runtime by the client.
+ * (mapped across the face's horizontal extent × height). Kept for the legacy s_common_box_01 fallback and mounds;
+ * the extracted 阻隔工事 (trap_1105_accrate) uses its authored UVs instead.
  */
 export function boxProjectUV(mesh, top, side) {
   const p = mesh.position, n = mesh.normal;

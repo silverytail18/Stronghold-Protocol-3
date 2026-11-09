@@ -1,4 +1,7 @@
-import TIER1,{batMod} from '../kits/tier1.js';
+import {hypot as productMath_hypot} from '../../detmath.js';
+import TIER1 from '../kits/ops/chess_char_1_05-vigna.js';
+import WISDEL from '../kits/ops/op-wisdel.js';
+import {batMod} from '../kits/shared/tier1.js';
 import {beginAttack,endAttack} from '../rhodes-mujica/common.js';
 import {frontOf} from '../../dir.js';
 import {aggregateMods} from '../../buffs.js';
@@ -9,7 +12,7 @@ const damage=(b,u,e,n,type='phys',tag='kz:skill',extra={})=>b.dealDamage(u,e,{am
 const plain=s=>({kind:'duration',mods:{atkPct:s.bb.atk||0}});
 const skillsOf=(c,fn)=>Object.fromEntries(c.skills.map(s=>[s.skillId,fn(s,s.bb)]));
 const healOnHit=(b,u,p)=>{if(live(u))b.heal(u,u,u.s.maxHp*p,{self:true});};
-const bomb=(b,u,pos,scale,stun,air=true)=>{const attackId=++b._attackSeq;for(const e of b.enemies.filter(e=>live(e)&&(!e.isFlying||air)&&Math.hypot(e.x-pos.x,e.y-pos.y)<=1.2)){damage(b,u,e,u.s.atk*scale,'phys','kz:bomb',{isSkill:true,attackId});b.applyStatus(e,'stun',{duration:stun,source:u});}b.fx('aoe',{x:pos.x,y:pos.y,id:u.id,r:1.2,skill:'kz:bomb'});};
+const bomb=(b,u,pos,scale,stun,air=true)=>{const attackId=++b._attackSeq;for(const e of b.enemies.filter(e=>live(e)&&(!e.isFlying||air)&&productMath_hypot(e.x-pos.x,e.y-pos.y)<=1.2)){damage(b,u,e,u.s.atk*scale,'phys','kz:bomb',{isSkill:true,attackId});b.applyStatus(e,'stun',{duration:stun,source:u});}b.fx('aoe',{x:pos.x,y:pos.y,id:u.id,r:1.2,skill:'kz:bomb'});};
 function vigna(bb,c,d){const k=TIER1.chess_char_1_05_a(bb,c,d);k.skills=skillsOf(c,(s,p)=>({kind:'duration',mods:{atkPct:p.atk||0,batPct:batMod(p.base_attack_time,c)}}));return k;}
 function hibisc(bb,c){return{skills:skillsOf(c,s=>({...plain(s),heal:true})),talents:[{install(b,u){b.addBuff(u,{key:'kz:hibisc:talent',mods:{atkPct:talent(c,0).atk||0},persist:true,allowDead:true});}}]};}
 function flameb(bb,c){const t=talent(c,0),tr=c.trait?.bb||{};return{
@@ -29,7 +32,7 @@ function cqbw(bb,c){const t=talent(c,0),t2=talent(c,1),tr=c.trait?.bb||{};return
  skills:skillsOf(c,(s,p)=>s.index===0?{kind:'instant',attack:{atkScale:p.atk_scale,splashRadius:1.2,splashScale:1},onHit({battle:b,unit:u,target:e}){b.applyStatus(e,'stun',{duration:p.stun,source:u});}}:s.index===1?{kind:'instant',attack:{atkScale:0,projectile:'none'},onStart({battle:b,unit:u}){
   const cells=u.rangeKeys.map(k=>({r:Math.floor(k/21),c:k%21})).filter(v=>b.grid.canStand(v.r,v.c,{ranged:false})&&!b.unitAt(v.r,v.c));const pos=b.rng.pick(cells);if(!pos)return;const mines=u.mem.kzMines||=[];if(mines.some(m=>m.r===pos.r&&m.c===pos.c))return;mines.push({...pos,expires:b.time+120});b.fx('zone',{x:pos.c,y:pos.r,id:u.id,r:.6,dur:120,skill:'kz:mine'});
  }}:{kind:'instant',attack:{atkScale:0,projectile:'none'},onStart({battle:b,unit:u}){for(const e of range(b,u).sort((a,z)=>z.hp-a.hp||a.id-z.id).slice(0,p.max_target)){const pos={x:e.x,y:e.y};b.after(3,()=>bomb(b,u,live(e)?e:pos,p.atk_scale,p.stun),{owner:u});}}}),
- talents:[{install(b,u){b.on('tick',()=>{if(!live(u))return;if(b.time-u.deployedAt>=t.interval)b.addBuff(u,{key:'kz:w:ambush',mods:{dodgePhys:t.prob,dodgeArts:t.prob,taunt:t.taunt_level},duration:.15});const mines=u.mem.kzMines||[];u.mem.kzMines=mines.filter(m=>{if(m.expires<=b.time)return false;const trigger=b.enemies.find(e=>live(e)&&!e.isFlying&&Math.hypot(e.x-m.c,e.y-m.r)<=.6);if(trigger){const p=c.skills[1].bb;bomb(b,u,{x:m.c,y:m.r},p.atk_scale,p.stun,false);return false;}return true;});},{owner:u});
+ talents:[{install(b,u){b.on('tick',()=>{if(!live(u))return;if(b.time-u.deployedAt>=t.interval)b.addBuff(u,{key:'kz:w:ambush',mods:{dodgePhys:t.prob,dodgeArts:t.prob,taunt:t.taunt_level},duration:.15});const mines=u.mem.kzMines||[];u.mem.kzMines=mines.filter(m=>{if(m.expires<=b.time)return false;const trigger=b.enemies.find(e=>live(e)&&!e.isFlying&&productMath_hypot(e.x-m.c,e.y-m.r)<=.6);if(trigger){const p=c.skills[1].bb;bomb(b,u,{x:m.c,y:m.r},p.atk_scale,p.stun,false);return false;}return true;});},{owner:u});
   b.on('hit',ctx=>{if(!live(u)||ctx.target.side!=='enemy'||ctx.dmg.type!=='phys')return;if(ctx.target.s.flags.stun&&range(b,u).includes(ctx.target))ctx.dmg.mul*=t2.damage_scale||1;if(ctx.source===u&&ctx.dmg.isAttack&&ctx.target.blockedBy&&tr.atk_scale)ctx.dmg.amount*=tr.atk_scale;},{owner:u});}}]
 };}
 function hodrer(bb,c){const t=talent(c,0),shelter=talent(c,1),tr=c.trait?.bb||{},sid=c.skill.skillId;return{
@@ -69,4 +72,4 @@ function logos(bb,c){const t=talent(c,0),t2=talent(c,1),ep=c.talents?.filter(t=>
   if(c.module?.active&&c.trait?.bb?.sp)b.on('attack',({attacker,targets})=>{if(attacker===u&&targets.some(e=>['ELITE','BOSS'].includes(e.def.rank)))u.skill.gainSp(c.trait.bb.sp,'kz:logos:module');},{owner:u});
  }}]
 };}
-export default {chess_kz_vigna_a:vigna,chess_kz_hibisc_a:hibisc,chess_kz_flameb_a:flameb,chess_kz_meteo_a:meteo,chess_kz_cqbw_a:cqbw,chess_kz_hodrer_a:hodrer,chess_kz_logos_a:logos};
+export default {chess_kz_vigna_a:vigna,chess_kz_hibisc_a:hibisc,chess_kz_flameb_a:flameb,chess_kz_meteo_a:meteo,chess_kz_cqbw_a:cqbw,chess_kz_hodrer_a:hodrer,chess_kz_logos_a:logos,chess_kz_wisdel_a:WISDEL.char_1035_wisdel};

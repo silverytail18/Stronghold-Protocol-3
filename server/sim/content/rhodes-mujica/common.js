@@ -13,6 +13,11 @@ export function beginAttack(b,u,targets,isSkill){
  const ctx={attacker:u,targets,isSkill,profile:effectiveProfile(u)};b.emit('beforeAttack',ctx);
  if(!live(u)||(targets.length&&!ctx.targets?.length))return null;
  u.lastAttackAt=b.time;u.stats.attacks++;u.mem.rmAttackId=++b._attackSeq;
+ const charId=u.def.charId||u.def.raw?.charId;
+ const visual=charId==='char_4182_oblvns'?'product-note':charId==='char_1052_kalts2'&&isSkill&&u.skill?.id==='skchr_kalts2_2'?'product-kalts2':ctx.profile.projectile||'none';
+ if(charId==='char_4182_oblvns'||!ctx.targets?.length)b._ev(['atk',u.id,ctx.targets?.[0]?.id??0,visual]);
+ else for(const target of ctx.targets||[])b._ev(['atk',u.id,target.id,visual]);
+ if(u.side==='ally'&&!u.mem.engaged&&(ctx.targets||[]).some(t=>t.side==='enemy')){u.mem.engaged=true;b._ev(['engage',u.id]);}
  return ctx.targets||[];
 }
 export function endAttack(b,u,targets,isSkill){b.emit('attack',{attacker:u,targets,isSkill});u.skill?.onAttackPerformed(targets,isSkill);}

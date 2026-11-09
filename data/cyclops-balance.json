@@ -1,0 +1,555 @@
+{
+  "revision": "cyclops-stage1-20261108-v1",
+  "schema": 1,
+  "roundCount": 21,
+  "difficulties": {
+    "FUNNY": {
+      "bossPoolMul": 1,
+      "rounds": {
+        "1": {
+          "hp": 0.8000000000000002,
+          "atk": 0.8000000000000002,
+          "speed": 1,
+          "frequencyHp": 0.8000000000000002
+        },
+        "2": {
+          "hp": 0.8000000000000002,
+          "atk": 0.8000000000000002,
+          "speed": 1,
+          "frequencyHp": 0.8000000000000002
+        },
+        "3": {
+          "hp": 0.8000000000000002,
+          "atk": 0.8000000000000002,
+          "speed": 1,
+          "frequencyHp": 0.8000000000000002
+        },
+        "4": {
+          "hp": 0.8,
+          "atk": 0.8,
+          "speed": 1,
+          "frequencyHp": 0.8
+        },
+        "5": {
+          "hp": 0.8,
+          "atk": 0.8,
+          "speed": 1,
+          "frequencyHp": 0.8
+        },
+        "6": {
+          "hp": 0.8,
+          "atk": 0.8,
+          "speed": 1,
+          "frequencyHp": 0.8
+        },
+        "7": {
+          "hp": 0.8,
+          "atk": 0.8,
+          "speed": 1,
+          "frequencyHp": 0.8
+        },
+        "8": {
+          "hp": 1.152,
+          "atk": 0.968,
+          "speed": 1,
+          "frequencyHp": 1.152
+        },
+        "9": {
+          "hp": 0.8,
+          "atk": 0.8,
+          "speed": 1,
+          "frequencyHp": 0.8
+        },
+        "10": {
+          "hp": 0.8,
+          "atk": 0.8,
+          "speed": 1,
+          "frequencyHp": 0.8
+        },
+        "11": {
+          "hp": 0.9,
+          "atk": 0.84,
+          "speed": 1,
+          "frequencyHp": 0.7999999999999999
+        },
+        "12": {
+          "hp": 1.65888,
+          "atk": 1.17128,
+          "speed": 1,
+          "frequencyHp": 1.65888
+        },
+        "13": {
+          "hp": 0.9,
+          "atk": 0.84,
+          "speed": 1,
+          "frequencyHp": 0.8
+        },
+        "14": {
+          "hp": 0.9,
+          "atk": 0.84,
+          "speed": 1,
+          "frequencyHp": 0.8
+        },
+        "15": {
+          "hp": 1,
+          "atk": 0.9,
+          "speed": 1,
+          "frequencyHp": 0.96
+        },
+        "16": {
+          "hp": 2.866545,
+          "atk": 1.558974,
+          "speed": 1,
+          "frequencyHp": 2.866545
+        },
+        "17": {
+          "hp": 1.15,
+          "atk": 0.98,
+          "speed": 1,
+          "frequencyHp": 0.9600000000000001
+        },
+        "18": {
+          "hp": 1.15,
+          "atk": 0.98,
+          "speed": 1,
+          "frequencyHp": 0.9600000000000001
+        },
+        "19": {
+          "hp": 1.4,
+          "atk": 1.05,
+          "speed": 1,
+          "frequencyHp": 1.1520000000000001
+        },
+        "20": {
+          "hp": 1.4,
+          "atk": 1.05,
+          "speed": 1,
+          "frequencyHp": 1.1520000000000001
+        },
+        "21": {
+          "hp": 1.1520000000000001,
+          "atk": 0.9504000451579051,
+          "speed": 1,
+          "frequencyHp": 1.1520000000000001
+        }
+      },
+      "bossParts": {
+        "hp": 1.1520000000000001,
+        "atk": 0.9504000451579051,
+        "speed": 1,
+        "frequencyHp": 1.1520000000000001
+      }
+    },
+    "NORMAL": {
+      "bossPoolMul": 1.3,
+      "rounds": {
+        "1": {
+          "hp": 0.8,
+          "atk": 0.8,
+          "speed": 1,
+          "frequencyHp": 0.8
+        },
+        "2": {
+          "hp": 0.8,
+          "atk": 0.8,
+          "speed": 1,
+          "frequencyHp": 0.8
+        },
+        "3": {
+          "hp": 0.96,
+          "atk": 0.88,
+          "speed": 1,
+          "frequencyHp": 0.8
+        },
+        "4": {
+          "hp": 0.8,
+          "atk": 0.8,
+          "speed": 1,
+          "frequencyHp": 0.8
+        },
+        "5": {
+          "hp": 1.152,
+          "atk": 0.968,
+          "speed": 1,
+          "frequencyHp": 0.96
+        },
+        "6": {
+          "hp": 1.152,
+          "atk": 0.968,
+          "speed": 1,
+          "frequencyHp": 0.96
+        },
+        "7": {
+          "hp": 1.3824,
+          "atk": 1.0648,
+          "speed": 1,
+          "frequencyHp": 1.152
+        },
+        "8": {
+          "hp": 1.152,
+          "atk": 0.968,
+          "speed": 1,
+          "frequencyHp": 1.152
+        },
+        "9": {
+          "hp": 1.65888,
+          "atk": 1.17128,
+          "speed": 1,
+          "frequencyHp": 1.152
+        },
+        "10": {
+          "hp": 1.65888,
+          "atk": 1.17128,
+          "speed": 1,
+          "frequencyHp": 1.152
+        },
+        "11": {
+          "hp": 1.990656,
+          "atk": 1.288408,
+          "speed": 1,
+          "frequencyHp": 1.3824
+        },
+        "12": {
+          "hp": 1.65888,
+          "atk": 1.17128,
+          "speed": 1,
+          "frequencyHp": 1.65888
+        },
+        "13": {
+          "hp": 2.388787,
+          "atk": 1.417249,
+          "speed": 1,
+          "frequencyHp": 1.65888
+        },
+        "14": {
+          "hp": 2.866545,
+          "atk": 1.558974,
+          "speed": 1,
+          "frequencyHp": 1.990656
+        },
+        "15": {
+          "hp": 3.439854,
+          "atk": 1.714871,
+          "speed": 1,
+          "frequencyHp": 2.388787
+        },
+        "16": {
+          "hp": 2.866545,
+          "atk": 1.558974,
+          "speed": 1,
+          "frequencyHp": 2.866545
+        },
+        "17": {
+          "hp": 4.127824,
+          "atk": 1.886358,
+          "speed": 1,
+          "frequencyHp": 2.866545
+        },
+        "18": {
+          "hp": 4.127824,
+          "atk": 1.886358,
+          "speed": 1,
+          "frequencyHp": 2.866545
+        },
+        "19": {
+          "hp": 4.953389,
+          "atk": 2.074994,
+          "speed": 1,
+          "frequencyHp": 3.439854
+        },
+        "20": {
+          "hp": 5.448728,
+          "atk": 2.178744,
+          "speed": 1,
+          "frequencyHp": 3.439854
+        },
+        "21": {
+          "hp": 3.869836,
+          "atk": 1.714871,
+          "speed": 1,
+          "frequencyHp": 3.439854
+        }
+      },
+      "bossParts": {
+        "hp": 2.866545,
+        "atk": 1.714871,
+        "speed": 1,
+        "frequencyHp": 3.439854
+      }
+    },
+    "HARD": {
+      "bossPoolMul": 1.3,
+      "rounds": {
+        "1": {
+          "hp": 1.2,
+          "atk": 1.1,
+          "speed": 1,
+          "frequencyHp": 1.2
+        },
+        "2": {
+          "hp": 1.2,
+          "atk": 1.1,
+          "speed": 1,
+          "frequencyHp": 1.2
+        },
+        "3": {
+          "hp": 1.44,
+          "atk": 1.21,
+          "speed": 1,
+          "frequencyHp": 1.2
+        },
+        "4": {
+          "hp": 0.8,
+          "atk": 0.8,
+          "speed": 1,
+          "frequencyHp": 0.8
+        },
+        "5": {
+          "hp": 1.728,
+          "atk": 1.331,
+          "speed": 1,
+          "frequencyHp": 1.44
+        },
+        "6": {
+          "hp": 1.728,
+          "atk": 1.331,
+          "speed": 1,
+          "frequencyHp": 1.44
+        },
+        "7": {
+          "hp": 1.728,
+          "atk": 1.331,
+          "speed": 1,
+          "frequencyHp": 1.728
+        },
+        "8": {
+          "hp": 1.152,
+          "atk": 0.968,
+          "speed": 1,
+          "frequencyHp": 1.152
+        },
+        "9": {
+          "hp": 2.0736,
+          "atk": 1.4641,
+          "speed": 1,
+          "frequencyHp": 1.728
+        },
+        "10": {
+          "hp": 2.0736,
+          "atk": 1.4641,
+          "speed": 1,
+          "frequencyHp": 1.728
+        },
+        "11": {
+          "hp": 2.985984,
+          "atk": 1.771561,
+          "speed": 1,
+          "frequencyHp": 1.7279999999999998
+        },
+        "12": {
+          "hp": 1.65888,
+          "atk": 1.17128,
+          "speed": 1,
+          "frequencyHp": 1.65888
+        },
+        "13": {
+          "hp": 2.985984,
+          "atk": 1.771561,
+          "speed": 1,
+          "frequencyHp": 2.48832
+        },
+        "14": {
+          "hp": 3.583181,
+          "atk": 1.948717,
+          "speed": 1,
+          "frequencyHp": 2.985984
+        },
+        "15": {
+          "hp": 4.299817,
+          "atk": 2.143589,
+          "speed": 1,
+          "frequencyHp": 2.985984
+        },
+        "16": {
+          "hp": 2.866545,
+          "atk": 1.558974,
+          "speed": 1,
+          "frequencyHp": 2.866545
+        },
+        "17": {
+          "hp": 5.159781,
+          "atk": 2.357948,
+          "speed": 1,
+          "frequencyHp": 4.299817
+        },
+        "18": {
+          "hp": 5.159781,
+          "atk": 2.357948,
+          "speed": 1,
+          "frequencyHp": 4.299817
+        },
+        "19": {
+          "hp": 6.191737,
+          "atk": 2.593742,
+          "speed": 1,
+          "frequencyHp": 5.1597804
+        },
+        "20": {
+          "hp": 6.81091,
+          "atk": 2.723429,
+          "speed": 1,
+          "frequencyHp": 5.1597804
+        },
+        "21": {
+          "hp": 5.804753,
+          "atk": 2.357948,
+          "speed": 1,
+          "frequencyHp": 5.1597804
+        }
+      },
+      "bossParts": {
+        "hp": 4.299817,
+        "atk": 2.357948,
+        "speed": 1,
+        "frequencyHp": 5.1597804
+      }
+    },
+    "ABYSS": {
+      "bossPoolMul": 1.3,
+      "rounds": {
+        "1": {
+          "hp": 1.2,
+          "atk": 1.1,
+          "speed": 1,
+          "frequencyHp": 1.2
+        },
+        "2": {
+          "hp": 1.2,
+          "atk": 1.1,
+          "speed": 1,
+          "frequencyHp": 1.2
+        },
+        "3": {
+          "hp": 1.44,
+          "atk": 1.21,
+          "speed": 1,
+          "frequencyHp": 1.2
+        },
+        "4": {
+          "hp": 0.8,
+          "atk": 0.8,
+          "speed": 1,
+          "frequencyHp": 0.8
+        },
+        "5": {
+          "hp": 1.728,
+          "atk": 1.331,
+          "speed": 1,
+          "frequencyHp": 1.44
+        },
+        "6": {
+          "hp": 1.728,
+          "atk": 1.331,
+          "speed": 1.15,
+          "frequencyHp": 1.44
+        },
+        "7": {
+          "hp": 4.299817,
+          "atk": 1.61051,
+          "speed": 1.15,
+          "frequencyHp": 1.728
+        },
+        "8": {
+          "hp": 1.152,
+          "atk": 0.968,
+          "speed": 1,
+          "frequencyHp": 1.152
+        },
+        "9": {
+          "hp": 4.299817,
+          "atk": 1.61051,
+          "speed": 1.15,
+          "frequencyHp": 2.239488
+        },
+        "10": {
+          "hp": 4.299817,
+          "atk": 1.61051,
+          "speed": 1.15,
+          "frequencyHp": 3.583181
+        },
+        "11": {
+          "hp": 5.15978,
+          "atk": 1.771561,
+          "speed": 1.15,
+          "frequencyHp": 4.299817
+        },
+        "12": {
+          "hp": 1.65888,
+          "atk": 1.17128,
+          "speed": 1,
+          "frequencyHp": 1.65888
+        },
+        "13": {
+          "hp": 6.191736,
+          "atk": 1.771561,
+          "speed": 1.15,
+          "frequencyHp": 4.299817
+        },
+        "14": {
+          "hp": 6.687075,
+          "atk": 1.948717,
+          "speed": 1.15,
+          "frequencyHp": 5.1597800000000005
+        },
+        "15": {
+          "hp": 8.02449,
+          "atk": 2.143589,
+          "speed": 1.15,
+          "frequencyHp": 6.191736
+        },
+        "16": {
+          "hp": 2.866545,
+          "atk": 1.558974,
+          "speed": 1,
+          "frequencyHp": 2.866545
+        },
+        "17": {
+          "hp": 9.629388,
+          "atk": 2.357948,
+          "speed": 1.15,
+          "frequencyHp": 6.687075000000001
+        },
+        "18": {
+          "hp": 9.629388,
+          "atk": 2.357948,
+          "speed": 1.15,
+          "frequencyHp": 6.687075000000001
+        },
+        "19": {
+          "hp": 11.555266,
+          "atk": 2.593742,
+          "speed": 1.15,
+          "frequencyHp": 8.02449
+        },
+        "20": {
+          "hp": 12.710792,
+          "atk": 2.723429,
+          "speed": 1.15,
+          "frequencyHp": 8.02449
+        },
+        "21": {
+          "hp": 9.027551,
+          "atk": 2.357948,
+          "speed": 1.15,
+          "frequencyHp": 8.02449
+        }
+      },
+      "bossParts": {
+        "hp": 6.687075,
+        "atk": 2.357948,
+        "speed": 1.15,
+        "frequencyHp": 8.02449
+      }
+    }
+  }
+}

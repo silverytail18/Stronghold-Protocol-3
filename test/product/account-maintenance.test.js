@@ -1,0 +1,52 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import {productFixture,login} from './fixture.js';
+
+test('administrator reset/delete persist, revoke sessions and preserve identity-owned data; other callers cannot mutate accounts',async t=>{
+  const f=await productFixture();t.after(()=>f.close());let s=await f.start();
+  const id=f.users[1].accountId,adminId=f.users[0].accountId;
+  await s.product.loadouts.save(id,{revision:0,entries:{},byChar:{char_1050_chen3:{skill:2}},ops:{char_1050_chen3:{potential:6}}});
+  await s.product.loadouts.save(adminId,{revision:0,entries:{},byChar:{char_1050_chen3:{skill:1}}});
+  const loadout=s.product.loadouts.view(id),adminLoadout=s.product.loadouts.view(adminId);
+  const a=await login(s.url),m=await login(s.url,'member');
+  const request=(username,cookie,method,body,extra={})=>fetch(s.url+'/auth/admin/users/'+username,{
+    method,headers:{Origin:s.url,Cookie:cookie,'Content-Type':'application/json',...extra},...(body?{body:JSON.stringify(body)}:{}),
+  });
+  assert.equal((await request('admin',m.cookie,'PATCH',{password:'wrong-owner-pass'})).status,403);
+  assert.equal((await request('member',m.cookie,'DELETE')).status,403);
+  assert.equal((await request('admin',a.cookie,'DELETE')).status,400);
+  assert.equal((await request('admin',a.cookie,'PATCH',{password:'self-reset-pass'})).status,400);
+  assert.equal((await request('member',a.cookie,'PATCH',{password:'short'})).status,400);
+  assert.equal((await request('member',a.cookie,'DELETE',null,{Origin:'https://wrong.example'})).status,403);
+  assert.equal((await request('member',a.cookie,'DELETE',null,{'User-Agent':'StrongholdProtocolApp/2'})).status,403);
+  assert.equal((await request('member',a.cookie,'PATCH',{password:'reset-fixture-pass'})).status,200);
+  assert.equal((await fetch(s.url+'/auth/session',{headers:{Cookie:m.cookie}}).then(r=>r.json())).authenticated,false);
+  assert.equal((await login(s.url,'member')).status,401);
+  const signIn=extra=>fetch(s.url+'/auth/login',{method:'POST',headers:{Origin:s.url,'Content-Type':'application/json',...extra},body:JSON.stringify({username:'member',password:'reset-fixture-pass'})});
+  const resetSession=await signIn();assert.equal(resetSession.status,200);
+  assert.equal((await resetSession.json()).mustChangePassword,true);
+  const initialApp=await signIn({'User-Agent':'StrongholdProtocolApp/2'});assert.equal(initialApp.status,200);assert.equal((await initialApp.json()).playAllowed,false);
+  const saved=JSON.parse(await fs.readFile(f.authFile,'utf8'));
+  const member=saved.users.find(u=>u.username==='member');
+  assert.equal(member.accountId,id);assert.equal(member.sponsor,true);assert.equal(member.mustChangePassword,true);
+  assert.deepEqual(member.retainedExtension,f.users[1].retainedExtension);
+  assert.deepEqual(saved.users.find(u=>u.username==='admin'),f.users[0]);
+  assert.deepEqual(saved.retainedExtension,{keep:true});
+  assert.deepEqual(s.product.ranked.records(id),f.expected.records);
+  assert.deepEqual(s.product.loadouts.view(id),loadout);
+  await f.stop();s=await f.start();
+  const a2=await login(s.url),session2=await signIn();assert.equal(session2.status,200);
+  const cookie2=session2.headers.get('set-cookie').split(';')[0];
+  assert.equal((await request('member',a2.cookie,'DELETE')).status,200);
+  assert.equal((await fetch(s.url+'/auth/session',{headers:{Cookie:cookie2}}).then(r=>r.json())).authenticated,false);
+  assert.equal((await signIn()).status,401);
+  assert.equal(JSON.parse(await fs.readFile(f.authFile,'utf8')).users.some(u=>u.username==='member'),false);
+  assert.deepEqual(s.product.ranked.records(id),f.expected.records);
+  assert.deepEqual(s.product.loadouts.view(id),loadout);
+  assert.deepEqual(s.product.loadouts.view(adminId),adminLoadout);
+  await f.stop();s=await f.start();assert.equal(s.product.auth.users.has('member'),false);
+  assert.equal((await login(s.url)).status,200);
+  assert.deepEqual(s.product.loadouts.view(adminId),adminLoadout);
+  assert.deepEqual(s.product.ranked.records(id),f.expected.records);
+});

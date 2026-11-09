@@ -1,6 +1,7 @@
+import {markProductContent} from '../../../../shared/product-content.js';
 // Match-scoped Rhine Lab overlay. Generated native records never replace formal data.
 import {OVERLAY} from './records.js';
-import {ASSETS} from './assets.js';
+const ASSETS={chars:{},enemies:{},tokens:{},skills:{},skillsById:{},modules:{},items:{},bonds:{},bands:{}};
 import {RHINE as CORE,RHINE_BATCH as BATCH,RHINE_SILENCE as SILENCE,RHINE_KRISTEN as KRISTEN,RHINE_CONTROLLER as CONTROLLER,RHINE_SAMPLER as SAMPLER,TECHNOLOGIES} from '../../../../shared/rhine.js';
 import {RESEARCH,RESEARCH_ATTACK_RATIO,RESEARCH_HEAL_RATIO} from '../../../../shared/rhine-balance.js';
 export {CORE,BATCH,SILENCE,KRISTEN,CONTROLLER,SAMPLER};
@@ -28,6 +29,7 @@ const researchDescriptions={
 '溯光星源':'原生开技后首次有效攻击，＋3/5层，上限6/10。'
 };
 export function applyRhine(data){
+ markProductContent(data,"rhine-lab-v1");
  const o=structuredClone(OVERLAY);data.assets||={};
  for(const key of ['chess','tokens','garrisons']){data[key]||={};for(const[id,r]of Object.entries(o[key])){if(data[key][id]&&data[key][id].expansionBatch!==BATCH)throw Error('Rhine ID collision '+id);data[key][id]=r;}}
  data.bonds||={};data.bonds[CORE]=structuredClone(bond);
@@ -47,9 +49,9 @@ export function applyRhine(data){
  }
  for(const b of Object.values(data.bonds)){const cs=Object.values(data.chess).filter(c=>!c.isGolden&&c.bonds?.includes(b.bondId));b.members=cs.map(c=>c.chessId);b.visibleMembers=cs.filter(c=>c.visible).map(c=>c.chessId);}
  for(const [key,r]of Object.entries(ASSETS))data.assets[key]={...(data.assets[key]||{}),...structuredClone(r)};
- data.assets.bonds={...data.assets.bonds,[CORE]:'/assets/rhine/rhine-mark.svg',[RESEARCH]:'/assets/rhine/research-mark.svg'};
- data.assets.items={...data.assets.items,[CONTROLLER]:'/assets/rhine/controller.svg',[SAMPLER]:'/assets/rhine/sampler.svg'};
- data.assets.bands={...data.assets.bands,[SILENCE]:data.assets.chars?.char_108_silent?.avatar,[KRISTEN]:'/assets/rhine/rhine-mark.svg'};
+ data.assets.bonds={...data.assets.bonds,[CORE]:null,[RESEARCH]:null};
+ data.assets.items={...data.assets.items,[CONTROLLER]:null,[SAMPLER]:null};
+ data.assets.bands={...data.assets.bands,[SILENCE]:data.assets.chars?.char_108_silent?.avatar,[KRISTEN]:null};
  return data;
 }
 export const buildRhineData=base=>applyRhine(structuredClone(base));

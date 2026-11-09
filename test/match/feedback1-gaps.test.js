@@ -9,14 +9,16 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { PHASE } from '../../shared/constants.js';
 import { GameData } from '../../server/match/gamedata.js';
 import { computeBonds, bondList, bondSnapshot, bondsWithGains, HARMONY_BOND } from '../../server/match/bondsMeta.js';
-import { botPickBand } from '../../server/match/bot.js';
+import { botPickBand, bandStrength } from '../../server/match/bot.js';
 import { tileKey } from '../../server/match/board.js';
 import { validateClientResult } from '../../server/match/fields.js';
 import { bandBondIds as bandBondIdsOf } from '../../shared/bandBonds.js';
 import { DATA, makeMatch, give, legalTileFor, checkInvariants } from './harness.js';
+import { designText } from '../helpers/designDocs.js';
 
 const MLYSS = 'chess_char_6_11_a'; // 缪尔赛思 (调和)
 const members = (bond, n) => Object.values(DATA.chess).filter((c) => c.visible && !c.isGolden && c.bonds.includes(bond) && !c.bonds.includes(HARMONY_BOND)).map((c) => c.chessId).sort().slice(0, n);
@@ -165,11 +167,13 @@ describe('§21.26 3 — strategies tied to a bond the mode switches off', () => 
     const { solo, coop } = picks('HARD');
     assert.ok(solo.filter((id) => TIED.has(id)).length > 0, `solo ${solo.filter((id) => TIED.has(id)).length}/200`);
     assert.ok(coop.filter((id) => TIED.has(id)).length > 0, `co-op ${coop.filter((id) => TIED.has(id)).length}/800`);
-    // the pre-0.1.1 pick (starting LP only), replayed on the same rng: identical where no bond is off
+    // the pre-0.1.1 pick (starting LP only), replayed on the same rng: identical where no bond is off (§37.34: cubed on
+    // 终极 solo; §37.46: on 终极 times the bots' measured strength with the band, 1 elsewhere)
     const before = (m) => {
       const ids = m.gd.bandIds();
       const lateFunds = (id) => /暂存/.test(String(m.gd.band(id)?.desc || ''));
-      const pairs = ids.map((id) => [id, Math.max(1, (m.gd.startLp(id) - 18) ** 2) * (m.isSolo && lateFunds(id) ? 0.02 : 1)]);
+      const exp = m.isSolo && m.difficulty === 'ABYSS' ? 3 : 2;
+      const pairs = ids.map((id) => [id, Math.max(1, (m.gd.startLp(id) - 18) ** exp) * (m.isSolo && lateFunds(id) ? 0.02 : 1) * bandStrength(m, id)]);
       let r = m.rngBots() * pairs.reduce((a, [, w]) => a + w, 0);
       for (const [id, w] of pairs) { r -= w; if (r < 0) return id; }
       return pairs[pairs.length - 1][0];
@@ -196,7 +200,7 @@ describe('§21.26 3 — strategies tied to a bond the mode switches off', () => 
       b.m.dispose();
     }
     let draws = 0;
-    const fake = (gd, r = 0.5) => ({ gd, isSolo: true, bandEligible: () => true, rngBots: () => { draws++; return r; } });
+    const fake = (gd, r = 0.5) => ({ gd, isSolo: true, rngBots: () => { draws++; return r; } });
     botPickBand(fake(funny), null);
     assert.equal(draws, 1);
     // every offered band tied to a bond 标准 switches off (the default band 华法琳 not offered here): the default band
@@ -227,6 +231,17 @@ describe('§21.26 found on the way — the client-result layer bound reads the l
   const check = (s, gains, opts = { gd }) => { const v = validateClientResult(s, res(gains), opts); return v.ok ? 'ok' : v.reason; };
   const SEED_107_R12 = ['chess_char_1_06_b', 'chess_char_4_14_a', 'chess_char_4_13_a', 'chess_char_3_14_a', 'chess_char_3_11_a', 'chess_char_4_22_a', 'chess_char_3_20_a', 'chess_char_5_14_b'];
 
+  // GitHub #175 (from PR #192 by @kukiC): the handed-out 华法琳 trait counts at the data cap, 7 / 14
+  test('华法琳\'s handed-out trait allows its data cap of 7 / 14 (GitHub #175)', () => {
+    for (const [id, cap] of [['chess_char_4_26_a', 7], ['chess_char_4_26_b', 14]]) {
+      const s = spec(3, [id, 'chess_char_1_10_a']); // 华法琳 + 古米
+      // a handed-out trait is counted once per operator of the player (2 here), on top of the flat 60 + 4·round
+      const bound = 60 + 4 * 3 + 2 * cap;
+      assert.equal(check(s, { steadShip: bound }), 'ok');
+      assert.equal(check(s, { steadShip: bound + 1 }), 'layer bound');
+    }
+  });
+
   test('an uncapped freeze trait leaves 谢拉格 bounded only by 999: the honest +112 passes; a bond without such a trait keeps 60 + 4·round', () => {
     const s = spec(12, SEED_107_R12, { kjeragShip: { count: 6, active: true, tier: 2, layers: 39 }, swiftShip: { count: 2, active: true, tier: 1, layers: 0 } });
     assert.equal(check(s, { kjeragShip: 112 }), 'ok', 'the board of coop/FUNNY/107 R12');
@@ -256,7 +271,7 @@ describe('§21.26 found on the way — the client-result layer bound reads the l
 
 test('§21.26 docs: DESIGN (the subsection and the normative lines), META, PLAYING and the CHANGELOG say what the code does', () => {
   const doc = (p) => readFileSync(new URL(`../../${p}`, import.meta.url), 'utf8');
-  const DESIGN = doc('docs/DESIGN.md');
+  const DESIGN = designText(fileURLToPath(new URL('../../', import.meta.url)));   // the index + docs/design/ + docs/history/
   const at = DESIGN.indexOf('### 21.26 Gaps found while triaging GitHub issues #1 / #8 (v0.1.1)');
   assert.ok(at > 0, 'the subsection');
   const s = DESIGN.slice(at);

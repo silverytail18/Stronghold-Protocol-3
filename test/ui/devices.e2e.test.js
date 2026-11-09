@@ -1,4 +1,3 @@
-import {appPage} from '../helpers/appPage.mjs';
 // Multi-device E2E (puppeteer-core + system Chrome device emulation). Opt-in: SP_E2E=1 (needs Chrome, ~2 min).
 //
 //   SP_E2E=1 node --test test/ui/devices.e2e.test.js
@@ -15,6 +14,7 @@ import {appPage} from '../helpers/appPage.mjs';
 // plus graceful degradation: WebGL disabled → the DOM view with a notice, local-client art missing → CSS look-alikes,
 // portrait → the rotate hint.
 
+import { seedReleaseRead } from '../helpers/releaseNotes.js';
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync } from 'node:fs';
@@ -47,7 +47,7 @@ describe('multi-device (Chrome device emulation)', { skip: !ENABLED && 'set SP_E
   before(async () => {
     const { startServer } = await import('../../server/index.js');
     const puppeteer = (await import('puppeteer-core')).default;
-    srv = await startServer({ auth: false, port: 0, host: '127.0.0.1', quiet: true });
+    srv = await startServer({ port: 0, host: '127.0.0.1', quiet: true });
     base = `http://127.0.0.1:${srv.port}`;
     browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--no-sandbox'] });
     mkdirSync(OUT, { recursive: true });
@@ -61,7 +61,7 @@ describe('multi-device (Chrome device emulation)', { skip: !ENABLED && 'set SP_E
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
   async function open(dev, url, { render = 'engine', intercept = null, b = browser, ctx = null } = {}) {
-    const page = await appPage(await (ctx || b).newPage());
+    const page = await (ctx || b).newPage();
     const d = DEVICES[dev];
     await page.emulate({ viewport: d.viewport, userAgent: d.userAgent || await b.userAgent() });
     const problems = [];
@@ -74,6 +74,7 @@ describe('multi-device (Chrome device emulation)', { skip: !ENABLED && 'set SP_E
       page.on('request', (r) => (intercept(r.url()) ? r.respond({ status: 404, body: 'gone' }) : r.continue()));
     }
     const full = url.startsWith('/') ? `${base}${url}` : `${base}/dev/game-mock.html?shot=1&render=${render}&${url}`;
+    await seedReleaseRead(page);
     await page.goto(full, { waitUntil: 'networkidle0' });
     await page.waitForFunction(() => !!document.querySelector('.screen:not(.gload)'), { timeout: 20000 });
     await sleep(url.startsWith('/') ? 600 : 1600);
@@ -298,7 +299,7 @@ describe('multi-device (Chrome device emulation)', { skip: !ENABLED && 'set SP_E
       await page.screenshot({ path: path.join(OUT, `device-${dev}-lobby.png`) });
       assert.deepEqual(await layoutProblems(page), [], `${dev} lobby`);
       await tapText('.mode-card', '同盟模拟');
-      await tapText('.create-box button', '创建同盟');
+      await tapText('[data-testid="alliance-create"]');
       await page.waitForSelector('.room-bar__right', { timeout: 15000 });
       await sleep(500);
       await page.screenshot({ path: path.join(OUT, `device-${dev}-room.png`) });
@@ -347,8 +348,9 @@ describe('multi-device (Chrome device emulation)', { skip: !ENABLED && 'set SP_E
     try {
       for (const b of [browser, b12]) {
         for (const [w, h, touch] of [[1280, 720], [1366, 657], [1920, 1080], [2560, 1440], [844, 390, true], [640, 360, true]]) {
-          const page = await appPage(await b.newPage());
+          const page = await b.newPage();
           await page.emulate({ viewport: { width: w, height: h, deviceScaleFactor: 1, isMobile: !!touch, hasTouch: !!touch, isLandscape: true }, userAgent: await b.userAgent() });
+          await seedReleaseRead(page);
           await page.goto(`${base}/dev/game-mock.html?shot=1&render=fallback&phase=PREP`, { waitUntil: 'networkidle0' });
           await page.waitForSelector('.ewheel__btn');
           await sleep(300);
@@ -377,16 +379,18 @@ describe('multi-device (Chrome device emulation)', { skip: !ENABLED && 'set SP_E
   });
 
   test('portrait phone: the rotate hint covers the page', async () => {
-    const page = await appPage(await browser.newPage());
+    const page = await browser.newPage();
     await page.emulate({ viewport: { width: 390, height: 844, deviceScaleFactor: 3, isMobile: true, hasTouch: true }, userAgent: IOS_UA });
+    await seedReleaseRead(page);
     await page.goto(`${base}/`, { waitUntil: 'networkidle0' });
     await sleep(400);
     assert.equal(await page.$eval('.rotate-hint', (el) => getComputedStyle(el).display), 'grid');
     await page.screenshot({ path: path.join(OUT, 'device-portrait-rotate.png') });
     await page.close();
     // review regression: a narrow desktop window (half a 1080p screen, portrait monitor) cannot be "rotated" — no hint
-    const desk = await appPage(await browser.newPage());
+    const desk = await browser.newPage();
     await desk.setViewport({ width: 900, height: 1000 });
+    await seedReleaseRead(desk);
     await desk.goto(`${base}/`, { waitUntil: 'networkidle0' });
     await desk.waitForSelector('.title-screen', { timeout: 10000 });
     assert.equal(await desk.$eval('.rotate-hint', (el) => getComputedStyle(el).display), 'none', 'desktop keeps the game');

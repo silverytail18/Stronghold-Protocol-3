@@ -1,0 +1,12 @@
+{
+  "pin": "bfd2a9209b3a42545acb757e0f6e51052d8694ff",
+  "expected": 2435,
+  "verified": 2435,
+  "missing": 0,
+  "differences": [],
+  "complete": true,
+  "at": "2026-11-02T14:18:36.275Z",
+  "repository": "sganggs/Stronghold-Protocol",
+  "role": "isolated first-batch candidate; not deployed",
+  "assets": "Pinned upstream sources and acquisition/extraction workflow only; do not copy old local assets, FX packs or mappings."
+}

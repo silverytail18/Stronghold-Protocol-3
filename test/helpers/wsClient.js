@@ -24,7 +24,7 @@ export class TestClient {
    */
   static connect(url, { timeout = 3000, wsOptions = {} } = {}) {
     return new Promise((resolve, reject) => {
-      const ws = new WebSocket(url, { ...wsOptions, headers: { 'User-Agent': 'StrongholdProtocolApp/1', ...wsOptions.headers } });
+      const ws = new WebSocket(url, wsOptions);
       const timer = setTimeout(() => { ws.terminate(); reject(new Error(`connect timeout ${url}`)); }, timeout);
       ws.once('open', () => { clearTimeout(timer); resolve(new TestClient(ws)); });
       ws.once('error', (e) => { clearTimeout(timer); reject(e); });

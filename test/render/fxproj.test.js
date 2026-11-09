@@ -18,6 +18,8 @@ import * as SIM from '../../server/sim/constants.js';
 import { installFakePixi, fakeViewCtx } from './fakepixi.js';
 import { presetCamera } from '../../public/js/render/projection.js';
 import { PROJ, HIT_TINT } from '../../public/js/render/style.js';
+import { UF } from '../../shared/constants.js';
+import { bodyZ, SHOT_HEIGHT } from '../../public/js/render/fx/camera.js';
 
 let fake, FX, T;
 before(async () => {
@@ -51,6 +53,49 @@ function makeFx({ quality = 'high', ts = 2, load = 0, views = [] } = {}) {
 const run = (fx, seconds, dt = DT) => { for (let t = 0; t < seconds - 1e-9; t += dt) fx.update(dt); };
 const texName = (fx, tex) => Object.keys(fx.tex).find((k) => fx.tex[k] === tex);
 const liveTex = (fx, name) => fx.parts.filter((p) => p.sp.texture === fx.tex[name]);
+
+test('谬因 path beams: project relay bends once, pulse on game time, restore S2 without events, clear on field change/death', () => {
+  const v = unit(1, 2, 9);
+  const { fx } = makeFx({ views: [v], quality: 'low', ts: 4 });
+  const g = fx.aphris.g, commands = [];
+  for (const name of ['moveTo', 'lineTo', 'lineStyle']) g[name] = (...args) => { commands.push([name, ...args]); return g; };
+  g.clear = () => { commands.length = 0; return g; };
+  const row = { id: 1, path: [[9, 2], [9, 4], [14, 4]], at: 10, mode: 0 };
+  fx.aphris.set([row], 10.1);
+  fx.update(1 / 60);
+  const lines = commands.filter(c => c[0] === 'lineTo');
+  assert.equal(lines.length, 6, 'three passes through two segments, no diagonal per-target beam');
+  const turn = cam.project(4, 9, 0.65), end = cam.project(4, 14, 0.65);
+  assert.deepEqual(lines.slice(0, 2), [['lineTo', turn.x, turn.y], ['lineTo', end.x, end.y]]);
+  const start = cam.project(v.x, v.y, bodyZ(cam, v, SHOT_HEIGHT.launch));
+  assert.deepEqual(commands.find(c => c[0] === 'moveTo'), ['moveTo', start.x, start.y]);
+  const paused = structuredClone(commands);
+  fx.update(1);
+  assert.deepEqual(commands, paused, 'wall time / speed multiplier cannot age a paused beam');
+  fx.aphris.set([row], 10.46);
+  fx.update(DT);
+  assert.equal(commands.length, 0, 'normal pulse ends on displayed time');
+  fx.aphris.set([{ ...row, mode: 2 }], 9.99);
+  fx.update(DT);
+  assert.equal(commands.length, 0, 'S2 waits for Begin delay');
+  fx.aphris.set([{ ...row, mode: 2 }], 15);
+  fx.update(DT);
+  assert.ok(commands.some(c => c[0] === 'lineTo'), 'joining mid-S2 needs no prior fx event, even on low quality');
+  fx.aphris.set([], 15.1);
+  fx.update(DT);
+  assert.equal(commands.length, 0, 'field/snapshot without metadata clears S2');
+  fx.aphris.set([{ ...row, mode: 2 }], 15);
+  v.alive = false;
+  fx.update(DT);
+  assert.equal(commands.length, 0, 'no beam for a dead caster');
+  v.alive = true;
+  fx.clear();
+  fx.update(DT);
+  assert.equal(fx.aphris.has(1), false);
+  assert.equal(commands.length, 0);
+  fx.destroy();
+  assert.ok(g.destroyed, 'controller releases its graphics');
+});
 
 describe('projectile speeds follow the sim', () => {
   test('style.js PROJ mirrors PROJECTILE_SPEEDS for every sim kind (and the boomerang return speed)', () => {
@@ -354,6 +399,23 @@ describe('蕾缪安 S3: lock, bombardShell, bombard', () => {
     assert.equal(fx.locks.length, 0);
   });
 
+  test('a held S3 lock (fx `hold`) waits as long as her skill runs with nothing in range, then LOCK_T after it ends; an unheld lock still times out', () => {
+    // 0.2.0 community report: S3 no longer ends by itself with nothing in her range — it waits with its bullets and locks
+    const { fx, lem } = setup();
+    lem.flags = UF.SKILL;                               // her S3 runs (the snapshot's skill bit)
+    fx.simFx('lock', 8, 10, { id: 21, src: 1, hold: 1 });
+    fx.simFx('lock', 9, 11.5, { id: 23, src: 1 });      // an S2 aim lock: no hold
+    const [held, plain] = fx.locks;
+    run(fx, 20 / 2);                                    // 20 game s at 2×, nothing new from her
+    assert.ok(fx.locks.includes(held) && held.out < 0, 'the held reticle stays while her skill waits');
+    assert.ok(!fx.locks.includes(plain), 'the unheld one timed out after LOCK_T');
+    lem.flags = 0;                                      // the skill ended
+    run(fx, 4 / 2);
+    assert.ok(held.out < 0, 'LOCK_T counts from the skill end');
+    run(fx, 1 / 2 + 0.3);
+    assert.equal(fx.locks.length, 0, 'gone LOCK_T after the skill ended (no shell came)');
+  });
+
   test('a lock sticks to the enemy named in `id` even when its view is a little off the event spot', () => {
     const { fx, e1 } = setup();
     fx.simFx('lock', 9, 10, { id: 21, src: 1 });   // e1 drawn at (8, 10): a fast walker between snapshots
@@ -387,6 +449,19 @@ describe('蕾缪安 S3: lock, bombardShell, bombard', () => {
 });
 
 describe('fx placement, quality, melee, skill', () => {
+  test('Typhon arrow rain is drawn above the map and cleaned up after its short cue', () => {
+    const { fx } = makeFx();
+    const overlay = new fake.P.Container();
+    fx.ctx.layers.vfxOver = overlay;
+    fx.simFx('arrowRain', 8, 10, { r: 1.3 });
+    assert.equal(overlay.children.length, 1);
+    assert.equal(fx.typhonRains.length, 1);
+    fx.updateTyphonRains(0.2);
+    assert.ok(overlay.children[0].alpha > 0 && overlay.children[0].alpha < 1);
+    fx.updateTyphonRains(0.23);
+    assert.equal(overlay.children.length, 0);
+  });
+
   test('_where: on the unit when the fx happens there, else at the event position', () => {
     const caster = unit(1, 2, 10);
     const { fx } = makeFx({ views: [caster] });
@@ -457,4 +532,21 @@ describe('fx placement, quality, melee, skill', () => {
     fx.update(DT);
     fx.destroy();
   });
+});
+
+test('Clemensa S2 water vortex: one view per caster, moves/refreshes, clears', () => {
+  const { fx } = makeFx({ views: [unit(1, 5, 10)] });
+  for (let i = 0; i < 30; i++) {
+    fx.simFx('clemnt-pod', 5 + Math.min(2, i / 15), 10, { src: 1, r: 1.1, dur: 0.15 });
+    fx.update(DT);
+  }
+  assert.equal(fx.waterVortices.views.size, 1, 'ticks refresh one view, not a new ring');
+  const v = fx.waterVortices.views.get(1);
+  assert.ok(v.root.alpha > 0 && v.root.alpha <= 0.78);
+  fx.simFx('clemnt-vortex', 7, 10, { src: 1, r: 1.5, dur: 2 });
+  fx.update(DT);
+  assert.equal(v.x, 7);
+  fx.simFx('clemnt-clear', 0, 0, { src: 1 });
+  assert.equal(fx.waterVortices.views.size, 0);
+  fx.destroy();
 });

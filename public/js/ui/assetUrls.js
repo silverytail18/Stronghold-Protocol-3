@@ -3,9 +3,20 @@
 // (glyph, CSS shape) when null. Only URLs present in the manifest are ever returned, so the client
 // never requests files the asset pipeline did not produce (no 404 noise in the console).
 
-import { skinRecord } from '../../../shared/skins.js';
+import {productIcon} from '../../../shared/product-icons.js';
+import {ROOM_CARD_EXTRAS} from '../../../shared/room-card-extras.js';
 const str = (v) => (typeof v === 'string' && v ? v : null);
 const obj = (v) => (v && typeof v === 'object' ? v : null);
+const roomCardAvatar=chess=>ROOM_CARD_EXTRAS.some(c=>c.charId===chess?.charId)?`/assets/char/avatar/${chess.charId}${chess.isGolden?'_2':''}.png`:null;
+
+/** Skin pictures belong to the effective operator, never the original chess of a stand-in / DIY slot. */
+function skinPicture(m, chess, skinId, field) {
+  if (!skinId) return null;
+  const id = chess?.charId || str(chess?.assets?.[field])?.replace(/_[12]$/, '');
+  const skin = m?.chars?.[id]?.skins?.[skinId];
+  const elite = chess?.isGolden || /_2$/.test(chess?.assets?.[field] || '');
+  return str(elite && skin?.[`${field}E2`]) || str(skin?.[field]) || (field === 'portrait' ? str(skin?.illust) : null);
+}
 
 /** @param {any} m manifest @param {string} key 'group/key' */
 export function uiUrl(m, key) {
@@ -17,16 +28,22 @@ export function uiUrl(m, key) {
  * @param {any} m manifest
  * @param {any} chess chess.json record (or { assets: { avatar } })
  */
-export function chessAvatarUrl(m, chess, skinId=null) {
-  const skin=skinRecord(m,skinId||chess?.skinId,chess?.charId); if(skin?.avatar)return skin.avatar;
+export function chessAvatarUrl(m, chess, { skin = null } = {}) {
+  const picture = skinPicture(m, chess, skin, 'avatar');
+  if (picture) return picture;
   const chars = obj(obj(m)?.chars);
   const id = str(chess?.assets?.avatar) || str(chess?.charId);
   if (!chars || !id) return null;
   if (id.endsWith('_2') && !chars[id]) {
     const base = chars[id.slice(0, -2)];
-    return str(base?.avatarE2) || str(base?.avatar);
+    return str(base?.avatarE2) || str(base?.avatar) || roomCardAvatar(chess);
   }
-  return str(chars[id]?.avatar) || (chess?.charId ? str(chars[chess.charId]?.avatar) : null);
+  // A golden piece whose avatar id is the character key uses that entry's E2 art when it has one.
+  // Official ids are `charId` or `charId_2` (the suffix branch above). Model and voice have no E2
+  // field on the character entry: the composed `spine` / `voice` id is already the form's.
+  const entry = chars[id];
+  if (entry && chess?.isGolden && str(entry.avatarE2)) return str(entry.avatarE2);
+  return str(entry?.avatar) || (chess?.charId ? str(chars[chess.charId]?.avatar) : null) || roomCardAvatar(chess);
 }
 
 /**
@@ -34,12 +51,17 @@ export function chessAvatarUrl(m, chess, skinId=null) {
  * @param {any} m
  * @param {any} chess
  */
-export function chessPortraitUrl(m, chess, skinId=null) {
-  const skin=skinRecord(m,skinId||chess?.skinId,chess?.charId); if(skin?.portrait)return skin.portrait;
+export function chessPortraitUrl(m, chess, { skin = null } = {}) {
+  const picture = skinPicture(m, chess, skin, 'portrait');
+  if (picture) return picture;
   const chars = obj(obj(m)?.chars);
   const id = str(chess?.assets?.portrait);
   if (!chars) return null;
   if (id) {
+    // A golden piece whose portrait id is the character key uses portraitE2 when the entry has one.
+    // An entry with only `portrait` (a custom golden URL included) keeps that URL. Official ids are
+    // `charId_1` / `charId_2` and are not character keys, so they stay on the suffix branches below.
+    if (chars[id]) return (chess?.isGolden ? str(chars[id].portraitE2) : null) || str(chars[id].portrait);
     if (id.endsWith('_2')) {
       const base = chars[id.slice(0, -2)];
       if (base) return str(base.portraitE2) || str(base.portrait);
@@ -50,13 +72,8 @@ export function chessPortraitUrl(m, chess, skinId=null) {
     }
   }
   const byChar = chess?.charId ? chars[chess.charId] : null;
-  if (!byChar) return null;
+  if (!byChar) return ROOM_CARD_EXTRAS.some(c=>c.charId===chess?.charId)?`/assets/char/portrait/${chess.charId}_1.png`:null;
   return (chess?.isGolden ? str(byChar.portraitE2) : null) || str(byChar.portrait);
-}
-
-/** Exact skin illustration used when the source has no separate half-body portrait. */
-export function chessFullPortrait(m, chess, skinId=null) {
-  return skinRecord(m,skinId||chess?.skinId,chess?.charId)?.portraitKind==='illustration';
 }
 
 /** Skill icon of a chess record (manifest `skills[iconId]`, else the empty skill sprite). */
@@ -95,6 +112,12 @@ export function profIconUrl(m, profession) {
   return k ? str(obj(obj(obj(m)?.prof)?.icon)?.[k]) : null;
 }
 
+/** Square profession glyph (manifest `prof.large`: a black glyph on white, drawn as a white one by loadout.css). */
+export function profGlyphUrl(m, profession) {
+  const v = obj(obj(obj(m)?.prof)?.large)?.[String(profession || '').toLowerCase()];
+  return str(v);
+}
+
 /** Sub-profession icon from a chess record (`assets.subProfIcon` = 'sub_<id>_icon'). */
 export function subProfIconUrl(m, chess) {
   const sub = obj(obj(obj(m)?.prof)?.sub);
@@ -106,20 +129,19 @@ export function subProfIconUrl(m, chess) {
 
 /** Bond glyph (white; tint in CSS). */
 export function bondIconUrl(m, bondId) {
-  return bondId ? str(obj(obj(m)?.bonds)?.[bondId]) : null;
+  return bondId ? productIcon(m,'bonds',bondId,str(obj(obj(m)?.bonds)?.[bondId])) : null;
 }
 
 /** Band (strategy) icon. */
 export function bandIconUrl(m, bandId) {
-  return bandId ? str(obj(obj(m)?.bands)?.[bandId]) : null;
+  return bandId ? productIcon(m,'bands',bandId,str(obj(obj(m)?.bands)?.[bandId])) : null;
 }
 
 /** Item icon for an items.json record (by trapId / iconId) or a raw trap id. */
 export function itemIconUrl(m, item) {
   const items = obj(obj(m)?.items);
-  if (!items) return null;
-  if (typeof item === 'string') return str(items[item]);
-  return str(items[item?.iconId]) || str(items[item?.trapId]);
+  if (typeof item === 'string') return productIcon(m,'items',item,str(items?.[item]));
+  const key=item?.iconId||item?.trapId;return productIcon(m,'items',key,str(items?.[item?.iconId]) || str(items?.[item?.trapId]));
 }
 
 /** Enemy icon (manifest keeps fallbacks resolved). */
@@ -131,12 +153,15 @@ export function enemyIconUrl(m, enemyKey) {
   return base && base !== enemyKey ? str(obj(obj(obj(m)?.enemies)?.[base])?.icon) : null;
 }
 
-/** Token avatar, falling back to its owner operator's avatar. */
-export function tokenAvatarUrl(m, tokenId) {
+/** Token avatar: `tokens[id].skins[opts.skin]`, else the token's avatar, else its owner's (docs/SKINS.md). */
+export function tokenAvatarUrl(m, tokenId, opts) {
   const tokens = obj(obj(m)?.tokens);
   const t = tokenId ? obj(tokens?.[tokenId]) : null;
-  if (t?.avatar) return str(t.avatar);
-  if (t?.owner) return str(obj(obj(obj(m)?.chars)?.[t.owner])?.avatar);
+  if (!t) return null;
+  const skin = opts?.skin ? obj(obj(t.skins)?.[String(opts.skin)]) : null;
+  if (skin?.avatar) return str(skin.avatar);
+  if (t.avatar) return str(t.avatar);
+  if (t.owner) return str(obj(obj(obj(m)?.chars)?.[t.owner])?.avatar);
   return null;
 }
 
@@ -185,7 +210,7 @@ export function moduleTypeIconUrl(local, typeName) {
 /**
  * Icon for an m.private.effects entry: { iconKind: 'band'|'choice'|'team'|'item'|'garrison', iconId }.
  * @param {any} m
- * @param {{ iconKind?: string, iconId?: string }} eff
+ * @param {{ iconKind?: string, iconId?: string, data?: {quality?: string} }} eff
  */
 export function effectIconUrl(m, eff) {
   const kind = eff?.iconKind;
@@ -195,5 +220,20 @@ export function effectIconUrl(m, eff) {
   if (kind === 'garrison') return uiUrl(m, `garrisonTypeIcon/${id || 's_icon_bond'}`) || uiUrl(m, 'garrisonTypeIcon/s_icon_bond');
   if (kind === 'team') return uiUrl(m, `buffIcon/${id && id.startsWith('icon_') ? id : 'icon_team_buff'}`);
   if (kind === 'choice') return uiUrl(m, `buffIcon/${id && id.startsWith('icon_') ? id : 'icon_player_buff'}`);
+  if (kind === 'cyclops') {
+    // Emi resolves quality-specific gift art first. Its cyclopsIcon/TFT files are not tracked in that
+    // repository or present in the current signed bundle; use the bundle's official art until provided.
+    const quality = eff?.data?.quality;
+    const qualityId = id?.startsWith('cyclopsIcon/') && quality ? `${id}_${quality}` : id;
+    const exact = uiUrl(m, qualityId) || uiUrl(m, id);
+    if (exact) return exact;
+    const family = id?.startsWith('cyclopsIcon/') ? id.slice('cyclopsIcon/'.length) : null;
+    if (['victoria', 'sargon', 'yan', 'kjerag', 'laterano', 'egir', 'siracusa', 'kazimierz'].includes(family))
+      return bondIconUrl(m, `${family}Ship`) || uiUrl(m, 'garrisonTypeIcon/s_icon_bond');
+    const existing = {economy: 'garrisonTypeIcon/s_icon_gold', interest: 'garrisonTypeIcon/s_icon_gold',
+      refresh: 'shopPanel/refresh_icon', bounty: 'buffIcon/icon_player_buff', morph: 'equipReplace/replace_icon',
+      streak: 'buffIcon/icon_team_buff', risk: 'garrisonTypeIcon/icon_gold', universal: 'garrisonTypeIcon/s_icon_bond'};
+    return uiUrl(m, existing[family]) || uiUrl(m, 'garrisonTypeIcon/s_icon_bond');
+  }
   return id ? uiUrl(m, `buffIcon/${id}`) : null;
 }

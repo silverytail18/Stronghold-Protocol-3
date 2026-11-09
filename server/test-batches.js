@@ -1,5 +1,6 @@
 // Per-match overlays only. Never edit the generated baseline or any player storage.
-import {ROUND_EXTENSION_TOTALS,EXTENSION_SOURCES,EXTENSION_PROFILES,EXTENSION_FLY,EXTENSION_BOSSES,extensionMultipliers} from '../shared/round-extensions.js';
+import {ROUND_EXTENSION_TOTALS,EXTENSION_SOURCES,EXTENSION_PROFILES,EXTENSION_FLY,EXTENSION_BOSSES,EXTENSION_DECISIONS,extensionMultipliers} from '../shared/round-extensions.js';
+import {modeIdFor} from '../shared/constants.js';
 const DIFFICULTIES = ['NORMAL', 'HARD', 'ABYSS'];
 const rounded = n => Math.round(n * 1e6) / 1e6;
 export function strategyConfirmOrder(data) {
@@ -34,6 +35,8 @@ export function extendRounds(data, total) {
   const bosses=EXTENSION_BOSSES[total];
   for (const [modeId,mode] of Object.entries(data.config.modes)) {
     if (!DIFFICULTIES.includes(mode.difficulty) || !['SINGLE', 'MULTI'].includes(mode.type)) continue;
+    // Independent variants can share a difficulty/type without sharing the official round lifecycle.
+    if (modeId !== modeIdFor(mode.type === 'SINGLE' ? 'solo' : 'coop', mode.difficulty)) continue;
     const boss = mode.bossRound, hidden = mode.hiddenRound;
     const bossCfg = structuredClone(mode.rounds[boss]);
     const hiddenCfg = structuredClone(mode.rounds[hidden]);
@@ -64,11 +67,11 @@ export function extendRounds(data, total) {
     mode.bossHpScale = {...mode.bossHpScale, testMultiplier:bosses.main,testMainMultiplier:bosses.main,testHiddenMultiplier:bosses.hidden};
     // Explicit schedules prevent a late draft from falling back to an unintended equipment pool.
     const schedule=data.choices.schedule[modeId];
-    for(const r of [16,20,24]){
+    for(const r of EXTENSION_DECISIONS[total]){
       if(r>=total)continue;
       mode.spRounds=[...new Set([...(mode.spRounds||[]),r])].sort((a,b)=>a-b);
       mode.rounds[r].isSpPrepare=true;
-      const tactic=r===20;
+      const tactic=r===20||r===28;
       schedule.spRounds=[...mode.spRounds];
       schedule.rounds[r]={families:[{family:tactic?'tactic':'supply',weight:1}],cards:mode.type==='SINGLE'?3:6,supplyTiers:[4,6],extensionDecision:true,combatGearOnly:true,
         tacticIds:tactic?data.choices.cards.tactic.filter(c=>c.kind==='ally'&&data.effects[c.effectId]?.buffs?.length&&data.effects[c.effectId].buffs.every(b=>['global_special_choice_gain_equip','global_special_choice_gain_coin','global_special_choice_refresh_free','single_special_choice_gain_bond_chess','global_special_choice_bond_addlayer'].includes(b.key))).map(c=>c.effectId):undefined};

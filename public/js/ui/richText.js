@@ -1,5 +1,4 @@
 import {kazdelCurrentEffect} from '../../../shared/kazdel-description.js';
-import {engineeringDamage} from '../../../shared/rhodes-engineering.js';
 import {testBondEffect} from '../../../shared/test-bond-descriptions.js';
 // Rich-text description formatting (pure, no DOM / Preact — unit-tested in Node).
 //
@@ -166,42 +165,25 @@ export function fillPlaceholders(src, values, formats = []) {
  * @param {number} [layers]
  * @returns {string} rich text (markup kept)
  */
-export function formatBondEffect(bond, layers = 0, tier = null, context = null) {
+export function formatBondEffect(bond, layers = 0,tier=null,context=null) {
   if (!bond || typeof bond !== 'object') return '';
-  if (bond.kazdel) return kazdelCurrentEffect(bond,layers,tier,context);
-  const testText=testBondEffect(bond,layers,tier,context);
-  if(testText!==null)return testText;
-  const src = bond.effectDescByTier?.[tier] || bond.effectDescRaw || bond.effectDesc || '';
+  if(bond.kazdel)return kazdelCurrentEffect(bond,layers,tier,context);
+  const testText=testBondEffect(bond,layers,tier,context);if(testText!==null)return testText;
+  const src = bond.effectDescRaw || bond.effectDesc || '';
   const params = Array.isArray(bond.effectDescParams) ? bond.effectDescParams : [];
   const bb = bond.bb && typeof bond.bb === 'object' ? bond.bb : {};
-  const rawLayers = Number.isFinite(Number(layers)) ? Math.max(0, Number(layers)) : 0;
-  const L = Number.isFinite(bond.effectLayerCap) ? Math.min(rawLayers,bond.effectLayerCap) : rawLayers;
+  const L = Number.isFinite(Number(layers)) ? Math.max(0, Number(layers)) : 0;
   const values = [];
   const formats = [];
   for (const p of params) {
     if (!p || !Number.isInteger(p.index)) continue;
     const base = Number(bb[p.base]) || 0;
     const per = Number(bb[p.perStack]) || 0;
-    values[p.index] = base + per * L;
+    // a layer-scaled chance (迅捷 / 不屈 base_prob + prob_per_stack, 奇迹 baseprob + prob) stops at 100 % like the sim's
+    // min(1, …) (bonds/addon procChance, meta.js 奇迹) — the card read 124 % at 266 layers (GitHub #108)
+    const chance = /prob/i.test(`${p.base}|${p.perStack}`);
+    values[p.index] = chance ? Math.max(0, Math.min(1, base + per * L)) : base + per * L;
     formats[p.index] = p.format || '0';
   }
-  if(bond.engineering){
-    if(!(tier>=1))return '未激活：在场至少3名罗德岛成员后生效。';
-    const e=bond.engineering,i=tier>=3?1:0,known=Number.isFinite(context?.atk),A=known?Math.max(0,context.atk):0;
-    const prep=bond.prepGrowth||{base:[1,4,7],professions:[3,4,5],composition:[1,4,4]},pi=Math.min(2,tier-1);
-    const prepText='休整基础+'+prep.base[pi]+'层，至少'+prep.professions[pi]+'职业额外+'+prep.composition[pi]+'层。';
-    const n=engineeringDamage(e,L,A,tier),v=(x,fmt='0.0%')=>'<@ba.vup>'+formatPlaceholder(x,fmt)+'</>';
-    const lines=['攻击力+'+v(values[0])+'，最大生命+'+v(values[1])+'。','1—3阶首次部署补给8／12点技力，与乐队／终端补差额。'];
-    if(tier>=2){
-      const mode=context?.live===false?'开战预计':'当前',damage=known?v(n.fire,'0'):'待获取';
-      lines.push('工程火力：每'+e.interval[i]+'秒'+(i?'物理／法术／真实各一发':'物理／法术各一发')+'；预告'+e.fuse[i]+'秒，半径'+e.radius[i]+'格，'+(i?'范围内全部敌人':'每发最多'+e.maxTargets[i]+'个敌人')+'。');
-      lines.push(mode+'单发伤害：物理 '+damage+'，法术 '+damage+(i?'，真实 '+(known?v(n.fire*e.trueScale,'0'):'待获取'):'')+'（减伤前）。');
-      lines.push('当前炮火底伤 '+v(n.base,'0')+'，攻击力系数 '+v(n.atkScale)+'；'+mode+'成员攻击力总和 '+(known?v(A,'0'):'待获取')+'。');
-      if(!known)lines.push('当前攻击力信息尚未获取，伤害数值更新后显示。');
-      lines.push('主锁定敌人预告期间减速50%；各弹优先不同目标，固定落点。');
-      lines.push(prepText+'有效炮击每轮+2、每场上限'+(i?30:24)+'；角色成长另计。');
-    }else lines.push(prepText+'角色成长另计。');
-    return lines.join('\n');
-  }
-  return fillPlaceholders(src,values,formats);
+  return fillPlaceholders(src, values, formats);
 }

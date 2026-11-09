@@ -1,0 +1,216 @@
+{
+  "source": "read-only installed official client; upstream Spine extraction",
+  "client": "26-10-20-11-10-38-04170990",
+  "attempted": 23,
+  "recovered": 23,
+  "skins": [
+    {
+      "charId": "char_002_amiya",
+      "skinId": "char_1037_amiya3@sale#13",
+      "faces": [
+        "front",
+        "back"
+      ],
+      "source": "dyn/battle/prefabs/skins/character/char_1037_amiya3/char_1037_amiya3_sale#13.prefab"
+    },
+    {
+      "charId": "char_002_amiya",
+      "skinId": "char_1001_amiya2@sale#16",
+      "faces": [
+        "front",
+        "back"
+      ],
+      "source": "dyn/battle/prefabs/skins/character/char_1001_amiya2/char_1001_amiya2_sale#16.prefab"
+    },
+    {
+      "charId": "char_002_amiya",
+      "skinId": "char_1001_amiya2@casc#1",
+      "faces": [
+        "front",
+        "back"
+      ],
+      "source": "dyn/battle/prefabs/skins/character/char_1001_amiya2/char_1001_amiya2_casc#1.prefab"
+    },
+    {
+      "charId": "char_1033_swire2",
+      "skinId": "char_1033_swire2@ambienceSynesthesia#4",
+      "faces": [
+        "front",
+        "back"
+      ],
+      "source": "dyn/battle/prefabs/skins/character/char_1033_swire2/char_1033_swire2_ambiencesynesthesia#4.prefab"
+    },
+    {
+      "charId": "char_1046_sbell2",
+      "skinId": "char_1046_sbell2@ambienceSynesthesia#8",
+      "faces": [
+        "front",
+        "back"
+      ],
+      "source": "dyn/battle/prefabs/skins/character/char_1046_sbell2/char_1046_sbell2_ambiencesynesthesia#8.prefab"
+    },
+    {
+      "charId": "char_172_svrash",
+      "skinId": "char_172_svrash@ambienceSynesthesia#4",
+      "faces": [
+        "front",
+        "back"
+      ],
+      "source": "dyn/battle/prefabs/skins/character/char_172_svrash/char_172_svrash_ambiencesynesthesia#4.prefab"
+    },
+    {
+      "charId": "char_202_demkni",
+      "skinId": "char_202_demkni@ambienceSynesthesia#7",
+      "faces": [
+        "front",
+        "back"
+      ],
+      "source": "dyn/battle/prefabs/skins/character/char_202_demkni/char_202_demkni_ambiencesynesthesia#7.prefab"
+    },
+    {
+      "charId": "char_213_mostma",
+      "skinId": "char_213_mostma@ambienceSynesthesia#6",
+      "faces": [
+        "front",
+        "back"
+      ],
+      "source": "dyn/battle/prefabs/skins/character/char_213_mostma/char_213_mostma_ambiencesynesthesia#6.prefab"
+    },
+    {
+      "charId": "char_249_mlyss",
+      "skinId": "char_249_mlyss@ambienceSynesthesia#6",
+      "faces": [
+        "front",
+        "back"
+      ],
+      "source": "dyn/battle/prefabs/skins/character/char_249_mlyss/char_249_mlyss_ambiencesynesthesia#6.prefab"
+    },
+    {
+      "charId": "char_311_mudrok",
+      "skinId": "char_311_mudrok@ambienceSynesthesia#2",
+      "faces": [
+        "front",
+        "back"
+      ],
+      "source": "dyn/battle/prefabs/skins/character/char_311_mudrok/char_311_mudrok_ambiencesynesthesia#2.prefab"
+    },
+    {
+      "charId": "char_350_surtr",
+      "skinId": "char_350_surtr@ambienceSynesthesia#6",
+      "faces": [
+        "front",
+        "back"
+      ],
+      "source": "dyn/battle/prefabs/skins/character/char_350_surtr/char_350_surtr_ambiencesynesthesia#6.prefab"
+    },
+    {
+      "charId": "char_4009_irene",
+      "skinId": "char_4009_irene@ambienceSynesthesia#3",
+      "faces": [
+        "front",
+        "back"
+      ],
+      "source": "dyn/battle/prefabs/skins/character/char_4009_irene/char_4009_irene_ambiencesynesthesia#3.prefab"
+    },
+    {
+      "charId": "char_4027_heyak",
+      "skinId": "char_4027_heyak@ambienceSynesthesia#4",
+      "faces": [
+        "front",
+        "back"
+      ],
+      "source": "dyn/battle/prefabs/skins/character/char_4027_heyak/char_4027_heyak_ambiencesynesthesia#4.prefab"
+    },
+    {
+      "charId": "char_4042_lumen",
+      "skinId": "char_4042_lumen@ambienceSynesthesia#3",
+      "faces": [
+        "front",
+        "back"
+      ],
+      "source": "dyn/battle/prefabs/skins/character/char_4042_lumen/char_4042_lumen_ambiencesynesthesia#3.prefab"
+    },
+    {
+      "charId": "char_4072_ironmn",
+      "skinId": "char_4072_ironmn@ambienceSynesthesia#5",
+      "faces": [
+        "front",
+        "back"
+      ],
+      "source": "dyn/battle/prefabs/skins/character/char_4072_ironmn/char_4072_ironmn_ambiencesynesthesia#5.prefab"
+    },
+    {
+      "charId": "char_4080_lin",
+      "skinId": "char_4080_lin@littlePony#1",
+      "faces": [
+        "front",
+        "back"
+      ],
+      "source": "dyn/battle/prefabs/skins/character/char_4080_lin/char_4080_lin_littlepony#1.prefab"
+    },
+    {
+      "charId": "char_4087_ines",
+      "skinId": "char_4087_ines@ambienceSynesthesia#5",
+      "faces": [
+        "front",
+        "back"
+      ],
+      "source": "dyn/battle/prefabs/skins/character/char_4087_ines/char_4087_ines_ambiencesynesthesia#5.prefab"
+    },
+    {
+      "charId": "char_4133_logos",
+      "skinId": "char_4133_logos@ambienceSynesthesia#6",
+      "faces": [
+        "front",
+        "back"
+      ],
+      "source": "dyn/battle/prefabs/skins/character/char_4133_logos/char_4133_logos_ambiencesynesthesia#6.prefab"
+    },
+    {
+      "charId": "char_4138_narant",
+      "skinId": "char_4138_narant@littlePony#1",
+      "faces": [
+        "front",
+        "back"
+      ],
+      "source": "dyn/battle/prefabs/skins/character/char_4138_narant/char_4138_narant_littlepony#1.prefab"
+    },
+    {
+      "charId": "char_4146_nymph",
+      "skinId": "char_4146_nymph@ambienceSynesthesia#6",
+      "faces": [
+        "front",
+        "back"
+      ],
+      "source": "dyn/battle/prefabs/skins/character/char_4146_nymph/char_4146_nymph_ambiencesynesthesia#6.prefab"
+    },
+    {
+      "charId": "char_4193_lemuen",
+      "skinId": "char_4193_lemuen@ambienceSynesthesia#7",
+      "faces": [
+        "front",
+        "back"
+      ],
+      "source": "dyn/battle/prefabs/skins/character/char_4193_lemuen/char_4193_lemuen_ambiencesynesthesia#7.prefab"
+    },
+    {
+      "charId": "char_423_blemsh",
+      "skinId": "char_423_blemsh@littlePony#1",
+      "faces": [
+        "front",
+        "back"
+      ],
+      "source": "dyn/battle/prefabs/skins/character/char_423_blemsh/char_423_blemsh_littlepony#1.prefab"
+    },
+    {
+      "charId": "char_450_necras",
+      "skinId": "char_450_necras@ambienceSynesthesia#7",
+      "faces": [
+        "front",
+        "back"
+      ],
+      "source": "dyn/battle/prefabs/skins/character/char_450_necras/char_450_necras_ambiencesynesthesia#7.prefab"
+    }
+  ],
+  "remaining": []
+}

@@ -1,4 +1,3 @@
-import {appPage} from '../helpers/appPage.mjs';
 // test/render/feedback1-forms.browser.test.js — player reports after 0.1.0 (#5, #8) in headless Chrome: the real sim runs
 // in the page (the client runner's loadBrowserSim) and feeds the render demo's field view on 战场#01 (render/app.js fx
 // 'phase' / `form` → render/units.js setForm / FORMS):
@@ -188,7 +187,7 @@ describe('player reports after 0.1.0: the models follow the knock-out forms (hea
   before(async () => {
     const puppeteer = (await import('puppeteer-core')).default;
     const { startServer } = await import('../../server/index.js');
-    srv = await startServer({ auth: false, port: 0, host: '127.0.0.1', quiet: true });
+    srv = await startServer({ port: 0, host: '127.0.0.1', quiet: true });
     browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--no-first-run'] });
     mkdirSync(OUT, { recursive: true });
   });
@@ -198,7 +197,7 @@ describe('player reports after 0.1.0: the models follow the knock-out forms (hea
   });
 
   async function page() {
-    const p = await appPage(await browser.newPage());
+    const p = await browser.newPage();
     const problems = [];
     p.on('console', (m) => { if (m.type() === 'error') problems.push(`console: ${m.text()}`); });
     p.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));

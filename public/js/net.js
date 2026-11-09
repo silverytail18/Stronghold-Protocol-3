@@ -31,21 +31,27 @@
 
 import { PROTOCOL_VERSION, ERR_TEXT } from '../../shared/constants.js';
 import { validateC2S } from '../../shared/protocol.js';
+import { N_ } from '../../shared/i18n.js';
+import { STATE_DELTA_VERSION, StateReceiver } from '../../shared/stateDelta.js';
+import { requestId } from './requestId.js';
+import { PeerTransport } from './p2p.js';
 
 export const REQUEST_TIMEOUT_MS = 8000;
 export const HELLO_TIMEOUT_MS = 8000;
 export const PING_INTERVAL_MS = 4000;
 export const DEAD_AFTER_MS = 15000;
+/** Minimum gap between two `state.resync` requests: a gap in one channel is answered by the full frame of the next one. */
+export const RESYNC_GAP_MS = 1000;
 export const BACKOFF = Object.freeze({ base: 500, factor: 2, max: 10000, jitter: 0.2 });
 
 /** Client-side error codes (in addition to shared ERR codes). */
 export const CLIENT_ERR_TEXT = Object.freeze({
-  TIMEOUT: '请求超时，请重试',
-  OFFLINE: '未连接到服务器',
-  DISCONNECTED: '连接已断开，请重试',
-  CLOSED: '连接已关闭',
-  REPLACED: '该身份已在其他页面登录',
-  VERSION: '客户端版本与服务器不一致，请刷新页面',
+  TIMEOUT: N_('请求超时，请重试'),
+  OFFLINE: N_('未连接到服务器'),
+  DISCONNECTED: N_('连接已断开，请重试'),
+  CLOSED: N_('连接已关闭'),
+  REPLACED: N_('该身份已在其他页面登录'),
+  VERSION: N_('客户端版本与服务器不一致，请刷新页面'),
 });
 
 /** Server close code: the session was taken over by another socket (server/net.js CLOSE.REPLACED). */
@@ -62,7 +68,7 @@ const QUIET_SWAP_MIN_AGE_MS = 5000;
  * @returns {string}
  */
 export function errorText(code, msg) {
-  return ERR_TEXT[code] || CLIENT_ERR_TEXT[code] || (typeof msg === 'string' && msg) || String(code || '未知错误');
+  return ERR_TEXT[code] || CLIENT_ERR_TEXT[code] || (typeof msg === 'string' && msg) || String(code || N_('未知错误'));
 }
 
 /** Error thrown/rejected by requests. `code` is an ERR code or a CLIENT_ERR_TEXT key. */
@@ -70,7 +76,7 @@ export class NetError extends Error {
   /** @param {string} code @param {string} [msg] server text @param {string} [detail] server developer detail */
   constructor(code, msg, detail) {
     const versionMismatch = typeof detail === 'string' && /version/i.test(detail);
-    super(versionMismatch ? CLIENT_ERR_TEXT.VERSION : errorText(code, msg));
+    super(versionMismatch ? CLIENT_ERR_TEXT.VERSION : code === 'BAD_TARGET' && typeof detail === 'string' && detail ? detail.slice(0,240) : errorText(code, msg));
     this.name = 'NetError';
     this.code = String(code || 'INTERNAL');
     this.serverMsg = msg ?? null;
@@ -113,14 +119,17 @@ export class Net {
    * @param {string} [opts.url] socket URL (default: derived from location at connect time)
    * @param {any} [opts.WebSocket] WebSocket constructor (default: globalThis.WebSocket)
    * @param {() => (string|null)} [opts.getToken] reconnect-token provider for `hello`
+   * @param {() => ({ noReplace: boolean, claimAt?: number })} [opts.getTokenClaim] local ownership for this hello
    * @param {() => number} [opts.now]
    * @param {() => number} [opts.random]
    * @param {{setTimeout: Function, clearTimeout: Function, setInterval: Function, clearInterval: Function}} [opts.timers]
+   * @param {object} [opts.p2p] optional WebRTC transport dependencies; enabled:false opts out
    */
   constructor(opts = {}) {
     this.url = opts.url || null;
     this.WS = opts.WebSocket || null;
     this.getToken = typeof opts.getToken === 'function' ? opts.getToken : () => null;
+    this.getTokenClaim = typeof opts.getTokenClaim === 'function' ? opts.getTokenClaim : () => null;
     this.now = opts.now || (() => Date.now());
     this.random = opts.random || Math.random;
     this.timers = opts.timers || {
@@ -156,9 +165,17 @@ export class Net {
     this._helloTimer = null;
     this._helloRid = null;
     this._helloSentName = null;
+    this._helloToken = null;
     this._lastRx = 0;
     this._unansweredSince = null; // time of the oldest ping sent since the last inbound frame
     this._clockSamples = [];   // [{ offset, rtt }]
+    // State-delta decoding (shared/stateDelta.js): only ever fed frames a server chose to send this client after its
+    // hello named STATE_DELTA_VERSION. A missed frame blocks that channel, and one resync request per RESYNC_GAP_MS
+    // asks for a full one — the server answers it like a repeated hello (and throttles it the same way).
+    this._receiver = new StateReceiver();
+    this._stateRoom = null;
+    this._resyncAt = 0;        // epoch ms of the last resync request we sent
+    this.peers = new PeerTransport(this, opts.p2p);
   }
 
   // ---- events ----------------------------------------------------------------------------------
@@ -253,8 +270,9 @@ export class Net {
   }
 
   /** Drop the current socket and reconnect immediately (fresh hello). */
-  reconnectNow() {
+  reconnectNow(name = this.name) {
     if (this._manualClose) return;
+    this.name = name;
     const ws = this.ws;
     this._teardownSocket();
     try { ws?.close(4000, 'reconnect'); } catch { /* ignore */ }
@@ -304,12 +322,6 @@ export class Net {
     this._teardownSocket();
     this._failPending('DISCONNECTED', false);
     if (this._manualClose) { this._setStatus('closed'); return; }
-    if (ev?.code === 4003) {
-      this._manualClose = true;
-      this._setStatus('closed');
-      this._emit('auth-required');
-      return;
-    }
     if (ev && ev.code === CLOSE_REPLACED) {
       // Another tab/socket took this session over: don't fight it; the user may reconnect manually.
       this._manualClose = true;
@@ -353,6 +365,11 @@ export class Net {
     this._clearTimer('_helloTimer', 'clearTimeout');
     this._helloRid = null;
     this._helloSentName = null;
+    // A new socket is a new negotiation (server/net.js onHelloMsg re-baselines per connection): the sequences the old
+    // one used mean nothing here, so a stale baseline must never make the first full frame of the new one look old.
+    this._receiver?.reset();
+    this._stateRoom = null;
+    this._resyncAt = 0;
   }
 
   _clearTimer(field, fn) {
@@ -367,10 +384,18 @@ export class Net {
   _sendHello() {
     if (!this.name) return;
     const rid = this._nextRid();
-    const msg = { t: 'hello', rid, name: this.name, version: PROTOCOL_VERSION, testContentVersion: 32 };
+    // `delta` says this build decodes `m.state` frames (shared/stateDelta.js). A server that does not speak it ignores
+    // the field, and the client then keeps receiving the plain m.public / m.private frames it always got.
+    const msg = { t: 'hello', rid, name: this.name, version: PROTOCOL_VERSION, delta: STATE_DELTA_VERSION };
     let token = null;
     try { token = this.getToken(); } catch { token = null; }
-    if (typeof token === 'string' && token.length > 0 && token.length <= 64) msg.token = token;
+    if (typeof token === 'string' && token.length > 0 && token.length <= 64) {
+      msg.token = token;
+      const claim = this.getTokenClaim();
+      if (claim?.noReplace) msg.noReplace = true;
+      if (Number.isFinite(claim?.claimAt)) msg.claimAt = claim.claimAt;
+    }
+    this._helloToken = token;
     this._helloRid = rid;
     this._helloSentName = this.name;
     if (this.status !== 'handshaking') this._setStatus('handshaking');
@@ -433,6 +458,7 @@ export class Net {
     return new Promise((resolve, reject) => {
       if (t === 'hello') { reject(new NetError('BAD_MSG', 'use setName() for hello')); return; }
       const rid = this._nextRid();
+      if (t.startsWith('g.mizuki.') && !fields.opId) fields = {...fields, opId: requestId()};
       const msg = { ...(fields && typeof fields === 'object' ? fields : {}), t, rid };
       const bad = validateC2S(msg);
       if (bad) {
@@ -522,6 +548,19 @@ export class Net {
 
   // ---- incoming --------------------------------------------------------------------------------
 
+  /**
+   * Ask the server for one full state frame (the answer to a gap in the delta stream). Rate-limited: one request per
+   * RESYNC_GAP_MS covers every channel, because the server re-sends the whole room state at once. Silent while offline —
+   * the next welcome resyncs anyway.
+   */
+  requestResync() {
+    const now = this.now();
+    if (now - this._resyncAt < RESYNC_GAP_MS) return;
+    this._resyncAt = now;
+    try { this.request('state.resync').catch(() => { /* the next full frame fixes it, or the room resyncs */ }); }
+    catch { /* offline: the reconnect resyncs the room from scratch */ }
+  }
+
   _onMessage(data) {
     this._lastRx = this.now();
     this._unansweredSince = null;
@@ -533,11 +572,32 @@ export class Net {
       return;
     }
     if (!msg || typeof msg !== 'object' || Array.isArray(msg) || typeof msg.t !== 'string') return;
+    // State-delta transport (shared/stateDelta.js): a negotiated server may compress the two big views into `m.state`
+    // frames. They are decoded here and continue as the ordinary m.public / m.private messages every listener already
+    // handles, so nothing above this line notices the difference. A frame that cannot be applied (a gap, a lost or
+    // reordered delta, an older full frame) is dropped and one rate-limited `state.resync` asks for a full one.
+    if (msg.t === 'room.closed' || (msg.t === 'room.state' && msg.code !== this._stateRoom)) {
+      this._stateRoom = msg.t === 'room.state' ? msg.code : null;
+      this._receiver.reset();
+      this._resyncAt = 0;
+    }
+    if (msg.t === 'm.state') {
+      const { message, resync } = this._receiver.receive(msg);
+      if (resync) this.requestResync();
+      if (message == null) return;
+      msg = message;
+    }
+    // Peer delivery (public/js/p2p.js): every snapshot — WebSocket or decoded from m.state — passes the same
+    // server-issued delivery order, so a delayed frame from either transport cannot overwrite newer state.
+    if (msg.t === 'm.public' && !this.peers.directSnapshot(msg)) return;
     const { t } = msg;
     const rid = msg.rid;
     const isHelloError = t === 'error' && rid != null && rid === this._helloRid;
 
     if (t === 'welcome') {
+      // A local ownership election can revoke a token after its hello went onto the wire.
+      // Do not publish or persist that stale welcome, even if the server had already accepted it.
+      if (this._helloToken !== this.getToken()) { this.reconnectNow(); return; }
       this._onWelcome(msg);
     } else if (t === 'pong') {
       this._onPong(msg);
@@ -568,6 +628,18 @@ export class Net {
   }
 
   // ---- heartbeat & clock -----------------------------------------------------------------------
+
+  /** A verified public snapshot; peer traffic never answers a WebSocket heartbeat or request. */
+  acceptPeerSnapshot(msg) {
+    const continuingHandshake = this.status === 'handshaking' && this.ws
+      && this.peers.sessionWs === this.ws && this.peers.sessionPlayerId === this.playerId;
+    if ((this.status !== 'online' && !continuingHandshake) || msg?.t !== 'm.public') return;
+    if (Number.isFinite(msg.serverNow) && !this.clockSynced) {
+      this._addClockSample(msg.serverNow + (this.ping ?? 0) / 2 - this.now(), Infinity);
+    }
+    this._emit('m.public', msg);
+    this._emit('*', msg);
+  }
 
   _startHeartbeat() {
     this._clearTimer('_pingTimer', 'clearInterval');
@@ -659,12 +731,17 @@ export class Net {
 // browsers throttle background-tab timers to ~1/min, which would make a busy background tab look
 // dead. A duplicated tab (sessionStorage is copied) therefore drops the copied token and becomes a
 // new player instead of kicking the original tab off its session (server close 4001). Two tabs
-// resolving at the same moment tie-break on tab id. Without BroadcastChannel a tab only ever uses
+// resolving shared candidates at the same moment tie-break on tab id. An existing session token
+// never falls back to another recent identity. Its welcome stamp survives reload; an earlier
+// welcome outranks a later claimant, then a live holder wins over its duplicate, then tab id.
+// Without BroadcastChannel a tab only ever uses
 // its own token (never another tab's), so it can't steal a live session either.
 
 const K_NAME = 'sp.name';
 const K_TOKEN = 'sp.token';      // sessionStorage: this tab's token
+const K_WELCOME = 'sp.tokenWelcome'; // sessionStorage: { hash, at } from the first welcome for this token
 const K_RECENT = 'sp.tokens';    // localStorage: this browser's recent tokens, most recent first
+const K_MATCHES = 'sp.matches'; // local metadata for explicit recovery of another closed tab's seat
 const K_ENTERED = 'sp.entered';  // sessionStorage: this tab passed the title screen
 const RECENT_MAX = 4;
 const TOKEN_MAX_LEN = 64;        // protocol limit for hello.token
@@ -718,20 +795,31 @@ function defaultChannel() {
  * Create the identity helper (nickname, "entered" flag and reconnect-token selection; see above).
  * @param {{ local?: Storage|null, session?: Storage|null, tabId?: string,
  *           channel?: { postMessage: Function, addEventListener?: Function, onmessage?: any } | null,
- *           setTimeout?: (fn: Function, ms: number) => any, queryMs?: number }} [deps]
+ *           setTimeout?: (fn: Function, ms: number) => any, queryMs?: number, now?: () => number,
+ *           onYield?: () => void }} [deps]
  */
 export function createIdentity(deps = {}) {
   const local = deps.local !== undefined ? deps.local : safeStorage('localStorage');
   const session = deps.session !== undefined ? deps.session : safeStorage('sessionStorage');
   const tabId = deps.tabId || Math.random().toString(36).slice(2) + Date.now().toString(36);
   const setTimer = deps.setTimeout || ((fn, ms) => globalThis.setTimeout(fn, ms));
+  const now = deps.now || (() => Date.now());
   const queryMs = Number.isFinite(deps.queryMs) && deps.queryMs >= 0 ? deps.queryMs : CLAIM_QUERY_MS;
 
   let channel = null;
   let initPromise = null;
   let initialized = false;
+  let resumeBusy = false;
   let current = null;    // token this tab uses (null = let the server create a session)
-  let resolving = null;  // { taken: Set<hash> } while init() waits for claims
+  let resolving = null;  // { hashes: Set<hash>, taken: Set<hash> } while init() waits for claims
+  let owned = sget(session, K_TOKEN);
+  if (!isToken(owned)) owned = null;
+  let welcomeAt = null;
+  try {
+    const saved = JSON.parse(sget(session, K_WELCOME) || 'null');
+    if (owned && saved?.hash === tokenHash(owned) && Number.isFinite(saved.at) && saved.at >= 0) welcomeAt = saved.at;
+  } catch { /* old / damaged storage: the session token still claims its seat */ }
+  let welcomed = false; // this document has received welcome (a copied stamp alone is not a live holder)
 
   const readRecent = () => {
     try {
@@ -743,22 +831,75 @@ export function createIdentity(deps = {}) {
   };
   const writeRecent = (list) => sset(local, K_RECENT, JSON.stringify([...new Set(list)].slice(0, RECENT_MAX)));
 
+  const readMatches = () => {
+    try {
+      const v = JSON.parse(sget(local, K_MATCHES) || '{}');
+      return v && typeof v === 'object' && !Array.isArray(v) ? v : {};
+    } catch { return {}; }
+  };
+  const rememberMatch = (info) => {
+    if (!current) return;
+    const old = readMatches(), next = {};
+    for (const token of readRecent()) {
+      const hash = tokenHash(token);
+      const v = token === current ? info : old[hash];
+      if (v && typeof v.name === 'string' && typeof v.code === 'string') {
+        next[hash] = { name: v.name.slice(0, 64), code: v.code.slice(0, 32) };
+      }
+    }
+    sset(local, K_MATCHES, JSON.stringify(next));
+  };
+
   const post = (msg) => {
     try { channel?.postMessage({ ...msg, from: tabId }); } catch { /* channel closed */ }
+  };
+
+  // Session ownership is already valid while init is waiting. Shared candidates, including an
+  // explicit resume, remain tentative until saveToken receives the server's welcome.
+  const claimFor = (hash) => {
+    if (owned && tokenHash(owned) === hash) return { owned: true, at: welcomeAt, live: welcomed };
+    if ((current && tokenHash(current) === hash) || resolving?.hashes.has(hash)) return { owned: false, at: null, live: false };
+    return null;
+  };
+  const peerWins = (peer, from, ours) => {
+    if (!peer || !ours) return true; // an older client answering "mine" is conservatively treated as live
+    const a = Number.isFinite(peer.at) && peer.at >= 0 ? peer.at : Infinity;
+    const b = Number.isFinite(ours.at) && ours.at >= 0 ? ours.at : Infinity;
+    if (a !== b) return a < b;
+    if (!!peer.owned !== !!ours.owned) return !!peer.owned;
+    if (!!peer.live !== !!ours.live) return !!peer.live;
+    return from < tabId;
+  };
+  const yieldCandidate = (hash) => {
+    resolving?.taken.add(hash);
+    // The original page can reappear after resume's query but before its hello. Keep our old
+    // session in storage and give back the tentative selection immediately in that interval.
+    if (current && tokenHash(current) === hash) {
+      if (current === owned) {
+        owned = null; welcomeAt = null; welcomed = false;
+        sdel(session, K_WELCOME);
+      }
+      current = owned;
+      if (owned) sset(session, K_TOKEN, owned);
+      else sdel(session, K_TOKEN);
+      if (initialized) deps.onYield?.();
+    }
   };
 
   function onChannelMessage(ev) {
     const m = ev && ev.data;
     if (!m || typeof m !== 'object' || m.from === tabId || typeof m.from !== 'string') return;
     if (m.type === 'who' && Array.isArray(m.hashes)) {
-      if (current) {
-        const h = tokenHash(current);
-        if (m.hashes.includes(h)) post({ type: 'mine', hash: h, to: m.from });
+      for (const h of m.hashes) {
+        if (typeof h !== 'string') continue;
+        const ours = claimFor(h);
+        if (!ours) continue;
+        const peer = m.claims?.[h] || { owned: false, at: null, live: false };
+        if (peerWins(peer, m.from, ours)) yieldCandidate(h);
+        else post({ type: 'mine', hash: h, claim: ours, to: m.from });
       }
-      // Another tab is choosing at the same time: the smaller tab id has precedence.
-      if (resolving && m.from < tabId) for (const h of m.hashes) if (typeof h === 'string') resolving.taken.add(h);
-    } else if (m.type === 'mine' && resolving && m.to === tabId && typeof m.hash === 'string') {
-      resolving.taken.add(m.hash);
+    } else if (m.type === 'mine' && m.to === tabId && typeof m.hash === 'string') {
+      if (peerWins(m.claim, m.from, claimFor(m.hash))) yieldCandidate(m.hash);
     }
   }
 
@@ -768,13 +909,16 @@ export function createIdentity(deps = {}) {
       if (typeof channel.addEventListener === 'function') channel.addEventListener('message', onChannelMessage);
       else channel.onmessage = onChannelMessage;
     }
-    const own = sget(session, K_TOKEN);
-    const ownOk = isToken(own) ? own : null;
     // Without a channel we cannot tell whether a shared token is in use: never adopt one.
-    const candidates = [...new Set([ownOk, ...(channel ? readRecent() : [])].filter(isToken))];
-    if (!channel || candidates.length === 0) return ownOk;
-    resolving = { taken: new Set() };
-    post({ type: 'who', hashes: candidates.map(tokenHash) });
+    const candidates = owned ? [owned] : channel ? [...new Set(readRecent())] : [];
+    if (!channel || candidates.length === 0) return owned;
+    return queryCandidates(candidates);
+  }
+
+  async function queryCandidates(candidates) {
+    resolving = { hashes: new Set(candidates.map(tokenHash)), taken: new Set() };
+    post({ type: 'who', hashes: [...resolving.hashes],
+      claims: Object.fromEntries([...resolving.hashes].map((h) => [h, claimFor(h)])) });
     await new Promise((r) => setTimer(r, queryMs));
     const { taken } = resolving;
     resolving = null;
@@ -791,16 +935,45 @@ export function createIdentity(deps = {}) {
     init() {
       if (!initPromise) {
         initPromise = resolveToken().catch(() => null).then((pick) => {
-          const own = sget(session, K_TOKEN);
-          if (pick) sset(session, K_TOKEN, pick);
-          else if (own) sdel(session, K_TOKEN); // duplicated tab: the copied token belongs to a live tab
           // A welcome may already have set a token while we were waiting: that one wins.
-          if (!current) current = pick;
+          if (!welcomed) {
+            current = pick;
+            if (pick) sset(session, K_TOKEN, pick);
+            else {
+              owned = null; welcomeAt = null;
+              sdel(session, K_TOKEN); sdel(session, K_WELCOME);
+            }
+          }
           initialized = true;
           return current;
         });
       }
       return initPromise;
+    },
+    /** Record only display metadata; the existing recent-token ring remains the authority. */
+    rememberMatch,
+    recoverable() {
+      const matches = readMatches();
+      return readRecent().filter((token) => token !== current).flatMap((token) => {
+        const hash = tokenHash(token), v = matches[hash];
+        return v && typeof v.name === 'string' && typeof v.code === 'string'
+          ? [{ id: hash, name: v.name.slice(0, 64), code: v.code.slice(0, 32) }] : [];
+      });
+    },
+    /** Explicit recovery only. Recheck live claims immediately before selecting a saved seat. */
+    async resume(id) {
+      await this.init();
+      if (!channel || resumeBusy) return false;
+      const token = readRecent().find((t) => t !== current && tokenHash(t) === id);
+      if (!token || !this.recoverable().some((m) => m.id === id)) return false;
+      resumeBusy = true;
+      try {
+        const pick = await queryCandidates([token]);
+        if (!pick) return false;
+        current = pick;
+        return true;
+      } catch { return false; }
+      finally { resumeBusy = false; }
     },
     /** @returns {string} remembered player name ('' if none) */
     loadName: () => (sget(local, K_NAME) || '').slice(0, 64),
@@ -813,18 +986,36 @@ export function createIdentity(deps = {}) {
       const own = sget(session, K_TOKEN);
       return isToken(own) ? own : null;
     },
+    /** A shared candidate must never replace a connected session, including a hello already in flight. */
+    getTokenClaim() {
+      return current === owned && owned
+        ? { noReplace: false, ...(welcomeAt != null ? { claimAt: welcomeAt } : {}) }
+        : { noReplace: true };
+    },
+    /** Only this page gives up the rejected claim; the shared recovery list belongs to all tabs. */
+    rejectToken() {
+      if (current) yieldCandidate(tokenHash(current));
+    },
     /** @param {string} token from `welcome` */
     saveToken(token) {
       if (!isToken(token)) return;
+      if (current !== token) rememberMatch(null);
+      if (owned !== token || welcomeAt == null) welcomeAt = now();
+      owned = token;
+      welcomed = true;
       current = token;
       sset(session, K_TOKEN, token);
+      sset(session, K_WELCOME, JSON.stringify({ hash: tokenHash(token), at: welcomeAt }));
       writeRecent([token, ...readRecent().filter((t) => t !== token)]);
     },
     /** Forget this tab's token (e.g. the server said the session is invalid). */
     clearToken() {
+      rememberMatch(null);
       const t = current || sget(session, K_TOKEN);
       current = null;
+      owned = null; welcomeAt = null; welcomed = false;
       sdel(session, K_TOKEN);
+      sdel(session, K_WELCOME);
       if (t) writeRecent(readRecent().filter((x) => x !== t));
     },
     /** Whether this tab already passed the title screen (survives reloads, not new tabs). */
@@ -835,7 +1026,7 @@ export function createIdentity(deps = {}) {
 }
 
 /** Browser identity singleton (main.js awaits `identity.init()` before connecting). */
-export const identity = createIdentity();
+export const identity = createIdentity({ onYield: () => net.reconnectNow(net.helloName || net.name) });
 
 /** Browser connection singleton (created lazily-safe: nothing touches the network until connect()). */
-export const net = new Net({ getToken: () => identity.getToken() });
+export const net = new Net({ getToken: () => identity.getToken(), getTokenClaim: () => identity.getTokenClaim() });

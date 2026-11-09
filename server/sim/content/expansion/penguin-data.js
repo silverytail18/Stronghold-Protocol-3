@@ -1,11 +1,13 @@
+import {markProductContent} from '../../../../shared/product-content.js';
 import {PENGUIN_OVERLAY} from './penguin-records.js';
-import {PENGUIN_ASSETS} from './penguin-assets.js';
+const PENGUIN_ASSETS={chars:{},enemies:{},tokens:{},skills:{},skillsById:{},modules:{},items:{},bonds:{},bands:{}};
 import {readableContent} from './content-text.js';
 export const CROISSANT='chess_exp_croissant_a';
 export const SORA='chess_exp_sora_a';
 export const PENGUIN='penguinShip';
 /** Apply only to a caller-owned per-match data clone. Never changes the overlay or baseline. */
 export function applyPenguin(data){
+ markProductContent(data,"arknights-expansion-v1");
   const o=readableContent(PENGUIN_OVERLAY);
   for(const id of Object.keys(o.chess))if(data.chess[id]&&data.chess[id].charId!==o.chess[id].charId)throw new Error(`Content ID collision: ${id}`);
   Object.assign(data.chess,o.chess);Object.assign(data.garrisons,o.garrisons);Object.assign(data.bonds,o.bonds);

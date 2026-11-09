@@ -1,7 +1,6 @@
 // Shared approved procedural shape, rendered once per cached animation frame. No HTTP or combat RNG.
 export function createBloodTextureCanvas(kind,frame){
 const SCALE=3;
-const motion={distance:5,flightSeconds:1,speed:5,fadeSeconds:.06,distanceAt:t=>Math.min(5,Math.max(0,t)*5)};
 const ARC_CX=-74,ARC_CY=0,ARC_R2=ARC_CX**2+ARC_CY**2;
 const frontX=f=>ARC_CX+Math.sqrt(Math.max(0,ARC_R2-(-74+74*f-ARC_CY)**2));
 function makeSurface(){const image=document.createElement('canvas');image.width=190*SCALE;image.height=125*SCALE;const c=image.getContext('2d');c.scale(SCALE,SCALE);c.translate(135,90);return{image,c};}

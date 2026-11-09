@@ -16,7 +16,7 @@ export function pendingGrowth({round,counters,bonds,board,baseId,pieceBonds}){
 export const pendingForPlayer=ps=>pendingGrowth({round:ps.m.round,counters:ps.counters,bonds:ps.bonds,board:[...ps.board.values()],baseId:id=>ps.gd.baseIdOf(id),pieceBonds:p=>ps.kazdelPieceBonds(p)});
 export function registerMeta(reg){
  reg.global('kazdel_growth',{
-  onBattleStart(ctx,ev){if(!ctx.gd.bond(CORE))return;ev.input.contentInfo||={};if(ev.input.kazdelFixedCarry){ev.input.contentInfo.kazdelFixedCarry=ev.input.kazdelFixedCarry;delete ev.input.kazdelFixedCarry;}ev.input.contentInfo.kazdelDonationIds=ctx.kazdelDonationIds();if(ev.input.kazdelCarry){ev.input.contentInfo.kazdelCarry=ev.input.kazdelCarry;delete ev.input.kazdelCarry;}},
+  onBattleStart(ctx,ev){if(!ctx.gd.bond(CORE))return;ev.input.contentInfo||={};if(ev.input.kazdelFixedCarry){ev.input.contentInfo.kazdelFixedCarry=ev.input.kazdelFixedCarry;delete ev.input.kazdelFixedCarry;}delete ev.input.contentInfo.kazdelDonationIds;if(ev.input.kazdelCarry){ev.input.contentInfo.kazdelCarry=ev.input.kazdelCarry;delete ev.input.kazdelCarry;}},
   onBattleResult(ctx,ev){
    if(!ctx.gd.bond(CORE)||ev.boss||ctx.counter('kz:flowRound')===ctx.round)return;
    ctx.setCounter('kz:flowRound',ctx.round);ctx.setCounter('kz:earningTier',Math.min(3,ctx.bond(CORE)?.tier||1));ctx.setCounter('kz:earningBloodTier',Math.min(2,ctx.bond(BLOOD)?.tier||1));

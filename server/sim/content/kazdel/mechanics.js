@@ -1,3 +1,4 @@
+import {exp as productMath_exp} from '../../productMath.js';
 // 5.4 combat additions. No data/config writes; this module is served to the browser unchanged.
 import {CORE} from './data.js';
 import {unitBonds} from '../support/index.js';
@@ -8,8 +9,8 @@ import {aggregateMods} from '../../buffs.js';
 import {storageCapacity,openingFire,generationBudget,generationRate,PERFORMANCE_CAP,
  NATIVE_FIRE_RATES,NATIVE_FIRE_BUDGET_SHARE,FOLLOW_UP_ARTS,FOLLOW_UP_INTERVAL,TRUE_ECHO_SCALE,
  OUTPUT_REFILL,HEAL_MARK_SECONDS,HEAL_MARK_WEIGHT,MELEE_COOLDOWNS,
- SWORD_RANGE,SWORD_SPEED,SWORD_WIDTH,RESONANCE_DURATION,RESONANCE_CD,NATURAL_SP_SCALE,
- DECAY_GRACE,DECAY_RATE,ACTIVE_DECAY_RATE,ACTIVITY_SECONDS,ATTACK_FLOOR_RATES,waveCost,waveDamage,attackReserve,nativeDamagePacket} from './rules.js';
+ SWORD_RANGE,SWORD_SPEED,SWORD_WIDTH,RESONANCE_DURATION,RESONANCE_CD,NATURAL_SP_SCALE,SKILL_RECOVERY_MULTIPLIER,
+ DECAY_GRACE,DECAY_RATE,ACTIVE_DECAY_RATE,ACTIVITY_SECONDS,ATTACK_FLOOR_RATES,waveCost,waveDamage,attackReserve,nativeDamagePacket,guardEnabled} from './rules.js';
 const live=u=>u?.alive&&u.deployed&&!u.removed;
 const actual=u=>u?.kind==='op'&&unitBonds(u).includes(CORE);
 const melee=u=>(u?.def?.position==='MELEE'||u?.def?.raw?.position==='MELEE')&&!u.isFlying&&!['liftoff','float','levitate'].some(k=>u.s?.flags?.[k]||u.profile?.[k]);
@@ -48,7 +49,7 @@ export function installMechanics(b,{states,core,M0,budget,debt,repay,hit,record,
  const refresh=st=>{Object.assign(st,roster(st));st.K=storageCapacity(st.C,st.N,st.H);st.R=generationRate(st.tier,st.S,st.K);st.Q=Math.min(st.K,st.Q);};
  const reserve=st=>{
   const us=b.allyUnits.filter(u=>u.ownerId===st.pid&&core(u)&&live(u));
-  if(!us.length||b.time+1e-8<st.guardReady)return 0;
+  if(!guardEnabled(st.tier)||!us.length||b.time+1e-8<st.guardReady)return 0;
   return attackReserve(st.tier,st.C,us.some(u=>u.hp<=.6*u.s.maxHp||debt(u)>=.25*st.C));
  };
  const addFire=(st,n,isNative=false)=>{
@@ -128,7 +129,7 @@ export function installMechanics(b,{states,core,M0,budget,debt,repay,hit,record,
  b.on('skillStart',({unit:u,reason})=>{
   const st=states.get(u.ownerId);if(!st||!actual(u)||!live(u)||reason==='carry'||!b.started)return;
   const lost=Math.min(.1*u.hp,Math.max(0,u.hp-1));
-  if(lost>0){skillFlow(()=>{u.hp-=lost;});st.metrics.skillLoss+=lost;st.recoveries.push({uid:u.uid,amount:2*lost,remaining:1});}
+  if(lost>0){skillFlow(()=>{u.hp-=lost;});st.metrics.skillLoss+=lost;st.recoveries.push({uid:u.uid,amount:SKILL_RECOVERY_MULTIPLIER*lost,remaining:1});}
   if(st.tier===3&&b.time+1e-8>=st.resonanceReady&&st.Q>=1.1*st.C){st.resonanceUntil=b.time+RESONANCE_DURATION;st.resonanceReady=b.time+RESONANCE_CD;st.metrics.resonances++;b.fx('kz-resonance',{x:u.x,y:u.y,id:u.id,t:RESONANCE_DURATION});}
  });
  b.on('battleStart',()=>{
@@ -167,17 +168,17 @@ export function installMechanics(b,{states,core,M0,budget,debt,repay,hit,record,
    st.recoveries=st.recoveries.filter(r=>{
     const u=b.allyUnits.find(v=>v.ownerId===st.pid&&v.uid===r.uid);if(!live(u))return false;
     const d=Math.min(dt,r.remaining),n=r.amount*d/Math.max(1e-8,r.remaining);r.amount-=n;r.remaining-=d;
-    // kazdel healing is fixed, while skillFlow explicitly permits only core growth for this one new recovery.
-    st.metrics.skillRecovery+=skillFlow(()=>b.heal(u,u,n,{self:true,kazdel:true,kzSkillRecovery:true}));return r.remaining>1e-8;
+    // Covenant recovery is fixed healing; it neither generates fire nor earns life-flow growth.
+    st.metrics.skillRecovery+=b.heal(u,u,n,{self:true,kazdel:true,kzSkillRecovery:true});return r.remaining>1e-8;
    });
    if(st.decayStart==null&&b.enemies.some(e=>live(e)&&!e.hidden))st.decayStart=b.time+DECAY_GRACE;
   }
   flush();
   for(let i=waves.length-1;i>=0;i--){const w=waves[i],next=Math.min(w.max,w.distance+SWORD_SPEED*dt);sweep(w,w.distance,next);w.distance=next;if(next>=w.max-1e-8){refund(w);waves.splice(i,1);}}
  };
- const decay=dt=>{for(const st of states.values())if(st.decayStart!=null&&b.time+1e-8>=st.decayStart){const loss=st.Q*(1-Math.exp(-(b.time-st.lastActivity<=ACTIVITY_SECONDS?ACTIVE_DECAY_RATE:DECAY_RATE)*dt));st.Q-=loss;st.metrics.decayed+=loss;if(st.Q<1)st.Q=0;}};
+ const decay=dt=>{for(const st of states.values())if(st.decayStart!=null&&b.time+1e-8>=st.decayStart){const loss=st.Q*(1-productMath_exp(-(b.time-st.lastActivity<=ACTIVITY_SECONDS?ACTIVE_DECAY_RATE:DECAY_RATE)*dt));st.Q-=loss;st.metrics.decayed+=loss;if(st.Q<1)st.Q=0;}};
  const snapshot=st=>{budget(st);const population=b.getPlayer(st.pid)?.bonds?.[CORE]?.count||[3,6,9][st.tier-1],cost=waveCost(st.tier,st.C),D=waveDamage(st.tier,population,st.S,st.Q,cost>0?Math.max(0,Math.min(cost,st.Q-reserve(st),st.E))/cost:0);return {population,waveArts:D.arts,waveTrue:D.true,lastWaveSpent:st.lastWaveSpent,generationPerSecond:st.R,generationAvailable:Math.max(0,st.R-st.secondGenerated),nativeGenerationAvailable:Math.max(0,NATIVE_FIRE_BUDGET_SHARE*st.R-st.nativeSecondGenerated),nativeSecondGenerated:st.nativeSecondGenerated,activityRemaining:Math.max(0,ACTIVITY_SECONDS-(b.time-st.lastActivity)),decayRate:st.decayStart!=null&&b.time>=st.decayStart?(b.time-st.lastActivity<=ACTIVITY_SECONDS?ACTIVE_DECAY_RATE:DECAY_RATE):0,capacity:st.K,reference:st.C,actualMembers:st.N,permanentHp:st.H,openingCapacity:st.K0,
-  outputAllowance:st.E,nativeGenerated:st.nativeGenerated,attackAvailable:Math.max(0,st.Q-reserve(st)),guardThreshold:st.C,
+  outputAllowance:st.E,nativeGenerated:st.nativeGenerated,attackAvailable:Math.max(0,st.Q-reserve(st)),guardEnabled:guardEnabled(st.tier),guardThreshold:guardEnabled(st.tier)?st.C:0,
   resonanceRemaining:Math.max(0,st.resonanceUntil-b.time),resonanceCooldown:Math.max(0,st.resonanceReady-b.time),
   decayGraceRemaining:st.decayStart==null?null:Math.max(0,st.decayStart-b.time),decayPerSecond:st.decayStart!=null&&b.time>=st.decayStart?st.Q*(b.time-st.lastActivity<=ACTIVITY_SECONDS?ACTIVE_DECAY_RATE:DECAY_RATE):0,
   meleeCooldowns:[...st.meleeReady].map(([uid,t])=>({uid,remaining:Math.max(0,t-b.time)}))};};

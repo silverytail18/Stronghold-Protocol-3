@@ -142,7 +142,11 @@ async function prep(c, stats) {
     let placed = false;
     for (const [r, col] of TILES) {
       if (taken.has(`${r},${col}`)) continue;
-      const res = await c.request({ t: 'g.move', uid: piece.uid, to: { area: 'board', row: r, col } });
+      const move = () => c.request({ t: 'g.move', uid: piece.uid, to: { area: 'board', row: r, col } });
+      let res = await move();
+      // walking the whole tile list for a piece with few legal tiles can drain the socket's token bucket (40 msg/s):
+      // like the real client, wait and send the same move again
+      for (let k = 0; k < 5 && res.t === 'error' && res.code === 'RATE'; k++) { await delay(250); res = await move(); }
       if (res.t === 'ok') { placed = true; stats.placed++; break; }
       assert.equal(res.code, 'BAD_TILE', `g.move: ${JSON.stringify(res)}`);
     }
@@ -160,7 +164,7 @@ async function prep(c, stats) {
 }
 
 test('real-time co-op over websockets with the real simulation: 2 humans + 2 AI from the room to the prep of round 4', { timeout: 120_000 }, async () => {
-  srv = await startServer({ auth: false, port: 0, host: '127.0.0.1', log, MatchClass: RealtimeMatch, seedFn: () => 20260928 });
+  srv = await startServer({ port: 0, host: '127.0.0.1', log, MatchClass: RealtimeMatch, seedFn: () => 20260928 });
   const a = await player('Alpha');
   const b = await player('Bravo');
   assert.equal((await a.request({ t: 'room.create', mode: 'coop', difficulty: 'NORMAL' })).t, 'ok');

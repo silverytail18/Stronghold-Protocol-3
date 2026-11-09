@@ -13,25 +13,27 @@ const approx = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) <= eps, `${a} ≈
 const guard = (o = {}) => chessRec({ id: 't_guard', profession: 'WARRIOR', stats: { atk: 300, blockCnt: 2 }, skill: null, ...o });
 const walker = (o = {}) => enemyRec({ key: 'enemy_walker', hp: 1e6, speed: 1, ...o });
 
-test('initial deployment order: top→bottom then left→right; right boss side right→left', () => {
+test('initial deployment order: by column from the left, top to bottom within a column (PRTS 从上到下>从左到右 as a scan); the right boss side from its own left', () => {
+  // PRTS 卫戍协议/帮助 §作战阶段 "按从上到下>从左到右的顺序部署" (since 2026-03-14; act 1: "从左到右>从下到上") — down each column,
+  // the columns from the left: the order PRTS gives the 阿戈尔 devour ("更靠左和靠上"). Until 0.1.3: the top row first
   const h = makeBattle({
-    defs: { chess: { a: guard({ id: 'a' }), b: guard({ id: 'b' }), c: guard({ id: 'c' }), d: guard({ id: 'd' }) } },
-    units: [{ chessId: 'a', row: 9, col: 5 }, { chessId: 'b', row: 12, col: 7 }, { chessId: 'c', row: 12, col: 3 }, { chessId: 'd', row: 10, col: 4 }],
+    defs: { chess: { a: guard({ id: 'a' }), b: guard({ id: 'b' }), c: guard({ id: 'c' }), d: guard({ id: 'd' }), e: guard({ id: 'e' }) } },
+    units: [{ chessId: 'a', row: 9, col: 5 }, { chessId: 'b', row: 12, col: 7 }, { chessId: 'c', row: 12, col: 3 }, { chessId: 'd', row: 10, col: 4 }, { chessId: 'e', row: 12, col: 5 }],
     content: 'none',
   });
   h.step();
-  assert.deepEqual(h.hooksOf('deploy').filter((c) => c.initial).map((c) => c.unit.defId), ['c', 'b', 'd', 'a']);
+  assert.deepEqual(h.hooksOf('deploy').filter((c) => c.initial).map((c) => c.unit.defId), ['c', 'd', 'e', 'a', 'b']);
   assert.equal(h.hooksOf('battleStart').length, 1);
   const hb = makeBattle({
     kind: 'boss',
-    defs: { chess: { a: guard({ id: 'a' }), b: guard({ id: 'b' }) } },
-    players: [{ playerId: 'R1', side: 'R', colOffset: 8, units: [{ uid: 1, chessId: 'a', row: 10, col: 3 }, { uid: 2, chessId: 'b', row: 10, col: 6 }] }],
+    defs: { chess: { a: guard({ id: 'a' }), b: guard({ id: 'b' }), c: guard({ id: 'c' }) } },
+    players: [{ playerId: 'R1', side: 'R', colOffset: 8, units: [{ uid: 1, chessId: 'a', row: 10, col: 3 }, { uid: 2, chessId: 'b', row: 10, col: 6 }, { uid: 3, chessId: 'c', row: 12, col: 6 }] }],
     content: 'none',
   });
   hb.step();
   const order = hb.hooksOf('deploy').filter((c) => c.initial).map((c) => [c.unit.defId, c.unit.tileR, c.unit.tileC, c.unit.facing]);
-  // board row 10 → boss row 3; mirrored cols: 3 → 17, 6 → 14; right→left in field coords
-  assert.deepEqual(order, [['a', 3, 17, -1], ['b', 3, 14, -1]]);
+  // board rows 10 / 12 → boss rows 3 / 5; mirrored cols: 3 → 17, 6 → 14; its own left first = the highest field column
+  assert.deepEqual(order, [['a', 3, 17, -1], ['c', 5, 14, -1], ['b', 3, 14, -1]]);
 });
 
 test('DP: starts at 10, +1/s, cap 99; dead operator redeploys after respawnTime when DP ≥ cost', () => {
@@ -373,8 +375,9 @@ test('snapshot / event wire format (DESIGN §8.2)', () => {
   const kinds = new Set(Object.values(EV));
   for (const ev of allEv) assert.ok(kinds.has(ev[0]), `known event ${ev[0]}`);
   const spawn = allEv.find((e) => e[0] === 'spawn');
-  assert.deepEqual(Object.keys(spawn[1]).filter((k) => spawn[1][k] !== undefined).slice(0, 15).sort(),
-    ['avatar', 'defId', 'dir', 'facing', 'golden', 'id', 'kind', 'maxHp', 'name', 'ownerId', 'side', 'spine', 'tier', 'x', 'y'].sort());
+  // 16 keys: the attack interval the renderer paces the attack clip with (render/attackRate.js) joined the record
+  assert.deepEqual(Object.keys(spawn[1]).filter((k) => spawn[1][k] !== undefined).slice(0, 16).sort(),
+    ['atkInterval', 'avatar', 'defId', 'dir', 'facing', 'golden', 'id', 'kind', 'maxHp', 'name', 'ownerId', 'side', 'spine', 'tier', 'x', 'y'].sort());
   assert.ok(['UP', 'RIGHT', 'DOWN', 'LEFT'].includes(spawn[1].dir), 'UnitInfo.dir is a direction');
   const atk = allEv.find((e) => e[0] === 'atk');
   assert.equal(atk.length, 4);
@@ -388,6 +391,24 @@ test('snapshot / event wire format (DESIGN §8.2)', () => {
   assert.equal(meta.kind, 'normal');
   assert.ok(Array.isArray(meta.units));
   JSON.stringify(snap); // serialisable
+});
+
+test('one ENGAGE per unit, on its first attack that hits an enemy (the client\'s 行动开始 voice)', () => {
+  const h = makeBattle({
+    defs: { chess: { t_guard: guard({ stats: { atk: 100, maxHp: 5000 } }) }, enemies: { enemy_walker: walker({ atk: 100, hp: 3000 }) } },
+    units: [{ chessId: 't_guard', row: 9, col: 5 }],
+    enemies: [{ key: 'enemy_walker' }], content: 'generic', fieldId: 'n:p1',
+  });
+  h.run(60); // the walker (0.5 tiles/s) reaches the guard at ~9 s and is attacked from then on
+  const id = h.unit('t_guard').id;
+  const engage = h.eventsOf(EV.ENGAGE);
+  assert.equal(engage.length, 1, 'one event for the whole battle');
+  assert.deepEqual(engage[0], ['engage', id]);
+  // it is emitted at the unit's first attack on an enemy — an earlier 命中的攻击 is impossible
+  const first = h.events.findIndex((e) => e[0] === 'engage');
+  const earlierAtk = h.events.slice(0, first).findIndex((e) => e[0] === 'atk' && e[1] === id);
+  assert.equal(earlierAtk, -1, 'no attack of that unit precedes it');
+  assert.ok(h.events.slice(first).some((e) => e[0] === 'atk' && e[1] === id), 'the attack it belongs to');
 });
 
 test('determinism: same seed ⇒ identical result and event stream; different seed may differ', () => {

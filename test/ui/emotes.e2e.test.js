@@ -1,4 +1,3 @@
-import {appPage} from '../helpers/appPage.mjs';
 // Browser checks of the official emotes (research 09 §4) in headless Chrome (puppeteer-core + system Chrome):
 // the UI-kit demo (/dev/uikit.html §13) and the in-match mock harness (/dev/game-mock.html). Opt-in like the other
 // browser suites: SP_E2E=1 node --test test/ui/emotes.e2e.test.js   → screenshots in test/e2e/out/emotes-*.png
@@ -8,6 +7,7 @@ import {appPage} from '../helpers/appPage.mjs';
 // a bubble fades out after 3 s and a newer one replaces it, the neutral glyph fallback when the art is missing, the
 // bubble sits beside the sender's avatar in the team panel, and zero console errors.
 
+import { seedReleaseRead } from '../helpers/releaseNotes.js';
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync } from 'node:fs';
@@ -19,7 +19,17 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const OUT = path.join(ROOT, 'test/e2e/out');
 const CHROME = process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const ENABLED = process.env.SP_E2E === '1' && existsSync(CHROME);
-const HAS_ART = existsSync(path.join(ROOT, 'public/assets/local/emoticon/fooldoctor'));
+// The official pictures reach the wheel through a two-link chain (data.js artUrls): the local-client extraction
+// first (tools/local-extract → data/local-assets.json), then the copies tools/fetch-assets.mjs downloads into
+// public/assets/ui/emoticon (GitHub #42). A deployment has one link or the other; the assertions below check that
+// the pictures LOAD, never which link served them, so either one is enough to run the suite.
+const HAS_ART = existsSync(path.join(ROOT, 'public/assets/local/emoticon/fooldoctor'))
+  || existsSync(path.join(ROOT, 'public/assets/ui/emoticon/fooldoctor'));
+// The WHEEL's own chrome is a different story: emoji_cell_bkg / emoji_bkg / emoji_btn come from the local client's
+// ui/battle atlas (ui/emotes.js emoteUiSprite → localAsset), which tools/fetch-assets.mjs does NOT carry — no dump,
+// no official cell, and the wheel draws its own. One assertion below is about that official chrome, so it asks for it
+// separately instead of quietly failing on a fetch-assets-only deployment.
+const HAS_UI = existsSync(path.join(ROOT, 'public/assets/local/ui/battle/emoji_cell_bkg.png'));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 describe('official emotes in the browser', { skip: !ENABLED && 'set SP_E2E=1 (and have Chrome) to run' }, () => {
@@ -30,7 +40,7 @@ describe('official emotes in the browser', { skip: !ENABLED && 'set SP_E2E=1 (an
   before(async () => {
     const { startServer } = await import('../../server/index.js');
     const puppeteer = (await import('puppeteer-core')).default;
-    srv = await startServer({ auth: false, port: 0, host: '127.0.0.1', quiet: true });
+    srv = await startServer({ port: 0, host: '127.0.0.1', quiet: true });
     base = `http://127.0.0.1:${srv.port}`;
     browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--no-sandbox', '--force-device-scale-factor=1'] });
     mkdirSync(OUT, { recursive: true });
@@ -40,8 +50,8 @@ describe('official emotes in the browser', { skip: !ENABLED && 'set SP_E2E=1 (an
     await srv?.close();
   });
 
-  async function open(url, { w = 1600, h = 900, manifest = null, ignore = [] } = {}) {
-    const page = await appPage(await browser.newPage());
+  async function open(url, { w = 1600, h = 900, manifest = null, ignore = [], block = null } = {}) {
+    const page = await browser.newPage();
     await page.setViewport({ width: w, height: h });
     const problems = [];
     const bad = (s) => !ignore.some((re) => re.test(s));
@@ -50,12 +60,16 @@ describe('official emotes in the browser', { skip: !ENABLED && 'set SP_E2E=1 (an
     // a reload cancels the images still in flight (net::ERR_ABORTED): not a failure of the page
     page.on('requestfailed', (r) => { if (bad(r.url()) && r.failure()?.errorText !== 'net::ERR_ABORTED') problems.push(`requestfailed: ${r.url()} ${r.failure()?.errorText}`); });
     page.on('response', (r) => { if (r.status() >= 400 && bad(r.url())) problems.push(`http ${r.status()}: ${r.url()}`); });
-    if (manifest) {
+    if (manifest || block) {
       await page.setRequestInterception(true);
-      page.on('request', (req) => (req.url().endsWith('/data/local-assets.json')
-        ? req.respond({ status: 200, contentType: 'application/json', body: JSON.stringify(manifest) })
-        : req.continue()));
+      page.on('request', (req) => {
+        // `block`: answer 404 for these URLs (e.g. the emote copies setup downloads, GitHub #42 — the second link of the chain)
+        if (block && block.test(req.url())) return req.respond({ status: 404, contentType: 'text/plain', body: 'blocked' });
+        if (manifest && req.url().endsWith('/data/local-assets.json')) return req.respond({ status: 200, contentType: 'application/json', body: JSON.stringify(manifest) });
+        return req.continue();
+      });
     }
+    await seedReleaseRead(page);
     await page.goto(`${base}${url}`, { waitUntil: 'networkidle0' });
     return { page, problems };
   }
@@ -75,7 +89,7 @@ describe('official emotes in the browser', { skip: !ENABLED && 'set SP_E2E=1 (an
     };
   }, root);
 
-  test('UI kit: pager per theme, picture-only, swipe / keys / dots, cooldown, remembered theme, 3 s bubble', { skip: !HAS_ART && 'no extracted emote art' }, async () => {
+  test('UI kit: pager per theme, picture-only, swipe / keys / dots, cooldown, remembered theme, 3 s bubble', { skip: !HAS_ART && 'no official emote art (neither the local extraction nor the fetched copies)' }, async () => {
     const { page, problems } = await open('/dev/uikit.html');
     await page.evaluate(() => localStorage.removeItem('sp.pref.emoteTheme'));
     await page.reload({ waitUntil: 'networkidle0' });
@@ -158,7 +172,7 @@ describe('official emotes in the browser', { skip: !ENABLED && 'set SP_E2E=1 (an
     await page.close();
   });
 
-  test('wheel: one trackpad swipe (momentum included) turns one page, a mouse-wheel notch turns one page', { skip: !HAS_ART && 'no extracted emote art' }, async () => {
+  test('wheel: one trackpad swipe (momentum included) turns one page, a mouse-wheel notch turns one page', { skip: !HAS_ART && 'no official emote art (neither the local extraction nor the fetched copies)' }, async () => {
     const { page, problems } = await open('/dev/uikit.html');
     await page.evaluate(() => localStorage.removeItem('sp.pref.emoteTheme'));
     await page.reload({ waitUntil: 'networkidle0' });
@@ -194,12 +208,19 @@ describe('official emotes in the browser', { skip: !ENABLED && 'set SP_E2E=1 (an
     const hover = await page.$eval('#emo-stage .ewheel__item:nth-child(2)', (el) => ({
       sprite: el.closest('.ewheel__panel').classList.contains('has-cell'), bg: getComputedStyle(el).backgroundColor, filter: getComputedStyle(el).filter,
     }));
-    assert.deepEqual(hover, { sprite: true, bg: 'rgba(0, 0, 0, 0)', filter: 'brightness(1.35)' });
+    if (HAS_UI) {
+      assert.deepEqual(hover, { sprite: true, bg: 'rgba(0, 0, 0, 0)', filter: 'brightness(1.35)' }, 'the official emoji_cell_bkg cell');
+    } else {
+      // no local client dump: the wheel draws its own cell and the hover is a drawn fill — the pictures are what this
+      // test is about on such a deployment, so only pin that it is NOT pretending to be the official sprite cell
+      assert.equal(hover.sprite, false, 'without ui/battle/emoji_cell_bkg the cell is drawn, not the official sprite');
+      assert.ok(hover.bg !== '' && hover.filter !== '', `the drawn cell is still styled: ${JSON.stringify(hover)}`);
+    }
     assert.deepEqual(problems, []);
     await page.close();
   });
 
-  test('the cooldown survives a remount of the wheel; a bubble mounted late resumes its timeline', { skip: !HAS_ART && 'no extracted emote art' }, async () => {
+  test('the cooldown survives a remount of the wheel; a bubble mounted late resumes its timeline', { skip: !HAS_ART && 'no official emote art (neither the local extraction nor the fetched copies)' }, async () => {
     const { page, problems } = await open('/dev/uikit.html');
     await page.waitForSelector('#emo-stage .ewheel__panel');
     await page.evaluate(async () => {
@@ -249,7 +270,7 @@ describe('official emotes in the browser', { skip: !ENABLED && 'set SP_E2E=1 (an
     await page.close();
   });
 
-  test('touch: a horizontal swipe on the pager turns the page, a tap sends', { skip: !HAS_ART && 'no extracted emote art' }, async () => {
+  test('touch: a horizontal swipe on the pager turns the page, a tap sends', { skip: !HAS_ART && 'no official emote art (neither the local extraction nor the fetched copies)' }, async () => {
     const { page, problems } = await open('/dev/uikit.html');
     await page.setViewport({ width: 1280, height: 720, hasTouch: true, isMobile: false });
     await page.evaluate(() => localStorage.removeItem('sp.pref.emoteTheme'));
@@ -277,9 +298,12 @@ describe('official emotes in the browser', { skip: !ENABLED && 'set SP_E2E=1 (an
   });
 
   test('missing art: neutral glyphs, never text', async () => {
+    // neither the local-client art nor the copies setup downloads (GitHub #42) load: the glyph is the last link
     const { page, problems } = await open('/dev/uikit.html', {
       manifest: { version: 1, groups: { 'emoticon/basic': { pic_happy_battle: { path: '/assets/local/emoticon/basic/nope_404.png', w: 120, h: 120 } } } },
-      ignore: [/nope_404\.png/, /Failed to load resource/],
+      // the served manifest's URLs may carry a content-hash segment (/assets/~<hash>/ui/…, 0.2.6 host bandwidth layer 1)
+      block: /\/assets\/(?:~[0-9a-f]{16}\/)?ui\/emoticon\//,
+      ignore: [/nope_404\.png/, /\/assets\/(?:~[0-9a-f]{16}\/)?ui\/emoticon\//, /Failed to load resource/],
     });
     await page.evaluate(() => localStorage.removeItem('sp.pref.emoteTheme'));
     await page.reload({ waitUntil: 'networkidle0' });
@@ -298,7 +322,7 @@ describe('official emotes in the browser', { skip: !ENABLED && 'set SP_E2E=1 (an
     await page.close();
   });
 
-  test('in-match mock: bubbles beside the senders\' avatars, wheel above 交流', { skip: !HAS_ART && 'no extracted emote art' }, async () => {
+  test('in-match mock: bubbles beside the senders\' avatars, wheel above 交流', { skip: !HAS_ART && 'no official emote art (neither the local extraction nor the fetched copies)' }, async () => {
     const { page, problems } = await open('/dev/game-mock.html?shot=1&render=fallback&phase=PREP&variant=emote', { w: 1920, h: 1080 });
     await page.waitForFunction(() => !!document.querySelector('.screen:not(.gload)'), { timeout: 15000 });
     await page.waitForSelector('.team__bubble');

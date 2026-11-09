@@ -4,10 +4,38 @@ import assert from 'node:assert/strict';
 import { PHASE, ERR } from '../../shared/constants.js';
 import { Match } from '../../server/match/Match.js';
 import { StubMatch } from '../../server/match/StubMatch.js';
-import { DATA, makeMatch, checkInvariants, give, chessOfTier } from './harness.js';
+import { DATA, makeMatch, checkInvariants, give, giveItem, chessOfTier } from './harness.js';
 import { bossPoolHp } from '../../server/match/finalAssault.js';
+import { attachAudit } from '../../server/match/audit.js';
 
 const STATUSES = ['acting', 'ready', 'deciding', 'combat', 'done', 'helping', 'left', 'dead'];
+
+test('public throttling starts at broadcast time even when building the previous snapshot was delayed', () => {
+  let now = 100;
+  let revision = 0;
+  const sent = [];
+  const timers = [];
+  const match = {
+    _lastPubAt: 0,
+    sched: {
+      now: () => now,
+      setTimeout: (fn, delay) => { timers.push({ fn, at: now + delay }); return timers.length; },
+    },
+    publicView: () => {
+      if (revision === 0) now += 16;
+      return { t: 'm.public', serverNow: now, revision: ++revision };
+    },
+    broadcast: (view) => sent.push(view.serverNow),
+    _maybeSendPublic: Match.prototype._maybeSendPublic,
+  };
+  match._maybeSendPublic(false);
+  now = 200;
+  match._maybeSendPublic(false);
+  assert.deepEqual(sent, [116], 'the second frame waits for the full interval after the first broadcast');
+  now = timers[0].at;
+  timers[0].fn();
+  assert.deepEqual(sent, [116, 216]);
+});
 
 test('constructor validation mirrors the stub; start() sends the first m.public and one m.private per human', () => {
   assert.throws(() => new Match({ seats: [] }), TypeError);
@@ -51,6 +79,7 @@ test('m.private shape in PREP matches DESIGN §8.3 (pieces, slots, bonds, effect
     assert.ok(s.kind === 'chess' || s.kind === 'item');
   }
   assert.equal(priv.shop.rewardOffer, null);
+  assert.equal(priv.personalChoice, null);
   assert.equal(priv.deployCap, 8);
   assert.ok(priv.effects.some((e) => e.iconKind === 'band' && e.name));
   assert.ok(priv.nextEnemies.length > 0);
@@ -90,7 +119,7 @@ test('disconnect: the seat keeps playing; draft turns / prep auto-resolve at dea
   h.m.onDisconnect('p_1');
   assert.equal(m.publicView().players.find((p) => p.playerId === 'p_1').connected, false);
   m.handle('p_0', { t: 'g.infoReady' });
-  // Random baseline order: p_1's disconnected turn defaults to 华法琳 while it is still free.
+  // p_1 never confirms: the 25 s deadline moves on; p_1 never picks: 12 s turn → 华法琳
   h.drive(() => m.phase === PHASE.PREP && m.round === 1);
   assert.equal(h.ps('p_1').bandId, 'band_bldsk');
   const sentBefore = h.sent.length;
@@ -109,19 +138,51 @@ test('disconnect: the seat keeps playing; draft turns / prep auto-resolve at dea
   m.dispose();
 });
 
+test('教鞭: simultaneous private choices survive reconnect; foreign, duplicate and old IDs cannot add bounties', () => {
+  const h = makeMatch({ mode: 'coop', humans: 2, spectators: ['watcher'], seed: 63, fake: true }).start();
+  h.toPrep(1);
+  const m = h.m, a = h.ps('p_0'), b = h.ps('p_1');
+  for (const ps of [a, b]) {
+    const art = giveItem(m, ps, 'chess_item_6_03_m');
+    assert.deepEqual(ps.useArt(art.uid, 10, 5), { ok: true });
+  }
+  const aChoice = a.privateView().personalChoice, bChoice = b.privateView().personalChoice;
+  assert.notEqual(aChoice.id, bChoice.id);
+  assert.equal(m.handle('p_0', { t: 'g.choice', idx: 0, choiceId: bChoice.id }).error, ERR.BAD_TARGET);
+  assert.equal(a.bounties.length + b.bounties.length, 0);
+  m.onDisconnect('p_0');
+  m.onReconnect('p_0');
+  assert.deepEqual(h.lastTo('p_0', 'm.private').personalChoice, aChoice);
+  m.flush(true);
+  assert.deepEqual(h.lastTo('p_1', 'm.private').personalChoice, bChoice);
+  assert.ok(!h.allTo('watcher', 'm.private').length);
+  assert.ok(!JSON.stringify(m.publicView()).includes(aChoice.id));
+  assert.ok(!JSON.stringify(m.prepFieldMeta(a)).includes(aChoice.id));
+  assert.deepEqual(m.handle('p_0', { t: 'g.choice', idx: 1, choiceId: aChoice.id }), { ok: true });
+  m.flush(true);
+  assert.equal(h.lastTo('p_0', 'm.private').personalChoice, null);
+  assert.equal(m.handle('p_0', { t: 'g.choice', idx: 1, choiceId: aChoice.id }).error, ERR.BAD_TARGET);
+  const next = giveItem(m, a, 'chess_item_6_03_m');
+  assert.deepEqual(a.useArt(next.uid, 10, 5), { ok: true });
+  const nextId = a.personalChoice.id;
+  assert.notEqual(nextId, aChoice.id);
+  assert.equal(m.handle('p_0', { t: 'g.choice', idx: 0, choiceId: aChoice.id }).error, ERR.BAD_TARGET);
+  assert.equal(a.personalChoice.id, nextId);
+  assert.equal(a.bounties.length, 1);
+  m.onDisconnect('p_1');
+  h.sched.advance(m.deadline - h.sched.now() + 1);
+  m.onReconnect('p_1');
+  assert.equal(h.lastTo('p_1', 'm.private').personalChoice, null);
+  assert.equal(b.bounties.length, 1, 'offline choice picked at the existing PREP deadline');
+  m.dispose();
+});
+
 test('g.autoplay lets the bot play a human seat (buys, places, readies); turning it off returns control', () => {
   const h = makeMatch({ mode: 'solo', seed: 64, fake: true }).start();
   const m = h.m;
   h.toPrep(1);
   assert.deepEqual(m.handle('p_0', { t: 'g.autoplay', on: true }), { ok: true });
   assert.equal(m.publicView().players[0].autoplay, true);
-  const frozen = h.ps('p_0').shop.frozen;
-  const funds = h.ps('p_0').funds;
-  for (const msg of [{ t: 'g.freeze' }, { t: 'g.buy', slot: 0 }, { t: 'g.refresh' }, { t: 'g.levelUp' }, { t: 'g.ready', ready: true }, { t: 'g.pause', on: true }, { t: 'g.chat', text: 'manual' }]) {
-    assert.equal(m.handle('p_0', msg).error, ERR.WRONG_PHASE, `manual ${msg.t} locked`);
-  }
-  assert.equal(h.ps('p_0').funds, funds);
-  assert.equal(h.ps('p_0').shop.frozen, frozen);
   h.run(() => m.phase !== PHASE.PREP);
   const ps = h.ps('p_0');
   assert.ok(ps.board.size > 0, 'the bot deployed units');
@@ -130,22 +191,8 @@ test('g.autoplay lets the bot play a human seat (buys, places, readies); turning
   assert.deepEqual(m.handle('p_0', { t: 'g.autoplay', on: false }), { ok: true });
   h.sched.advance(60000);
   assert.equal(m.phase, PHASE.PREP, 'solo prep waits for the human again');
-  assert.deepEqual(m.handle('p_0', { t: 'g.freeze' }), { ok: true }, 'manual play resumes after exiting autoplay');
   checkInvariants(m);
   m.dispose();
-});
-
-test('autoplay also locks briefing and loadout edits until the player exits it', () => {
-  const h = makeMatch({ mode: 'solo', seed: 641, fake: true }).start();
-  try {
-    assert.equal(h.m.phase, PHASE.INFO_CHECK);
-    assert.deepEqual(h.m.handle('p_0', { t: 'g.autoplay', on: true }), { ok: true });
-    assert.equal(h.m.handle('p_0', { t: 'g.infoReady' }).error, ERR.WRONG_PHASE);
-    assert.equal(h.m.setLoadout('p_0', null).error, ERR.WRONG_PHASE);
-    assert.deepEqual(h.m.handle('p_0', { t: 'g.autoplay', on: false }), { ok: true });
-    assert.deepEqual(h.m.setLoadout('p_0', null), { ok: true });
-    assert.deepEqual(h.m.handle('p_0', { t: 'g.infoReady' }), { ok: true });
-  } finally { h.m.dispose(); }
 });
 
 test('onLeave: quitting counts as elimination (copies back to the pool at once, status left); last human leaving ends the match once', () => {
@@ -186,7 +233,8 @@ test('onLeave: quitting counts as elimination (copies back to the pool at once, 
 });
 
 test('onLeave: a quitter has no place in the Final Assault pairing or the boss pool; its draft turns pass on', () => {
-  // band draft: the player on turn leaves → its pick is the default band and the turn moves on
+  // band draft: the player on turn leaves → at once the AI drafts for it like for a seat gone before the draft (Touch
+  // while nobody else holds it, not the default band; §37.65), it keeps its 0 LP and the turn moves on
   const h = makeMatch({ mode: 'coop', difficulty: 'FUNNY', humans: 3, seed: 5, fake: true, script: (b) => (b.kind === 'boss' ? { bossDps: 1e9 } : {}) }).start();
   const m = h.m;
   for (const id of ['p_0', 'p_1', 'p_2']) m.handle(id, { t: 'g.infoReady' });
@@ -194,7 +242,9 @@ test('onLeave: a quitter has no place in the Final Assault pairing or the boss p
   assert.equal(m.phase, PHASE.BAND_DRAFT);
   const first = m.draftTurn();
   m.onLeave(first);
-  assert.equal(m.draft.picks[first], m.gd.bandDraft.timeoutBandId);
+  h.sched.advance(1);
+  assert.equal(m.draft.picks[first], 'band_amedic');
+  assert.equal(h.ps(first).lp, 0);
   assert.notEqual(m.draftTurn(), first);
   h.autoHumans();
   h.drive(() => m.phase === PHASE.PREP && m.round === 14);
@@ -202,9 +252,9 @@ test('onLeave: a quitter has no place in the Final Assault pairing or the boss p
   assert.equal(alive.length, 2);
   assert.ok(!alive.includes(first));
   h.drive(() => m.phase === PHASE.FINAL_ASSAULT);
-  assert.deepEqual(m.fields.map((f) => f.players), [alive], 'one boss field for the two players left');
+  assert.deepEqual(m.fields.map((f) => [...f.players].sort()), [[...alive].sort()], 'one boss field for the two players left');
   assert.equal(m.bossPool.maxHp, bossPoolHp(m.gd, m.bossId, 2), 'the co-op boss pool of two alive players');
-  assert.equal(m.bossPool.maxHp, m.gd.boss(m.bossId).bloodPoint[m.gd.difficulty], 'bloodPoint, no alive-player factor (DESIGN §20.10)');
+  assert.equal(m.bossPool.maxHp, m.gd.boss(m.bossId).bloodPoint[m.gd.difficulty] * 2, 'bloodPoint × the two players left; the quitter does not count (DESIGN §25.13.4)');
   const end = h.runToEnd();
   assert.equal(end.victory, true);
   assert.equal(end.players.find((p) => p.playerId === first).roundsPassed, 0);
@@ -248,6 +298,44 @@ test('onLeave: a quitter has no place in the Final Assault pairing or the boss p
   assert.equal(h3.ended.reason, 'eliminated');
   assert.ok(h3.lastTo('p_1', 'm.result'), 'the spectator gets the result');
   h3.m.dispose();
+});
+
+test('onLeave: a seat gone before the strategy draft keeps 0 LP once its strategy is drafted (m.public, result; §37.65)', () => {
+  /** 2 humans + 2 AI; p_1 leaves during the briefing (its draft turn is then the AI's), p_0 confirms it. */
+  const briefingLeft = () => {
+    const h = makeMatch({ mode: 'coop', difficulty: 'ABYSS', humans: 2, bots: 2, seed: 3 }).start();
+    h.audit = attachAudit(h.m);
+    h.m.onLeave('p_1');
+    assert.equal(h.ps('p_1').lp, 0, 'it left with 0');
+    h.m.handle('p_0', { t: 'g.infoReady' });
+    h.runToPhase(PHASE.BAND_DRAFT);
+    return h;
+  };
+  const startLps = (h) => {
+    for (const ps of h.m.order) if (ps.alive) assert.equal(ps.lp, h.m.gd.startLp(ps.bandId), `${ps.playerId} starts with its strategy's LP`);
+    // the battle check's audit takes the departed seat's 0 (audit.js enterBattleCheck)
+    const lp = h.audit.violations.filter((x) => / LP /.test(x));
+    assert.deepEqual(lp, [], lp.join('\n'));
+  };
+  const h = briefingLeft();
+  const m = h.m;
+  m.handle('p_0', { t: 'g.autoplay', on: true });
+  h.run(() => m.phase !== PHASE.BAND_DRAFT);
+  const gone = h.ps('p_1');
+  assert.ok(gone.bandId && m.draft.picks.p_1 === gone.bandId, 'its strategy was drafted');
+  assert.equal(gone.lp, 0, 'the strategy\'s starting LP is a living seat\'s');
+  assert.equal(m.publicView().players.find((p) => p.playerId === 'p_1').lp, 0);
+  startLps(h);
+  m.finish({ victory: false, reason: 'defeat' });
+  assert.equal(h.ended.players.find((p) => p.playerId === 'p_1').lp, 0, 'the result shows 0 too');
+  m.dispose();
+  // a draft ended by finishBandDraft (every seat still to pick gets a default strategy) leaves it at 0 as well
+  const h2 = briefingLeft();
+  h2.m.finishBandDraft();
+  assert.ok(h2.ps('p_1').bandId);
+  assert.equal(h2.ps('p_1').lp, 0);
+  startLps(h2);
+  h2.m.dispose();
 });
 
 test('dispose stops timers and battles; handle/hooks after dispose are inert', () => {

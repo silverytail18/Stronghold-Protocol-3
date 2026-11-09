@@ -1,4 +1,5 @@
 import {CORE} from './data.js';import {dirVec} from '../../dir.js';
+import {unitBonds} from '../support/index.js';
 import {nativeDamagePacket,nativeDamageBonus,flowPoints} from './rules.js';
 import {TRAIT_RULES as R,kazdelTraitFor,personalGrowthPoints,personalBase} from '../../../../shared/kazdel-personal.js';
 const live=u=>u?.alive&&u.deployed&&!u.removed;
@@ -7,7 +8,8 @@ const pressure=u=>live(u)&&u.blocking.some(e=>live(e)&&e.blockedBy===u);
 const ground=u=>live(u)&&u.ground&&!u.isFlying&&!['liftoff','float','levitate','noBlock','sleep'].some(k=>u.s.flags[k]||u.profile?.[k]);
 export function installTraits(b,states){
  if(!states.size&&!b.allyUnits.some(info))return null;
- const cooldowns=new Map(),deployed=new Set(),actions=new Map(),enemyCooldowns=new Map(),healTimes=new Map();let started=false;
+ const cooldowns=new Map(),deployed=new Set(),actions=new Map(),enemyCooldowns=new Map(),healTimes=new Map(),shockPackets=new WeakSet();let started=false;
+ const wisdelShock=dmg=>dmg.type==='phys'&&dmg.tags?.includes('wisdel:shock');
  const key=u=>u.ownerId+':'+u.uid;
  const ready=(u,k,cd)=>{const id=key(u)+':'+k;if(b.time+1e-8<(cooldowns.get(id)||0))return false;cooldowns.set(id,b.time+cd);return true;};
  const buff=(u,key,mods,duration=.35)=>{const v=u.findBuff(key);if(v&&JSON.stringify(v.mods)===JSON.stringify(mods)){v.timeLeft=duration;return v;}return b.addBuff(u,{key,mods,duration,visible:true});};
@@ -25,7 +27,7 @@ export function installTraits(b,states){
  const sync=u=>{
   if(u?.kind!=='op'||!live(u))return;
   const t=info(u),st=states.get(u.ownerId),isMelee=(u.def.raw?.position||u.def.position)==='MELEE';
-  const common=st&&b.getPlayer(u.ownerId)?.bonds?.[CORE]?.active&&isMelee&&ground(u)?1:0;
+  const common=st&&b.getPlayer(u.ownerId)?.bonds?.[CORE]?.active&&unitBonds(u).includes(CORE)&&isMelee&&ground(u)?1:0;
   if(common)buff(u,'kz:trait:block',{blockCnt:1});else b.removeBuff(u,'kz:trait:block');
   if(t?.id==='vigna')buff(u,'kz:trait:vigna',{aspd:pressure(u)?R.vignaAspd:0});
   if(t?.id==='hodrer')buff(u,'kz:trait:hodrer',{defFlat:pressure(u)?R.hodrerDef:0});
@@ -48,13 +50,15 @@ export function installTraits(b,states){
  b.on('hit',c=>{
   const u=c.source,t=info(u);if(!t||c.target?.side!=='enemy'||!nativeDamagePacket(c.dmg))return;
   const blocked=c.target.blockedBy?.kind==='op'&&live(c.target.blockedBy)&&c.target.blockedBy.ownerId===u.ownerId;
-  const extra=t.id==='flameb'&&c.dmg.isAttack&&!c.dmg.isSkill&&c.target.blockedBy===u?R.flameDamage:t.id==='logos'&&c.dmg.type==='arts'&&blocked?R.logosDamage:0;
+  const extra=t.id==='flameb'&&c.dmg.isAttack&&!c.dmg.isSkill&&c.target.blockedBy===u?R.flameDamage:t.id==='logos'&&c.dmg.type==='arts'&&blocked?R.logosDamage:t.id==='wisdel'&&wisdelShock(c.dmg)?R.wisdelShockDamage:0;
   const st=states.get(u.ownerId),bonus=st?nativeDamageBonus(st.tier,st.S):0;
   if(extra)c.dmg.mul*=(1+bonus+extra)/(1+bonus);
  },{priority:100});
  const resolved=c=>{
   const u=c.source,t=info(u),e=c.target;if(!t||!live(u)||e?.side!=='enemy'||!nativeDamagePacket(c.dmg)||!(c.dealt>0||c.absorbed>0))return;
   b.kazdel?.record(u,0,true);
+  // Shield absorption and HP damage can report the same packet; count that native shock hit once.
+  if(t.id==='wisdel'&&wisdelShock(c.dmg)&&!shockPackets.has(c.dmg)){shockPackets.add(c.dmg);grow(u,'blastHits');}
   const id=c.dmg.attackId||'dot:'+Math.floor(b.time),k=key(u)+':'+id;
   let a=actions.get(k);if(!a){a={time:b.time,counts:new Set(),targets:new Set()};actions.set(k,a);}
   const once=(name,field)=>{if(a.counts.has(name))return;a.counts.add(name);grow(u,field);};

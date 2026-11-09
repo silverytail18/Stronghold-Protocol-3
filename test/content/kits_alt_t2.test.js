@@ -1,4 +1,4 @@
-// Operator loadouts (DESIGN §16) for the tier-2 kits (server/sim/content/kits/tier2.js): every selectable NON-default
+// Operator loadouts (DESIGN §16) for the tier-2 kits (server/sim/content/kits/ops/): every selectable NON-default
 // skill of every visible tier-2 chess is hand-authored (tools/kit-coverage.mjs) and shows its signature effect for the
 // normal (Lv4) and the elite (Lv7) chess — numbers from the selected skill's blackboard (data/chess.json skills[]) —
 // and the elite's module choice ('none' instead of the default module) changes what the kit / profile does.
@@ -342,26 +342,36 @@ test('2_12 砾 S1 影袭: at deployment DEF +def decaying to 0 over `duration` s
     h.run(0.5);
     approx(u.s.def, u.base.def * (1 + aura + bb.def), `${id} full bonus`);
     assert.equal(u.s.shield, 0, 'no 鼠群 barrier');
+    assert.equal(u.skill.kind, 'duration');
+    assert.equal(u.skill.active, true);
+    assert.equal(u.skill.ready, false);
+    assert.equal(h.snapshot().units.find((t) => t[0] === u.id)[6], bb.duration);
     h.run(1);
     approx(u.s.def, u.base.def * (1 + aura + bb.def * (bb.duration - 1) / bb.duration), 'one step down after 1 s');
     h.run(0.4);
     approx(u.s.def, u.base.def * (1 + aura + bb.def * (bb.duration - 1) / bb.duration), 'steps once per second');
     h.run(bb.duration);
     approx(u.s.def, u.base.def * (1 + aura), 'gone');
+    assert.equal(u.skill.active, false);
+    assert.equal(u.skill.ready, false);
+    assert.equal(u.findBuff('gravel:shadow'), null);
+    assert.equal(h.hooksOf('skillEnd').filter((c) => c.unit === u && c.reason === 'duration').length, 1);
     done(h);
   }
 });
 
-test('2_13 蒂比 S1 专业喷绘技巧: DEFAULT trigger, takes off (skill range, ATK +atk, blocks flyers), single shots; hits never set it off', () => {
+test('2_13 蒂比 S1 专业喷绘技巧: ACTIVE_RANGE trigger (an enemy in its 2-3 only), takes off (skill range, ATK +atk, blocks flyers), single shots; hits never set it off', () => {
   for (const id of both('chess_char_2_13')) {
     const bb = bbAlt(id);
-    const h = run({ defs: { enemies: { e: dummy('e'), f: dummy('f', { motion: 'FLY' }) } }, units: [U(id, 9, 5, { carryState: READY })], enemies: [{ key: 'e', pos: [9, 6] }] });
+    // (10,5) = [1,0]: inside S1's 2-3, outside her own 2-2 — the owner's rule of 2026-10-05 (data trigger ACTIVE_RANGE)
+    const h = run({ defs: { enemies: { e: dummy('e'), f: dummy('f', { motion: 'FLY' }) } }, units: [U(id, 9, 5, { carryState: READY })], enemies: [{ key: 'e', pos: [10, 5] }] });
     const u = h.unit(id);
     usesAlt(u, id);
     h.step();
     const range0 = u.baseRangeKeys.length;
+    assert.ok(!u.baseRangeKeys.includes(h.b.grid.key(10, 5)), 'the enemy is outside her own range');
     h.runUntil(() => u.skill.active, 3);
-    assert.equal(started(h, u)[0].reason, 'DEFAULT');
+    assert.equal(started(h, u)[0].reason, 'ACTIVE_RANGE');
     assert.equal(u.s.flags.liftoff, true, 'airborne (起飞)');
     assert.equal(u.ground, true, 'still a ground unit on her low tile');
     approx(u.s.atk, u.base.atk * (1 + bb.atk));
@@ -406,14 +416,14 @@ test('2_14 调香师 S1 治疗强化·β型: ATK +atk (ASPD unchanged); heals 3 
   }
 });
 
-test('2_16 拉普兰德 S1 日晷: toggle (持续时间无限) ATK +atk; blocks enemy physical damage with `prob`; physical normal attacks', () => {
+test('2_16 拉普兰德 S1 日晷: toggle (持续时间无限) ATK +atk; dodges physical damage with `prob`; physical normal attacks', () => {
   for (const id of both('chess_char_2_16')) {
     const bb = bbAlt(id);
     for (const roll of [true, false]) {
-      const seen = [];
+      // 120 hits a minute at bat 0.5, each at the 5 % floor (12.5): 1500 in the 60 s, short of the normal form's 1791 HP
       const h = run({
-        defs: { enemies: { e: dummy('e', { atk: 300, bat: 0.5 }) } }, units: [U(id, 9, 5, { carryState: READY })], enemies: [{ key: 'e', pos: [9, 5] }],
-        setup: (b) => { b.rng.chance = (p) => { seen.push(p); return roll; }; },
+        defs: { enemies: { e: dummy('e', { atk: 250, bat: 0.5 }) } }, units: [U(id, 9, 5, { carryState: READY })], enemies: [{ key: 'e', pos: [9, 5] }],
+        setup: (b) => { b.rng = Object.assign(() => roll ? 0 : 0.999999, b.rng); },
       });
       const u = h.unit(id);
       usesAlt(u, id);
@@ -423,8 +433,8 @@ test('2_16 拉普兰德 S1 日晷: toggle (持续时间无限) ATK +atk; blocks 
       const taken0 = u.stats.taken;
       h.run(60);
       assert.ok(u.skill.active, 'still active after 60 s');
-      assert.ok(seen.includes(bb.prob), 'rolls prob');
-      if (roll) assert.equal(u.stats.taken, taken0, 'every blocked roll negates the physical hit');
+      approx(u.s.dodgePhys, bb.prob, 'skill physical dodge probability');
+      if (roll) assert.equal(u.stats.taken, taken0, 'every successful dodge negates the physical hit');
       else assert.ok(u.stats.taken > taken0, 'a failed roll lands');
       assert.ok(dealt(h, u, (c) => c.dmg.isAttack).every((c) => c.type === 'phys'), 'no 狼魂 arts conversion');
       done(h);
@@ -512,10 +522,10 @@ test('2_19 锡人 S1 “老科利”: alchemy unit — 8 s of weaken −atk and 
     approx(f.s.atk, 100, 'flyers unaffected');
     approx(far.s.atk, 100, 'outside');
     h.run(bb.projectile_delay_time);
-    const zone = dealt(h, u, (c) => c.target === g && (c.dmg.tags || []).includes('zone'));
+    const zone = h.hooksOf('damaged').filter((c) => c.credit === u && c.target === g && (c.dmg.tags || []).includes('zone'));
     assert.equal(zone.length, bb.projectile_delay_time, 'one pulse per second');
     for (const c of zone) { assert.equal(c.type, 'arts'); approx(c.amount, atk0 * bb.atk_scale * wither, `${id} ×${bb.atk_scale}${wither > 1 ? ' ×凋敝魂灵' : ''}`); }
-    assert.equal(dealt(h, u, (c) => (c.target === f || c.target === far) && (c.dmg.tags || []).includes('zone')).length, 0);
+    assert.equal(h.hooksOf('damaged').filter((c) => c.credit === u && (c.target === f || c.target === far) && (c.dmg.tags || []).includes('zone')).length, 0);
     approx(g.s.atk, 100, 'weaken over');
     assert.equal(u.mem.tinZones, 0);
     done(h);
@@ -648,9 +658,9 @@ test('modules: removing the elite module changes the trait / talent behaviour th
     const id = 'chess_char_2_10_b';
     const [a, b] = withAndWithout((m) => {
       const h = run({ defs: { enemies: { e: dummy('e') } }, units: [{ chessId: id, row: 10, col: 4, carryState: IDLE, ...mod(m) }], enemies: [{ key: 'e', pos: [10, 6] }] });
-      h.runUntil(() => dealt(h, h.unit(id)).length > 0, 5);
+      h.runUntil(() => dealt(h, h.unit(id), (c) => c.dmg.tags.includes('funnel')).length > 0, 5);
       const u = h.unit(id);
-      const r = dealt(h, u)[0].amount / u.s.atk;
+      const r = dealt(h, u, (c) => c.dmg.tags.includes('funnel'))[0].amount / u.s.atk;
       done(h);
       return r;
     });

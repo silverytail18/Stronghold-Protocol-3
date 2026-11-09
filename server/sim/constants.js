@@ -13,7 +13,11 @@ export const COLS = GEO.COLS;
 
 /** tilesPerSecond = moveSpeed × MOVE_SCALE (DESIGN §3). */
 export const MOVE_SCALE = 0.5;
-/** Ranged enemies stop moving this long after each attack (DESIGN §5.5). */
+/**
+ * An unblocked ranged enemy stands for each attack's clip (ai.js attackStand, GitHub #58); one whose model has no attack
+ * clip known (no `attackAnim` in data/enemies.json) stands this long after each attack instead, as do all after an
+ * attack 麻痹 interrupts (DESIGN §5.5).
+ */
 export const ATTACK_PAUSE = 0.35;
 /**
  * Collider radius of an allied unit (PRTS 作战机制 §碰撞体积与位置识别: "我方干员碰撞体积基本均为以0.25格为半径的圆形" —
@@ -24,6 +28,16 @@ export const ATTACK_PAUSE = 0.35;
  */
 export const ALLY_COLLIDER_RADIUS = 0.25;
 /**
+ * Collider radius of an enemy (a regular one: a huge enemy's hit rectangle is its collider, body.js). The official
+ * client gives every enemy prefab of this mode a CircleCollider2D of radius 0.1 (237 prefabs, local CN client read
+ * 2026-10-14), and target search tests colliders (PRTS 作战机制, above): an operator-side range — an attack range, a
+ * skill's or trait's range grid, the skill-range trigger — takes an enemy whose circle overlaps one of its tiles
+ * (body.js colliderKeys / bodyInRange; the owner's decision of 2026-10-14). Tile rules keep the tile of the position
+ * (格子判定: terrain, traps, fields and marks laid on tiles, "所在格" effects — Battle.enemiesOnTiles, body.js bodyInKeys),
+ * blocking and splash keep the position (中点判定); a radius PRTS marks 碰撞判定 takes the collider (Battle.foesInColliderRadius).
+ */
+export const ENEMY_COLLIDER_RADIUS = 0.1;
+/**
  * Block contact (PRTS 游戏数据基础 §阻挡半径; 作战机制 §碰撞体积与位置识别 "中点判定 … 案例: 阻挡"): an unblocked enemy whose
  * position lies within the blocker's radius of the blocker's centre touches it — compared on squared distances, as the
  * official client does. Ground blocking 0.70709997 (² 0.49999037); air blocking (起飞 / blockFly units against flyers)
@@ -31,13 +45,20 @@ export const ALLY_COLLIDER_RADIUS = 0.25;
  */
 export const BLOCK_RADIUS = Object.freeze({ ground: 0.70709997, fly: 0.8944, device: 0.4472 });
 export const BLOCK_RADIUS_SQ = Object.freeze({ ground: 0.49999037, fly: 0.79995137, device: 0.4472 * 0.4472 });
+/**
+ * An enemy's 隐匿 after a block ends (s): PRTS 作战机制 §隐匿 "对于绝大部分可隐匿的敌人而言，在被我方单位阻挡后会解除隐匿，不被
+ * 阻挡的3秒后重新进入隐匿" / §隐匿与Buff的关系 "阻挡状态解除后3s开关重新被开启而恢复隐匿". An enemy page's "（解除阻挡N秒后
+ * 恢复）" overrides it per 隐匿 source (buff `data.stealthRestore`: content/enemies/helpers.js STEALTH_RESTORE_BY_KEY). Battle._stealthSwitch; our
+ * operators' 隐匿 / 迷彩 are never lifted by blocking ("我方干员并不会因为阻挡而解除隐匿").
+ */
+export const STEALTH_RESTORE = 3;
 /** Default projectile speed in tiles/s for ranged operators/enemies. */
 export const PROJECTILE_SPEED = 12;
 /**
  * Projectile speeds per visual kind (tiles/s). `none`/`beam` are instant. `boomerang` (回环射手 跃跃) is the OUTBOUND
  * flight to the target — PRTS 跃跃 特性 note "投射物飞行速度15，返回时飞行速度3.75"; the way back is
  * BOOMERANG_RETURN_SPEED (ai.js throwBoomerang). `droneBomb` = 暴鸰's bomb (the official projectile_bombd `_speed` 5;
- * content/enemies.js kitBombd).
+ * content/enemies/fly.js kitBombd).
  */
 export const PROJECTILE_SPEEDS = Object.freeze({ arrow: 14, bolt: 11, bomb: 8, lob: 8, orb: 10, drone: 16, enemy: 10, boomerang: 15, droneBomb: 5 });
 /** 回环射手: speed (tiles/s) of a boomerang flying back from its hit point to its thrower (PRTS "返回时飞行速度3.75"). */
@@ -59,7 +80,7 @@ export const ELEMENTS = Object.freeze(['burn', 'neural', 'necrosis', 'apoptosis'
  * Burst damage is 无来源 (PRTS 元素): no damage-dealt multiplier or penetration of the unit that filled the gauge.
  * `duration` = the burst's 爆发冷却 (PRTS 元素 table "持续时间": 10 s, 凋亡 15 s, 侵蚀 on enemies 8 s — the operators'
  * 侵蚀 burst has its 10 s cooldown too): while it runs NO element of the unit fills or recovers, and when it ends every
- * gauge of the unit resets (damage.js).
+ * gauge of the unit resets (attack/element.js).
  * `necrosis` keeps the engine's earlier invented burst (no official counterpart) for legacy content.
  */
 export const ELEMENT = Object.freeze({
@@ -86,7 +107,7 @@ export const ELEMENT = Object.freeze({
 });
 /**
  * Official element order (PRTS 元素: SANITY 1 神经, WATER 2 侵蚀, FIRE 3 灼燃, DARK 4 凋亡; the legacy `necrosis` last):
- * the tie-break of the "当前损伤元素" a unit shows — the fullest gauge, then the lower id (damage.js elementView).
+ * the tie-break of the "当前损伤元素" a unit shows — the fullest gauge, then the lower id (attack/element.js elementView).
  */
 export const ELEMENT_ORDER = Object.freeze(['neural', 'erosion', 'burn', 'apoptosis', 'necrosis']);
 /** 麻痹 (ba.palsy): each stack cancels one normal attack of an enemy; at most 3 stacks, lasts until consumed. */
@@ -106,8 +127,9 @@ export const PALSY_MAX = 3;
  * PRTS 推与拉 gives two columns of 理想移动距离: 弹道 (a push carried by a projectile — "温蒂的23技能、阿消的12技能"; equal
  * to the 游戏数据基础 table above) and 特效 (an effect push, one frame less of travel — "食铁兽的12技能、见行者的12技能"):
  * PUSH_TILES_EFFECT, used by the skills in PUSH_EFFECT_SKILLS (见行者 S1 护身射击 / S2 惊爆射击, the only 特效 pushers of
- * the pool PRTS names). [ASSUMED: every other push of the pool (野鬃, 山, 莫斯提马, 琳琅诗怀雅, 圣聆初雪, 薄绿) uses the 弹道
- * column — PRTS does not classify them; the two columns differ by 7–12 %.]
+ * the pool PRTS names). 野鬃 S2 rear hits also use the effect column: #782's official recordings, DESIGN §35.10.
+ * [ASSUMED: all remaining pushes of the pool (including 野鬃's front/side hits, unchanged by #782's scope) use
+ * the 弹道 column — PRTS does not classify them; rear-only classification is not established by the footage.]
  */
 export const PUSH_TILES = Object.freeze({ '-2': 0.12, '-1': 0.44, 0: 1.7, 1: 2.14, 2: 2.96, 3: 3.53 });
 export const PUSH_TILES_EFFECT = Object.freeze({ '-2': 0.085, '-1': 0.374, 0: 1.562, 1: 1.987, 2: 2.773, 3: 3.331 });
@@ -117,8 +139,27 @@ export const PULL_CRAWL = 0.03;
 export const PULL_ORIGIN = 0.5;
 export const PULL_STOP_RADIUS = 0.6708;
 export const PUSH_DIRECTIONAL_MIN_DIST = 0.25;
+/**
+ * 失衡 (UNBALANCE) — the state machine a force > 0 puts an enemy in (PRTS 失衡位移机制 「当一名敌方单位受到一个任意来源的力，
+ * 并且受力大小 > 0 时，该敌方单位将进入失衡（UNBALANCE）状态机」; 异常效果图鉴/失衡免疫 「失衡期间无法自主移动、发动攻击、使用技能」 —
+ * not an abnormal status: 异常效果 「失衡…不属于异常效果，它是一种状态机」, so it is no stun). Its length in game seconds:
+ * PUSH_UNBALANCE = a push by 受力等级 — PRTS 游戏数据基础 推力-位移近似对应表 「位移时间」 (whole frames at 30 fps: 6, 12, 24,
+ * 27, 32, 35; the 0.1 s floor is inside them); PULL_UNBALANCE / PULL_UNBALANCE_WEAK = a pull's force window — 推与拉 §拉力
+ * 「作用时间默认为 1 s；若本次受力等级 < −1，作用时间改为 0.5 s」, the state lasting to its end after the 急停 too (「目标将仍保持
+ * 失衡状态至拉力作用时间结束为止」); UNBALANCE_MIN = the 失衡硬直 floor (「立刻拥有 0.1 s 的“失衡硬直”。此期间无法解除失衡状态机
+ * ——哪怕已经没有被移动或者受力」) — what a 静态刚体 hit by a push gets (特殊机制 静态刚体 「失衡状态拥有 0.1 秒保底持续时间」; a pulled
+ * one stays for the pull's window, its force lasting that long).
+ * PR #392 by @xcdoge brought the state; its 0.6387·√tiles was derived from the page's μ = 0.5 单位假设, not printed.
+ */
+export const PUSH_UNBALANCE = Object.freeze({ '-2': 0.2, '-1': 0.4, 0: 0.8, 1: 0.9, 2: 32 / 30, 3: 35 / 30 });
+export const PULL_UNBALANCE = 1;
+export const PULL_UNBALANCE_WEAK = 0.5;
+export const UNBALANCE_MIN = 0.1;
 
-/** Freeze caused by cold on cold (DESIGN §5.3). */
+/**
+ * Fallback freeze when a second 寒冷 lands and neither the remaining cold nor the incoming one has a duration
+ * (Battle.applyStatus). A real duration uses max(remaining, incoming) — PRTS 术语释义 寒冷 「持续时间取双方之中最高」.
+ */
 export const COLD_FREEZE_DURATION = 3;
 /** 浮空 (ba.levitate): the duration is halved on units heavier than this weight (massLevel). */
 export const LEVITATE_HALF_WEIGHT = 3;
@@ -189,6 +230,15 @@ export const MAX_ALIVE_ENEMIES = 600;
 
 /** Heal-over-time / regen events are aggregated and only emitted when they reach this amount. */
 export const REGEN_EVENT_MIN = 1;
+
+/**
+ * How far inside the field rectangle an enemy is held (tiles; Battle._clampPos). [ASSUMED] The rectangle's edge lies
+ * exactly halfway between two tiles, where the tile of a position — rounded half to even (body.js; PRTS 作战机制
+ * 四舍六入五成双) — would depend on whether the row or column number is even. Held this little inside, an enemy at the
+ * edge stays on the edge tile. 2^-20 is exact in binary and too small to move a slide of 0.1-tile steps; a 1/1024 inset
+ * did move those steps.
+ */
+export const FIELD_EDGE_INSET = 1 / 1048576;
 
 /** Row offset mapping board rows (9..12) onto boss-field rows (2..5). */
 export const BOSS_ROW_OFFSET = -7;

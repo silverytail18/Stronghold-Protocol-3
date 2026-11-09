@@ -19,6 +19,17 @@
 //     and the quiet budget emptied the cache ≈ 18 s later — back in the tab every unit was an avatar diamond until its
 //     model downloaded again (public issue #8 item 5). The idle budget still applies while it holds.
 // A model that fails or times out is retried by its view (bounded, render/units.js), `acquire(entry, { retry: true })`.
+// A load that may never settle (GitHub #68: begun in a hidden tab, still pending when the tab came back) is started again
+// by its view (`spine.restart(entry)`, RefLru.restart); such a fresh load — and any load after a failure — drops PIXI's
+// still-pending requests of that skeleton first (forgetPendingSpine), so it does not join them.
+//
+// Cosmetic plugins (DESIGN §32 P1a, docs/PLUGINS.md §9): the manifest the helpers read is the installation's with the
+// cosmetic layers laid over it — `cosmetics` (public/js/cosmetics.js createCosmeticLayers; public/js/content.js sets
+// them): the room's visual set, then the player's personal plugins, composed on the page's own manifest (every plugin
+// URL built from a set's checked composition, every reference copied out of that manifest: shared/plugins/visual.js). A
+// layer change is told like a late manifest (onChange 'manifest'). A plugin file that fails to load (an image, a model)
+// is reported (`cosmetics.fail`): its entry falls back to the art beneath it. This store itself loads with the first
+// match (ui/fieldHost.js), as in 0.2.6: the title page needs neither it nor its Spine cache.
 //
 // Pure at import time: no PIXI, no DOM access until a loader actually runs (Node tests import this file).
 //
@@ -32,14 +43,16 @@
 //   await assets.local();                           // optional local-client art manifest (data/local-assets.json,
 //   assets.localUrl('map/autochess', 'TX_autochessi_D')   DESIGN §13) → URL or null (never required)
 //   assets.spineEntry('enemy_1305_mhslim')          // its official model from the local client once local() listed
-//                                                   // it (manifest spineLocal), else the web model; `.fallback`
+//                                                   // it (manifest spineLocal; enemies and tokens), else the web
+//                                                   // model; `.fallback`
 //
 // Every URL helper is also exported as a pure function taking the manifest first (`avatarUrl(manifest, …)`),
 // so it can be unit tested without a browser. Helpers never throw on unknown ids — they return null and the
 // caller falls back (docs/ASSETS.md "Other fallbacks").
 
-import { appArtPaths } from './appResources.js';
-import { skinRecord } from '../../shared/skins.js';
+import { cosmetics, createCosmeticLayers, EMPTY_MANIFEST } from './cosmetics.js';
+import {productIcon} from '../../shared/product-icons.js';
+
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const str = (v) => (typeof v === 'string' && v ? v : null);
 const get = (o, k) => (isObj(o) && Object.hasOwn(o, k) ? o[k] : undefined);
@@ -56,11 +69,15 @@ export function baseCharId(id) {
 /**
  * Operator avatar. Accepts a charId (`char_002_amiya`) or an asset id with the E2 suffix (`char_002_amiya_2`).
  * `opts.e2` prefers the E2 art. Falls back to the base avatar, then null.
+ *
+ * `opts.skin` (docs/SKINS.md) asks for an appearance of that operator: the record under `chars[<charId>].skins[<skinId>]`
+ * — written by a cosmetic plugin's overlay (docs/PLUGINS.md §9) — and its own `avatar` / `avatarE2` when it has them.
+ * A skin that ships no picture, or a skinId the manifest does not hold, falls back to the operator's own avatar: the
+ * renderer must never draw a broken face because a plugin replaced only the model.
  */
 export function avatarUrl(m, id, opts) {
   const s = str(id);
   if (!s) return null;
-  const skin=skinRecord(m,s); if(skin?.avatar)return skin.avatar;
   const direct = get(get(m, 'chars'), s);
   let rec = direct, e2 = !!(opts && opts.e2);
   if (!rec) {
@@ -68,22 +85,53 @@ export function avatarUrl(m, id, opts) {
     rec = get(get(m, 'chars'), base);
     if (rec && /_2$/.test(s)) e2 = true;
   }
-  if (rec) return str(e2 && rec.avatarE2) || str(rec.avatar) || null;
+  if (rec) {
+    // the skin is looked up on the OPERATOR's record, whatever form the id named (a `_2` art id resolves to the same one)
+    const wanted = opts && str(opts.skin) ? String(opts.skin) : null;
+    const skin = wanted ? get(get(rec, 'skins'), wanted) : null;
+    if (skin) {
+      const art = str(e2 && skin.avatarE2) || str(skin.avatar);
+      if (art) return art;
+    }
+    return str(e2 && rec.avatarE2) || str(rec.avatar) || null;
+  }
   return null;
 }
 
-/** Operator half-body portrait (`_1` base, `_2` E2). */
+/**
+ * Operator half-body portrait (`_1` base, `_2` E2), with `opts.skin` for an appearance of that operator (docs/SKINS.md:
+ * the picker's tile art). A skin without a portrait falls back to the operator's own, like avatarUrl.
+ */
 export function portraitUrl(m, id, opts) {
   const s = str(id);
   if (!s) return null;
-  const skin=skinRecord(m,s); if(skin?.portrait)return skin.portrait;
   let rec = get(get(m, 'chars'), s), e2 = !!(opts && opts.e2);
   if (!rec) {
     rec = get(get(m, 'chars'), baseCharId(s));
     if (rec && /_2$/.test(s)) e2 = true;
   }
   if (!rec) return null;
+  const wanted = opts && str(opts.skin) ? String(opts.skin) : null;
+  const skin = wanted ? get(get(rec, 'skins'), wanted) : null;
+  if (skin) {
+    const art = str(e2 && skin.portraitE2) || str(skin.portrait) || str(skin.illust);
+    if (art) return art;
+  }
   return str(e2 && rec.portraitE2) || str(rec.portrait) || null;
+}
+
+/**
+ * The illustration (立绘) of an operator or of one of its appearances (docs/SKINS.md): `opts.skin` first, else the
+ * operator's own `illust`, else null — a detail view falls back to the portrait itself.
+ */
+export function illustUrl(m, id, opts) {
+  const s = str(id);
+  if (!s) return null;
+  const rec = get(get(m, 'chars'), s) || get(get(m, 'chars'), baseCharId(s));
+  if (!rec) return null;
+  const wanted = opts && str(opts.skin) ? String(opts.skin) : null;
+  const skin = wanted ? get(get(rec, 'skins'), wanted) : null;
+  return (skin && str(skin.illust)) || str(rec.illust) || null;
 }
 
 export function enemyIconUrl(m, enemyId) {
@@ -91,21 +139,41 @@ export function enemyIconUrl(m, enemyId) {
   return str(rec && rec.icon);
 }
 
-/** Token avatar, falling back to its owner's avatar (docs/ASSETS.md token fallbacks). */
-export function tokenAvatarUrl(m, tokenId) {
+/** Token avatar: `tokens[id].skins[opts.skin]`, else the token's avatar, else its owner's (docs/ASSETS.md token
+ * fallbacks, docs/SKINS.md). */
+export function tokenAvatarUrl(m, tokenId, opts) {
   const rec = get(get(m, 'tokens'), str(tokenId) || '');
   if (!rec) return null;
-  return str(rec.avatar) || (rec.owner ? avatarUrl(m, rec.owner) : null) || str(get(get(get(m, 'prof'), 'battlecard'), 'token'));
+  const wanted = opts && str(opts.skin) ? String(opts.skin) : null;
+  const skin = wanted ? get(get(rec, 'skins'), wanted) : null;
+  return str(skin && skin.avatar) || str(rec.avatar) || (rec.owner ? avatarUrl(m, rec.owner) : null) || str(get(get(get(m, 'prof'), 'battlecard'), 'token'));
 }
 
-export const bondIconUrl = (m, bondId) => str(get(get(m, 'bonds'), str(bondId) || ''));
-export const bandIconUrl = (m, bandId) => str(get(get(m, 'bands'), str(bandId) || ''));
+export const bondIconUrl = (m, bondId) => bondId?productIcon(m,'bonds',bondId,str(get(get(m, 'bonds'),bondId))):null;
+export const bandIconUrl = (m, bandId) => bandId?productIcon(m,'bands',bandId,str(get(get(m, 'bands'),bandId))):null;
 
 /** Item icon by trapId (`trap_1041_acarm041`) or item record (`{ trapId | iconId }`). */
 export function itemIconUrl(m, item) {
   const id = isObj(item) ? (str(item.iconId) || str(item.trapId)) : str(item);
-  return id ? str(get(get(m, 'items'), id)) : null;
+  return id ? productIcon(m,'items',id,str(get(get(m, 'items'), id))) : null;
 }
+
+/** The manifest's shared empty skins map (one object, so callers can compare identity). */
+export const EMPTY_SKINS = Object.freeze({});
+
+/**
+ * The appearances of an operator the manifest holds (docs/SKINS.md, the picker's source): `chars[charId].skins`,
+ * written by a cosmetic plugin's overlay — `{ [skinId]: { name, group, avatar, …, spine: { front, back? } } }` — or an
+ * empty object. A skin may carry a Spine model or pictures only; missing layers use the operator defaults.
+ * @returns {Record<string, any>}
+ */
+export function skinsOf(m, charId) {
+  const rec = get(get(m, 'chars'), str(charId) || '');
+  return rec && isObj(rec.skins) ? rec.skins : EMPTY_SKINS;
+}
+
+/** Whether a skin record names a Spine model (picture-only outfits are wearable too) (docs/SKINS.md). */
+export const skinHasModel = (skin) => !!skin && isObj(skin.spine) && typeof skin.spine.front === 'object' && skin.spine.front !== null && typeof skin.spine.front.skel === 'string';
 
 /** Skill icon by iconId, or by skillId via `skillsById`. Falls back to the empty skill icon. */
 export function skillIconUrl(m, id, opts) {
@@ -142,21 +210,50 @@ export function subProfIconUrl(m, sub) {
  * Spine manifest entry for a unit asset id (operator charId, token id, enemy id). `opts.back` asks for the Back
  * model (operators only; falls back to Front). Enemy aliases are resolved transparently. Returns the Spine
  * object of docs/ASSETS.md or null.
- * `opts.local` (the data/local-assets.json manifest): an enemy whose official model only the local client has
- * (`spineLocal`, e.g. 灼热源石虫 — user feedback after 0.1.0, D3) gets that model when the manifest lists every one of
- * its files; the returned entry's `fallback` is the web model (aliased), for a load failure (DESIGN §13: local art is
+ * `opts.local` (the data/local-assets.json manifest): an enemy or token whose official model only the local client has
+ * (`spineLocal`, e.g. 灼热源石虫 — user feedback after 0.1.0, D3 — and most 自选 summons) gets that model when the
+ * manifest lists every one of its files; the returned entry's `fallback` is the web model (an enemy's alias; a token's
+ * web model, mostly none — its view then keeps the avatar diamond), for a load failure (DESIGN §13: local art is
  * optional, everything works without it).
+ * `opts.skin` (docs/SKINS.md): an appearance of that operator, written by a cosmetic plugin's overlay — the model under
+ * `chars[<charId>].skins[<skinId>].spine`. A skin the manifest does not hold (or one of another operator) draws the
+ * operator's own model instead: the caller is a renderer that must always end up with something to draw.
  */
 export function spineEntry(m, id, opts) {
   const s = str(id);
   if (!s) return null;
-  const ch = skinRecord(m,s) || get(get(m, 'chars'), s) || get(get(m, 'chars'), baseCharId(s));
-  if (ch && isObj(ch.spine)) {
-    const sp = (opts && opts.back && isObj(ch.spine.back)) ? ch.spine.back : ch.spine.front;
-    return validSpine(sp) ? sp : null;
+  const ch = get(get(m, 'chars'), s) || get(get(m, 'chars'), baseCharId(s));
+  if (ch) {
+    const wanted = opts && str(opts.skin) ? String(opts.skin) : null;
+    if (wanted) {
+      const skin = get(get(ch, 'skins'), wanted);
+      // B6 / §35.4 [ASSUMED]: an unfinished spine map with no Front uses the complete default body.
+      if (skinHasModel(skin)) {
+        const sp = (opts && opts.back && isObj(skin.spine.back)) ? skin.spine.back : skin.spine.front;
+        if (validSpine(sp)) return sp;
+      }
+    }
+    // no such skin (or no skin asked for): the operator's own model
+    if (isObj(ch.spine)) {
+      const sp = (opts && opts.back && isObj(ch.spine.back)) ? ch.spine.back : ch.spine.front;
+      return validSpine(sp) ? sp : null;
+    }
   }
   const tk = get(get(m, 'tokens'), s);
-  if (tk) return validSpine(tk.spine) ? tk.spine : null;
+  if (tk) {
+    // A summon's own appearance (docs/SKINS.md): `tokens[id].skins[<owner skin id>]`, the official tokenSkinMap, written
+    // by a cosmetic plugin. A skin the manifest does not hold (or none asked for) draws the token's own model.
+    const wanted = opts && str(opts.skin) ? String(opts.skin) : null;
+    if (wanted) {
+      const skin = get(get(tk, 'skins'), wanted);
+      if (isObj(skin) && isObj(skin.spine)) {
+        const sp = (opts && opts.back && isObj(skin.spine.back)) ? skin.spine.back : skin.spine.front;
+        if (validSpine(sp)) return sp;
+      }
+    }
+    const web = validSpine(tk.spine) ? tk.spine : null;
+    return (opts && opts.local && localSpineEntry(tk.spineLocal, opts.local, web)) || web;
+  }
   const en = get(get(m, 'enemies'), s);
   if (en) {
     let web = null;
@@ -195,19 +292,32 @@ export function localSpineEntry(sl, local, web) {
   return entry;
 }
 
-/** Whether an operator/token/enemy has a Back model. */
-export function hasBackSpine(m, id) {
-  const ch = skinRecord(m,id) || get(get(m, 'chars'), str(id) || '') || get(get(m, 'chars'), baseCharId(id) || '');
-  return !!(ch && isObj(ch.spine) && validSpine(ch.spine.back));
+/**
+ * Whether an operator/token/enemy has a Back model. `skinId` (docs/SKINS.md) asks about one of the operator's
+ * appearances — a skin may ship its own Front/Back pair, or none at all (then the operator's own Back decides).
+ */
+export function hasBackSpine(m, id, skinId) {
+  const ch = get(get(m, 'chars'), str(id) || '') || get(get(m, 'chars'), baseCharId(id) || '');
+  if (ch) {
+    const skin = str(skinId) ? get(get(ch, 'skins'), String(skinId)) : null;
+    const src = skinHasModel(skin) ? skin.spine : ch.spine;
+    return !!(isObj(src) && validSpine(src.back));
+  }
+  // 召唤物皮肤 (docs/SKINS.md): a token's skin may ship its own Back; otherwise the token's own model decides
+  const tk = get(get(m, 'tokens'), str(id) || '');
+  if (!tk) return false;
+  const skin = str(skinId) ? get(get(tk, 'skins'), String(skinId)) : null;
+  const src = skin && isObj(skin.spine) ? skin.spine : tk.spine;
+  return !!(isObj(src) && validSpine(src.back));
 }
 
 export function validSpine(sp) {
   return isObj(sp) && typeof sp.skel === 'string' && /^\/[^\s]*\.skel$/.test(sp.skel) && typeof sp.atlas === 'string' && isObj(sp.anims);
 }
 
-/** Best 2D picture for a unit asset id (operator avatar, token avatar, enemy icon, item icon). */
-export function unitPictureUrl(m, id) {
-  return avatarUrl(m, id) || tokenAvatarUrl(m, id) || enemyIconUrl(m, id) || itemIconUrl(m, id) || null;
+/** Best 2D picture for a unit asset id (operator avatar, token avatar, enemy icon, item icon); `opts` reaches avatarUrl. */
+export function unitPictureUrl(m, id, opts) {
+  return avatarUrl(m, id, opts) || tokenAvatarUrl(m, id, opts) || enemyIconUrl(m, id) || itemIconUrl(m, id) || null;
 }
 
 // ---- audio ---------------------------------------------------------------------------------------------------
@@ -222,17 +332,31 @@ export function bgmEntry(m, kind) {
 /** SFX URL: group 'ui' | 'battle', key e.g. 'buy'. */
 export const sfxUrl = (m, group, key) => str(get(get(get(get(m, 'audio'), 'sfx'), str(group) || ''), str(key) || ''));
 
-/** Per-unit SFX: kind 'attack' | 'hit' | 'skill' | 'die' | 'born'; `skillIndex` picks `skills[i]` when present. */
+/**
+ * Per-unit SFX: kind 'attack' | 'hit' | 'skill' | 'die' | 'born'; `skillIndex` picks `skills[i]` and — for an attack or
+ * an impact — `attacks[i]` / `hits[i]` (the running skill's own files, tools/assets/audio.mjs pickModeAttacks /
+ * pickModeHits) when the manifest has them.
+ */
 export function unitSfxUrl(m, id, kind, skillIndex) {
-  id=skinRecord(m,id)?.charId || skinRecord(m,id)?.tokenId || id;
   const u = get(get(get(get(m, 'audio'), 'sfx'), 'units'), str(id) || '') || get(get(get(get(m, 'audio'), 'sfx'), 'units'), baseCharId(id) || '');
   if (!isObj(u)) return null;
   if (kind === 'skill' && Number.isInteger(skillIndex) && isObj(u.skills)) {
     const s = str(u.skills[skillIndex]);
     if (s) return s;
   }
+  const per = kind === 'attack' ? u.attacks : kind === 'hit' ? u.hits : null;
+  if (Number.isInteger(skillIndex) && isObj(per)) {
+    const a = str(per[skillIndex]);
+    if (a) return a;
+  }
   return str(u[kind]);
 }
+
+// ---- cosmetic plugins (DESIGN §32 P1a) ---------------------------------------------------------------------------
+
+// The layers live in public/js/cosmetics.js (small: the title page loads it, not this store); re-exported for the code
+// and the tests that read them from here.
+export { createCosmeticLayers, cosmetics };
 
 // ---- generic caches ----------------------------------------------------------------------------------------
 
@@ -242,7 +366,11 @@ export function unitSfxUrl(m, id, kind, skillIndex) {
  * Entries with refs > 0 are never evicted; the cache may exceed `max` while everything is in use.
  * Failures are remembered for `failTtl` ms (so a missing model is not refetched every frame) and rethrown — except for
  * `acquire(key, arg, { retry: true })`, which drops a remembered failure nobody references and loads again (a view
- * retrying a failed or timed-out model: render/units.js).
+ * retrying a failed or timed-out model: render/units.js). `restart(key, arg)` starts a load still in flight again (GitHub
+ * #68: one begun in a hidden tab may never settle): a new attempt of the same entry — its refs and the promise its
+ * holders wait on stay —, the earlier attempt is abandoned (its concurrency slot freed, a late result ignored: PIXI shares
+ * its resources by URL, so nothing is unloaded), the first attempt to succeed settles the entry and only the newest
+ * attempt's failure fails it. A load after a failure and a restart are `fresh` (`load(key, arg, { fresh: true })`).
  * Memory budget (optional): `weigh(key, value, arg)` → cost of a ready value; idle (refs 0) ready entries are evicted,
  * least recently used first, while their total weight exceeds `maxIdleWeight` — or `quietWeight` once nothing at all
  * has been referenced and no scene holds the cache (`hold()`) for `quietDelay` ms (no scene on screen; the instant zero
@@ -310,29 +438,14 @@ export class RefLru {
    */
   acquire(key, arg, opts) {
     let e = this.map.get(key);
-    if (e && e.state === 'failed' && (this.now() - e.failedAt > this.failTtl || (opts && opts.retry && e.refs === 0))) { this.map.delete(key); e = null; }
+    let fresh = false;
+    if (e && e.state === 'failed' && (this.now() - e.failedAt > this.failTtl || (opts && opts.retry && e.refs === 0))) { this.map.delete(key); e = null; fresh = true; }
     if (!e) {
-      e = { key, promise: null, value: null, state: 'loading', refs: 0, used: ++this._tick, weight: 0, idleSince: null };
+      e = { key, promise: null, value: null, state: 'loading', refs: 0, used: ++this._tick, weight: 0, idleSince: null, attempt: 0, abort: null, settle: null };
       this.map.set(key, e);
-      // an unload of this key still in flight: load again only once it has settled (never the doomed value)
-      const load = () => {
-        const pending = this._unloading.get(key);
-        return pending ? pending.then(() => this._load(key, arg)) : this._load(key, arg);
-      };
-      e.promise = this._schedule(() => this._withTimeout(load(), key)).then(
-        (v) => {
-          if (this.map.get(key) !== e) { this._unloadNow(key, v, e); return v; }
-          e.value = v; e.state = 'ready';
-          if (this._weigh) { let w = 0; try { w = Number(this._weigh(key, v, arg)); } catch { /* ignore */ } e.weight = w > 0 ? w : 0; }
-          this._requestEvict();
-          return v;
-        },
-        (err) => {
-          e.state = 'failed'; e.error = err; e.failedAt = this.now();
-          throw err;
-        },
-      );
+      e.promise = new Promise((resolve, reject) => { e.settle = { resolve, reject }; });
       e.promise.catch(() => {});
+      this._attempt(e, key, arg, fresh);
     }
     e.refs++;
     this._refs++;
@@ -340,6 +453,51 @@ export class RefLru {
     e.idleSince = null;
     e.used = ++this._tick;
     return e.promise;
+  }
+
+  /**
+   * Start the load of `key` again while it is still in flight (see the header); false when it is not loading (ready,
+   * failed or unknown).
+   */
+  restart(key, arg) {
+    const e = this.map.get(key);
+    if (!e || e.state !== 'loading' || !e.settle) return false;
+    this._attempt(e, key, arg, true);
+    return true;
+  }
+
+  /** One load attempt of entry `e` (see the header): the first success settles it, only the newest attempt's failure. */
+  _attempt(e, key, arg, fresh) {
+    const n = ++e.attempt;
+    if (e.abort) { const abort = e.abort; e.abort = null; abort(); }
+    // an unload of this key still in flight: load again only once it has settled (never the doomed value)
+    const load = () => {
+      const pending = this._unloading.get(key);
+      const go = () => this._load(key, arg, fresh ? { fresh: true } : undefined);
+      return pending ? pending.then(go) : go();
+    };
+    const run = () => (n === e.attempt
+      ? this._withTimeout(load(), key, (abort) => { if (n === e.attempt) e.abort = abort; })
+      : Promise.reject(new Error(`load superseded: ${key}`)));
+    this._schedule(run).then(
+      (v) => {
+        const s = e.settle;
+        if (!s) return; // settled by another attempt: a late duplicate (PIXI shares its resources by URL — keep them)
+        e.settle = null; e.abort = null;
+        if (this.map.get(key) !== e) { this._unloadNow(key, v, e); s.resolve(v); return; }
+        e.value = v; e.state = 'ready';
+        if (this._weigh) { let w = 0; try { w = Number(this._weigh(key, v, arg)); } catch { /* ignore */ } e.weight = w > 0 ? w : 0; }
+        this._requestEvict();
+        s.resolve(v);
+      },
+      (err) => {
+        const s = e.settle;
+        if (!s || n !== e.attempt) return; // an abandoned attempt: the newest one decides
+        e.settle = null; e.abort = null;
+        e.state = 'failed'; e.error = err; e.failedAt = this.now();
+        s.reject(err);
+      },
+    );
   }
 
   /** Drop one reference (never below 0). */
@@ -482,11 +640,14 @@ export class RefLru {
     });
   }
 
-  _withTimeout(p, key) {
-    if (!(this.timeout > 0)) return p;
+  /** `p` bounded by the timeout; `onAbort(abort)` receives a function that rejects it at once (a restart). */
+  _withTimeout(p, key, onAbort) {
+    if (!(this.timeout > 0) && !onAbort) return p;
     return new Promise((resolve, reject) => {
-      const t = setTimeout(() => reject(new Error(`load timeout: ${key}`)), this.timeout);
-      p.then((v) => { clearTimeout(t); resolve(v); }, (err) => { clearTimeout(t); reject(err); });
+      const t = this.timeout > 0 ? setTimeout(() => reject(new Error(`load timeout: ${key}`)), this.timeout) : null;
+      const stop = () => { if (t !== null) clearTimeout(t); };
+      if (onAbort) onAbort(() => { stop(); reject(new Error(`load restarted: ${key}`)); });
+      p.then((v) => { stop(); resolve(v); }, (err) => { stop(); reject(err); });
     });
   }
 }
@@ -511,13 +672,38 @@ export function loadImageElement(url) {
 }
 
 /** Default Spine loader: PIXI.Assets.load(skel) → spineData (needs globalThis.PIXI + PIXI.spine). */
-export async function loadSpineData(entry) {
+export async function loadSpineData(entry, opts) {
   const PIXI = globalThis.PIXI;
   if (!PIXI || !PIXI.Assets || !PIXI.spine) throw new Error('PIXI / pixi-spine not loaded');
+  if (opts && opts.fresh) forgetPendingSpine(entry, opts.keep);
   const res = await PIXI.Assets.load(entry.skel);
   const data = res && (res.spineData || res);
   if (!data || !Array.isArray(data.animations)) throw new Error(`bad spine data: ${entry.skel}`);
   return data;
+}
+
+/**
+ * Forget PIXI's requests of a skeleton that never finished loading — its .skel is not in `PIXI.Assets.cache` — so a fresh
+ * load asks for them again instead of joining them (GitHub #68: a request begun in a hidden tab may never settle, and
+ * `PIXI.Assets.load` of the same URL hands out the same pending promise): the .skel's and, unless the atlas finished
+ * (then its pages did too), the .atlas's and its pages' entries of the loader's promise cache. Pages in `keep` (another
+ * cached skeleton's) stay. Returns how many were dropped; best effort (0 without that cache).
+ * @param {object} entry manifest spine entry { skel, atlas?, textures? }
+ * @param {Set<string>} [keep]
+ */
+export function forgetPendingSpine(entry, keep) {
+  const PIXI = globalThis.PIXI;
+  const cache = PIXI && PIXI.Assets && PIXI.Assets.loader && PIXI.Assets.loader.promiseCache;
+  const skel = entry && entry.skel;
+  if (!skel || !cache || typeof cache !== 'object') return 0;
+  const done = (u) => { try { return !!PIXI.Assets.cache?.has?.(u); } catch { return true; } };
+  if (done(skel)) return 0;
+  const atlas = (typeof entry.atlas === 'string' && entry.atlas) || skel.replace(/\.skel$/, '.atlas');
+  const urls = (done(atlas) ? [skel] : [skel, atlas, ...spinePages(entry)]).filter((u) => !(keep && keep.has(u)));
+  let n = 0;
+  // the loader keys its cache by the resolved URL: the manifest path itself, or that path made absolute
+  for (const key of Object.keys(cache)) if (urls.some((u) => key === u || (u.startsWith('/') && key.endsWith(u)))) { delete cache[key]; n++; }
+  return n;
 }
 
 /**
@@ -640,15 +826,20 @@ const transientFetch = (err) => {
  * after MANIFEST_BACKOFF_MS (bounded; a 404 or a body that is no JSON only on the next `ready()`). `onChange(fn)` is told
  * when the manifest (`'manifest'`) or the optional local-client manifest (`'local'`) arrives, so views built without it
  * resolve their models then (render/app.js → UnitView.retryAssets).
+ * Cosmetic plugins (`opts.cosmetics`, createCosmeticLayers; the browser singleton has the page's `cosmetics`): every
+ * helper reads the manifest with the layers laid over it, `manifest` is that one, and a layer change is told as
+ * 'manifest' (the views re-resolve what they draw next).
  * @param {{ url?: string, fetch?: typeof fetch, manifest?: object, localManifest?: object, loadImage?: (url) => Promise<any>,
  *           loadSpine?: (entry) => Promise<any>, unloadSpine?: (entry, value, keepPages:Set<string>) => (Promise<void>|void),
  *           spineMax?: number, spineTimeout?: number, spineWeigh?: (key, spineData) => number, spineIdleBytes?: number,
  *           spineQuietBytes?: number, spineIdleGrace?: number, spineEvictDelay?: number, spineQuietDelay?: number,
  *           spineTimers?: { set, clear }, spineNow?: () => number, retryDelays?: number[], backoff?: number[],
- *           wait?: (ms: number) => Promise<void>, timers?: { set, clear } }} [opts]
+ *           wait?: (ms: number) => Promise<void>, timers?: { set, clear },
+ *           cosmetics?: ReturnType<typeof createCosmeticLayers> | null }} [opts]
  */
 export function createAssets(options) {
   const opts = options && typeof options === 'object' ? options : {};
+  const layers = opts.cosmetics && typeof opts.cosmetics.apply === 'function' ? opts.cosmetics : null;
   const url = opts.url || '/data/assets.json';
   const localUrl = opts.localUrl || '/data/local-assets.json';
   let localPromise = isObj(opts.localManifest) ? Promise.resolve(opts.localManifest) : null;
@@ -675,8 +866,8 @@ export function createAssets(options) {
   };
 
   /** Adopt a manifest (fetched or seeded): resolves `ready()`, stops the background tries, tells the listeners. */
-  function adopt(m, replace = false) {
-    if ((!replace && manifest) || !isObj(m) || manifest === m) return false;
+  function adopt(m) {
+    if (manifest || !isObj(m)) return false;
     manifest = m;
     readyPromise = Promise.resolve(m);
     backoffN = 0;
@@ -692,7 +883,7 @@ export function createAssets(options) {
     let json;
     try { json = await res.json(); } catch (err) { throw Object.assign(err instanceof Error ? err : new Error(String(err)), { badJson: true }); }
     if (!isObj(json)) throw Object.assign(new Error('not a manifest'), { badJson: true });
-    return appArtPaths(json);
+    return json;
   }
 
   function scheduleBackoff() {
@@ -727,7 +918,15 @@ export function createAssets(options) {
 
   const spineEntries = new Map(); // skel URL → manifest entry (for the atlas / page URLs on unload)
   const spine = new RefLru({
-    load: (key, entry) => { spineEntries.set(key, entry); return (opts.loadSpine || loadSpineData)(entry); },
+    load: (key, entry, o) => {
+      spineEntries.set(key, entry);
+      if (!(o && o.fresh)) return (opts.loadSpine || loadSpineData)(entry);
+      // a fresh load (a restart, or after a failure): not joined to a request that may never settle — but the pages
+      // another cached skeleton uses stay (forgetPendingSpine `keep`)
+      const keep = new Set();
+      for (const [k, other] of spineEntries) if (k !== key && spine.map.has(k)) for (const u of spinePages(other)) keep.add(u);
+      return (opts.loadSpine || loadSpineData)(entry, { fresh: true, keep });
+    },
     unload: (key, value, rec) => {
       // a late value of an entry that was dropped while loading, with the key already loading/cached again: the
       // PIXI caches are shared by URL, so unloading would pull the resources out from under the new entry
@@ -757,16 +956,23 @@ export function createAssets(options) {
     now: opts.spineNow,
   });
 
-  /** Image element (cached; failures resolve to null). */
-  function image(u) {
+  /**
+   * A file of a cosmetic layer failed to load (DESIGN §32 P1a): its entry falls back to the art beneath it from now on
+   * (createCosmeticLayers fail — the listeners re-resolve their art). Whether it was a layer's file.
+   */
+  const failed = (u) => { try { return !!layers?.fail?.(u); } catch { return false; } };
+
+  /** Image element (cached; failures resolve to null — a cosmetic plugin's image that failed falls back: `failed`). */
+  function image(u, { retry = false } = {}) {
     const s = str(u);
     if (!s) return Promise.resolve(null);
     let e = images.get(s);
+    if (retry && e?.done && !e.value) { images.delete(s); e = null; }
     if (!e) {
       e = { value: null, done: false, promise: null };
       e.promise = Promise.resolve().then(() => loadImage(s)).then(
-        (img) => { e.value = img; e.done = true; return img; },
-        () => { e.done = true; return null; },
+        (img) => { e.value = img; e.done = true; if (!img) failed(s); return img; },
+        () => { e.done = true; failed(s); return null; },
       );
       images.set(s, e);
     }
@@ -780,7 +986,7 @@ export function createAssets(options) {
         try {
           const res = await doFetch(localUrl, { cache: 'no-cache' });
           if (!res || !res.ok) return localManifest;
-          const json = appArtPaths(await res.json());
+          const json = await res.json();
           if (!localManifest && isObj(json) && isObj(json.groups)) { localManifest = json; notify('local'); }
         } catch { /* optional art: absent */ }
         return localManifest;
@@ -789,7 +995,9 @@ export function createAssets(options) {
     return localPromise;
   }
 
-  const m = () => manifest || {};
+  const m = () => (layers ? layers.apply(manifest || EMPTY_MANIFEST) : manifest || {});
+  // a layer switched on or off draws like a manifest that arrived: the views re-resolve their art (render/app.js)
+  if (layers) layers.subscribe(() => notify('manifest'));
   return {
     ready,
     local,
@@ -798,8 +1006,6 @@ export function createAssets(options) {
      * manifest is loaded: no second download, nothing to wait for. Returns whether it was adopted.
      */
     seed: (mf) => adopt(mf),
-    // Switch match manifests while preserving cached Spine textures and skin lookups.
-    replaceManifest: (mf) => adopt(mf, true),
     /** The same for the optional local-client manifest (data.js 'local'; `{ groups }`), unless one is known. */
     seedLocal(lm) {
       if (localManifest || !isObj(lm) || !isObj(lm.groups)) return false;
@@ -815,12 +1021,14 @@ export function createAssets(options) {
       return () => listeners.delete(fn);
     },
     localUrl: (group, name) => localAssetUrl(localManifest, group, name),
-    get manifest() { return manifest; },
+    /** The manifest the helpers read (the cosmetic layers over the loaded one), null until one is loaded. */
+    get manifest() { return manifest ? m() : null; },
     get loaded() { return !!manifest; },
     avatar: (id, o) => avatarUrl(m(), id, o),
     portrait: (id, o) => portraitUrl(m(), id, o),
+    illust: (id, o) => illustUrl(m(), id, o),
     enemyIcon: (id) => enemyIconUrl(m(), id),
-    tokenAvatar: (id) => tokenAvatarUrl(m(), id),
+    tokenAvatar: (id, o) => tokenAvatarUrl(m(), id, o),
     bondIcon: (id) => bondIconUrl(m(), id),
     bandIcon: (id) => bandIconUrl(m(), id),
     itemIcon: (item) => itemIconUrl(m(), item),
@@ -828,9 +1036,9 @@ export function createAssets(options) {
     profIcon: (p, kind) => profIconUrl(m(), p, kind),
     subProfIcon: (s) => subProfIconUrl(m(), s),
     ui: (name) => uiUrl(m(), name),
-    picture: (id) => unitPictureUrl(m(), id),
+    picture: (id, o) => unitPictureUrl(m(), id, o),
     spineEntry: (id, o) => spineEntry(m(), id, localManifest ? { ...o, local: localManifest } : o),
-    hasBack: (id) => hasBackSpine(m(), id),
+    hasBack: (id, skinId) => hasBackSpine(m(), id, skinId),
     audio: {
       bgm: (kind) => bgmEntry(m(), kind),
       sfx: (group, key) => sfxUrl(m(), group, key),
@@ -838,6 +1046,12 @@ export function createAssets(options) {
     },
     /** Cached image element promise (null on failure). */
     image,
+    /**
+     * Report a file that failed to load outside this store (a texture another loader made — render/app.js's shadow, an
+     * `<img>` of the interface: public/js/content.js): a cosmetic plugin's file falls back. Whether it was one.
+     * @param {string} u
+     */
+    failed,
     /** Already-loaded image element or null (sync). */
     imageNow(u) { const e = images.get(str(u) || ''); return e && e.done ? e.value : null; },
     /**
@@ -855,10 +1069,18 @@ export function createAssets(options) {
     },
     /**
      * Spine data LRU: acquire(entry, { retry }) → Promise<spineData> (`retry`: load again after a remembered failure);
-     * release(entry); peek(entry); hold() → release function (a scene that will need its skeletons again: RefLru).
+     * restart(entry) → bool (a load still in flight starts again: RefLru.restart); release(entry); peek(entry);
+     * hold() → release function (a scene that will need its skeletons again: RefLru).
      */
     spine: {
-      acquire: (entry, o) => (validSpine(entry) ? spine.acquire(entry.skel, entry, o) : Promise.reject(new Error('no spine entry'))),
+      // a cosmetic plugin's model that fails to load (any of its files) falls back to the installation's: its view loads
+      // that one (render/units.js retryAssets) — not while the tab is hidden (a load the hidden tab left hanging times out
+      // without the file being at fault: GitHub #68; the view tries again when it is shown)
+      acquire: (entry, o) => (validSpine(entry) ? spine.acquire(entry.skel, entry, o).catch((err) => {
+        if (!globalThis.document?.hidden) failed(entry.skel);
+        throw err;
+      }) : Promise.reject(new Error('no spine entry'))),
+      restart: (entry) => (validSpine(entry) ? spine.restart(entry.skel, entry) : false),
       release: (entry) => { if (entry && entry.skel) spine.release(entry.skel); },
       peek: (entry) => (entry && entry.skel ? spine.peek(entry.skel) : null),
       hold: () => spine.hold(),
@@ -869,5 +1091,5 @@ export function createAssets(options) {
   };
 }
 
-/** Browser singleton. */
-export const assets = createAssets();
+/** Browser singleton (with the page's cosmetic layers). */
+export const assets = createAssets({ cosmetics });

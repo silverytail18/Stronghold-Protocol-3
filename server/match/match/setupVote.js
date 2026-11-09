@@ -1,0 +1,133 @@
+// INFO_CHECK full setup reroll: unanimous human consent, keeping the room and player settings.
+// [ASSUMED] Remake convenience, not official mode rules (DESIGN §28.21): the unanimous human vote, the INFO_CHECK
+// timer paused during the vote and resumed with its remaining time, the independent reroll stream; and (PR #860) any
+// seated player may open or cancel the vote, each seat may open one every 30 s, a completed reroll opens a fresh window
+// (a cancelled or rejected vote does not give the cooldown back); a connection's starts also draw from its heavy bucket.
+// Installed on Match.prototype like the other method containers. The lobby only refuses spectators and absent seats.
+import { PHASE, ERR, SETUP_REROLL_COOLDOWN_MS as REROLL_COOLDOWN_MS } from '../../../shared/constants.js';
+import { createRng, deriveSeed } from '../../sim/rng.js';
+import { setupMatchWaves } from '../waves.js';
+import { drawDisabledBonds, SharedPool } from '../pool.js';
+import { createCyclopsPoolGroups } from '../cyclopsPools.js';
+import { OK, fail } from './common.js';
+
+// One start per seat per cooldown: the vote freezes the INFO_CHECK countdown, so an endless restart loop would stall
+// the opening. A completed reroll starts a new opening and therefore a new window. (SETUP_REROLL_COOLDOWN_MS, 30 s, lives
+// in shared/constants.js so the client's refusal toast names the same value.) With one human every start completes at
+// once and clears the seat cooldown, so the throttle there is the connection's heavy bucket: room.rerollSetup is in
+// server/net.js HEAVY_TYPES (2 per second, burst 6), as each reroll rebuilds the opening and resends m.public (DESIGN §35.47).
+
+export class MatchSetupVote {
+  requestSetupReroll(playerId, revision) {
+    if (this.disposed || this.ended || this.phase !== PHASE.INFO_CHECK) return fail(ERR.WRONG_PHASE);
+    const ps = this.players.get(playerId);
+    if (!ps || ps.isBot || ps.left || !ps.connected) return fail(ERR.NOT_IN_ROOM);
+    if (revision !== this.setupRevision) return fail(ERR.BAD_TARGET, 'setup revision changed');
+    if (this.setupVote) return fail(ERR.WRONG_PHASE, 'setup reroll vote in progress');
+    const humans = this.humans();
+    if (humans.some((p) => !p.connected)) return fail(ERR.NOT_READY, 'all humans must be connected to vote');
+    const now = this.sched.now();
+    const last = this._rerollStartAt.get(playerId);
+    if (last !== undefined && now - last < REROLL_COOLDOWN_MS) return fail(ERR.RATE, 'setup reroll cooldown');
+    this._rerollStartAt.set(playerId, now);
+    this.setupVote = {
+      id: ++this._setupVoteSeq,
+      proposerId: playerId,
+      voters: humans.map((p) => p.playerId),
+      agreed: new Set([playerId]),
+      remainingMs: this.deadline > 0 ? Math.max(1, this.deadline - now) : 0,
+    };
+    this.cancel(this._infoAdvanceTimer);
+    this._infoAdvanceTimer = null;
+    this.setDeadline(0);
+    if (humans.length === 1) return this.completeSetupReroll();
+    this.markPublic();
+    this.flush(true);
+    return OK;
+  }
+
+  voteSetupReroll(ps, voteId, agree) {
+    if (this.phase !== PHASE.INFO_CHECK || !this.setupVote) return fail(ERR.WRONG_PHASE);
+    const vote = this.setupVote;
+    if (vote.id !== voteId) return fail(ERR.BAD_TARGET, 'setup vote changed');
+    if (!ps.connected || !vote.voters.includes(ps.playerId)) return fail(ERR.NOT_IN_ROOM);
+    if (!agree) { this.cancelSetupVote(); return OK; }
+    vote.agreed.add(ps.playerId);
+    if (vote.voters.every((id) => vote.agreed.has(id))) return this.completeSetupReroll();
+    this.markPublic();
+    this.flush(true);
+    return OK;
+  }
+
+  cancelSetupReroll(playerId, voteId) {
+    if (this.disposed || this.ended || this.phase !== PHASE.INFO_CHECK || !this.setupVote) return fail(ERR.WRONG_PHASE);
+    if (this.setupVote.id !== voteId) return fail(ERR.BAD_TARGET, 'setup vote changed');
+    const ps = this.players.get(playerId);
+    if (!ps || ps.left || !ps.connected) return fail(ERR.NOT_IN_ROOM);
+    this.cancelSetupVote();
+    return OK;
+  }
+
+  cancelSetupVote() {
+    const vote = this.setupVote;
+    if (!vote) return;
+    this.setupVote = null;
+    if (this.phase === PHASE.INFO_CHECK && !this.disposed && !this.ended) {
+      if (vote.remainingMs > 0) {
+        this.deadline = this.sched.now() + vote.remainingMs;
+        this._phaseTimer = this.later(vote.remainingMs, () => {
+          this._phaseTimer = null;
+          this.enterBandDraft();
+        });
+      }
+      this.maybeEndInfo();
+      this.markPublic();
+      this.flush(true);
+    }
+  }
+
+  completeSetupReroll() {
+    let prepared;
+    try {
+      const rng = createRng(deriveSeed(this.seed, `reroll-setup:${this.setupRevision + 1}`));
+      const setup = setupMatchWaves(this.gd, rng);
+      const stage = setup.stageId ? this.gd.stage(setup.stageId) : null;
+      const bans = this.isCyclops ? { drawn: [], staticOff: [], banned: [] } : drawDisabledBonds(this.gd, rng);
+      const poolGroups = this.isCyclops ? createCyclopsPoolGroups(this.gd, this.order, bans.banned) : null;
+      const pool = poolGroups?.[0].pool || new SharedPool(this.gd, { banned: bans.banned });
+      if (!pool.entries.size) throw new Error('rerolled chess pool is empty');
+      const off = new Set([...bans.drawn, ...bans.staticOff]);
+      const stocks = this.order.map((ps) => ps.buildDiyStock(off));
+      prepared = { setup, stage, bans, pool, poolGroups, stocks };
+    } catch (e) {
+      this.reportError('reroll setup', e);
+      this.cancelSetupVote();
+      return fail(ERR.INTERNAL);
+    }
+    // All data-dependent work succeeds before any opening or player state changes.
+    const { setup, stage, bans, pool, poolGroups, stocks } = prepared;
+    this.stageId = setup.stageId;
+    this.stage = stage;
+    this.factions = setup.factions;
+    this.bossId = setup.bossId;
+    this.hiddenBossId = setup.hiddenBossId;
+    this.disabledBonds = bans.drawn;
+    this.staticInactiveBonds = bans.staticOff;
+    this.bannedChess = bans.banned;
+    this.pool = pool;
+    this.poolGroups = poolGroups;
+    this._botPath = null;
+    for (const [i, ps] of this.order.entries()) {
+      ps.diyStock = stocks[i].stock;
+      ps.diyBanned = stocks[i].banned;
+      ps.invalidateDeployMap();
+      ps.infoReady = ps.botControlled;
+    }
+    this.setupRevision++;
+    this.setupVote = null;
+    // A completed reroll is a new opening, so every seat gets a fresh chance to ask for another one.
+    this._rerollStartAt.clear();
+    this.enterInfoCheck();
+    return OK;
+  }
+}

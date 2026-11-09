@@ -3,8 +3,7 @@ export const RI_FIRE_COLORS=Object.freeze({phys:0xf1a658,arts:0xab91ed,true:0xf2
 export const RI_FIRE_ANGLES=Object.freeze({phys:12,arts:18,true:6});
 export const riShellProgress=t=>Math.min(1,Math.max(0,t));
 
-const shellCache=new Map();
-function shellTextures(P,type){
+function shellTextures(P,type,shellCache){
  if(shellCache.has(type))return shellCache.get(type);
  const col=RI_FIRE_COLORS[type]||RI_FIRE_COLORS.phys,r=col>>16&255,g=col>>8&255,b=col&255;
  const rgba=a=>'rgba('+r+','+g+','+b+','+a+')';
@@ -32,16 +31,17 @@ function shellTextures(P,type){
 
  const textures={body:P.Texture.from(body),plume:P.Texture.from(plume),halo:P.Texture.from(halo),smoke:P.Texture.from(smoke)};shellCache.set(type,textures);return textures;
 }
-function makeShell(P,type,layer,salvo){
- const tex=shellTextures(P,type),root=new P.Container(),body=new P.Sprite(tex.body),plume=new P.Sprite(tex.plume),halo=new P.Sprite(tex.halo),smoke=new P.Sprite(tex.smoke);
+function makeShell(P,type,layer,salvo,shellCache){
+ const tex=shellTextures(P,type,shellCache),root=new P.Container(),body=new P.Sprite(tex.body),plume=new P.Sprite(tex.plume),halo=new P.Sprite(tex.halo),smoke=new P.Sprite(tex.smoke);
  body.anchor.set(.5);plume.anchor.set(.5,1);smoke.anchor.set(.5,1);halo.anchor.set(.5);
  halo.blendMode=plume.blendMode=P.BLEND_MODES.ADD;body.alpha=.38;
  root.addChild(smoke,halo,plume,body);layer.addChild(root);return{root,body,plume,halo,smoke,salvo};
 }
 
 export class RhodesFireSystem{
- constructor(ctx){this.ctx=ctx;this.salvos=[];this.rocketNodes=[];this.rocketLayer=new ctx.P.Container();ctx.layers.fxAdd.addChild(this.rocketLayer);this.ground=new ctx.P.Graphics();this.air=new ctx.P.Graphics();this.ground.blendMode=ctx.P.BLEND_MODES.NORMAL;this.air.blendMode=ctx.P.BLEND_MODES.ADD;ctx.layers.groundFx.addChild(this.ground);ctx.layers.fxAdd.addChild(this.air);}
+ constructor(ctx){this.ctx=ctx;this.shellCache=new Map();this.salvos=[];this.rocketNodes=[];this.rocketLayer=new ctx.P.Container();ctx.layers.fxAdd.addChild(this.rocketLayer);this.ground=new ctx.P.Graphics();this.air=new ctx.P.Graphics();this.ground.blendMode=ctx.P.BLEND_MODES.NORMAL;this.air.blendMode=ctx.P.BLEND_MODES.ADD;ctx.layers.groundFx.addChild(this.ground);ctx.layers.fxAdd.addChild(this.air);}
  salvo(ex){if(!Array.isArray(ex.locks))return;this.salvos.push({locks:ex.locks,r:ex.r,tier:ex.tier,age:0,dur:ex.t||.5});if(this.salvos.length>32){const removed=this.salvos.shift();for(const n of removed.rockets||[])n.root.destroy({children:true,texture:false,baseTexture:false});this.rocketNodes=this.rocketNodes.filter(n=>n.salvo!==removed);}}
+ mark(ex){if(!Number.isFinite(ex.x)||!Number.isFinite(ex.y))return;if(!this.marks)this.marks=[];this.marks=this.marks.filter(v=>v.id!==ex.id);this.marks.push({id:ex.id,x:ex.x,y:ex.y,age:0,dur:Math.min(3,Math.max(.1,ex.t||1))});if(this.marks.length>128)this.marks.shift();}
  impact(){}
  hitAt(){}
  z(x,y){return this.ctx.heightAt?.(Math.round(y),Math.round(x))||0;}
@@ -62,6 +62,8 @@ export class RhodesFireSystem{
  }
 
  update(dt){const step=Math.max(0,dt)*(Number(this.ctx.timeScale?.())||1),cam=this.ctx.cam();this.ground.clear();this.air.clear();
+  for(const m of this.marks||[]){m.age+=step;if(m.age>=m.dur)continue;const p=cam.project(m.x,m.y,this.z(m.x,m.y)+.03),g=this.ground,d=p.s*.11,a=.7*(1-m.age/m.dur);g.lineStyle(Math.max(1.2,p.s*.015),0xa8dbe3,a);for(const sx of [-1,1])for(const sy of [-1,1])g.moveTo(p.x+sx*d,p.y+sy*d*.25).lineTo(p.x+sx*d,p.y+sy*d*.55).lineTo(p.x+sx*d*.45,p.y+sy*d*.55);}
+  this.marks=(this.marks||[]).filter(m=>m.age<m.dur);
   const warnings=new Set();for(const s of this.salvos){s.age+=step;if(s.age>=s.dur)continue;const t=Math.min(1,s.age/s.dur),fall=riShellProgress(t);
    for(const l of s.locks){const col=RI_FIRE_COLORS[l.type]||RI_FIRE_COLORS.phys,p=cam.project(l.x,l.y,this.z(l.x,l.y)+.04);
     const key=l.x+':'+l.y+':'+s.r;if(!warnings.has(key)){warnings.add(key);this.reticle(l,s,t);}
@@ -69,7 +71,7 @@ export class RhodesFireSystem{
     const angle=(RI_FIRE_ANGLES[l.type]||12)*Math.PI/180,height=p.s*(s.tier>=3?2.8:2.5),dy=height*(1-fall),dx=dy*Math.tan(angle),x=p.x-dx,y=p.y-dy;
 
     const size=s.tier>=3?1.18:1,bodyW=p.s*.095*size,bodyL=p.s*.30*size;
-    const li=s.locks.indexOf(l);if(!s.rockets)s.rockets=[];if(!s.rockets[li]){s.rockets[li]=makeShell(this.ctx.P,l.type,this.rocketLayer,s);this.rocketNodes.push(s.rockets[li]);}
+    const li=s.locks.indexOf(l);if(!s.rockets)s.rockets=[];if(!s.rockets[li]){s.rockets[li]=makeShell(this.ctx.P,l.type,this.rocketLayer,s,this.shellCache);this.rocketNodes.push(s.rockets[li]);}
     const n=s.rockets[li];n.root.position.set(x-Math.sin(angle)*bodyL*.5,y-Math.cos(angle)*bodyL*.5);n.root.rotation=-angle;
     n.body.width=bodyW*128/60;n.body.height=bodyL*320/276;
     const rear=bodyL*.5;
@@ -84,6 +86,6 @@ export class RhodesFireSystem{
    }
   }this.salvos=this.salvos.filter(s=>s.age<s.dur);
   this.rocketNodes=this.rocketNodes.filter(n=>{if(n.salvo.age>=n.salvo.dur){n.root.destroy({children:true,texture:false,baseTexture:false});return false;}return true;}); }
- clear(){for(const n of this.rocketNodes)n.root.destroy({children:true,texture:false,baseTexture:false});this.rocketNodes=[];this.salvos=[];this.ground.clear();this.air.clear();}
- destroy(){this.clear();this.ground.destroy();this.air.destroy();this.rocketLayer.destroy({children:true,texture:false,baseTexture:false});}
+ clear(){for(const n of this.rocketNodes)n.root.destroy({children:true,texture:false,baseTexture:false});this.rocketNodes=[];this.salvos=[];this.marks=[];this.ground.clear();this.air.clear();}
+ destroy(){this.clear();this.ground.destroy();this.air.destroy();this.rocketLayer.destroy({children:true,texture:false,baseTexture:false});for(const set of this.shellCache.values())for(const texture of Object.values(set))texture.destroy(true);this.shellCache.clear();}
 }

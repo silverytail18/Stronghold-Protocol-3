@@ -5,46 +5,60 @@ import { useState, useMemo } from '../../vendor/hooks.module.js';
 import { html, Icon, TierChip, Tooltip } from './components.js';
 import { data, useData, localAsset } from '../data.js';
 import { parseRichText, rtClassName } from './richText.js';
+import { t as tr } from '../../../shared/i18n.js';
+import { useStore, store } from '../store.js';
+import { skinsStore, ownerSkin, tokenSkinShown } from './skins.js';
+import { settingsStore } from './settingsStore.js';
 import {
   uiUrl, chessAvatarUrl, chessPortraitUrl, itemIconUrl, tokenAvatarUrl, enemyIconUrl, bondIconUrl, bandIconUrl,
 } from './assetUrls.js';
 
 const cx = (...p) => p.flat().filter(Boolean).join(' ');
 
-/** Data files the in-match screens use. */
+/** Data files the in-match screens use (`backups`: the 补位 stand-ins' bodies — cards, the board model, the detail card). */
 export const GAME_FILES = ['config', 'assets', 'chess', 'bonds', 'items', 'bands', 'enemies', 'bosses', 'stages', 'tokens',
-  'choices', 'effects', 'garrisons', 'factions', 'local'];
+  'choices', 'effects', 'garrisons', 'factions', 'local', 'backups'];
 
 /**
  * Load every in-match data file; returns lookups (sync, null until loaded).
  * @returns {{ ready: boolean, m: any, config: any, chess: (id:string)=>any, bond: (id:string)=>any, item: (id:string)=>any,
  *   band: (id:string)=>any, enemy: (k:string)=>any, boss: (id:string)=>any, stage: (id:string)=>any, token: (id:string)=>any,
- *   effect: (id:string)=>any, garrison: (id:string)=>any, factions: any, choices: any, list: (name:string)=>any[] }}
+ *   effect: (id:string)=>any, garrison: (id:string)=>any, factions: any, choices: any, backups: any, list: (name:string)=>any[] }}
  */
 export function useGameData() {
   const ready = useData(...GAME_FILES);
-  return useMemo(() => makeLookups(ready), [ready]);
+  // (config / factions / choices are read once per memo: a language switch reads them again in the new locale, a
+  // content switch — a version or a plugin set — from the new files)
+  return useMemo(() => makeLookups(ready), [ready, data.locale(), data.contentId(), data.modeKey()]);
+}
+
+/** A 自选 operator's summon record (data/backups.json `tokens`, 0.2.0), or null. */
+export function diyToken(id) {
+  const t = typeof id === 'string' ? data.get('backups')?.tokens : null;
+  return t && Object.hasOwn(t, id) ? t[id] : null;
 }
 
 /** Non-hook lookups (for event handlers). */
-export function makeLookups(ready = true) {
+export function makeLookups(ready = true, source = data) {
   return {
     ready,
-    m: data.get('assets'),
-    config: data.get('config'),
-    chess: (id) => data.lookup('chess', id),
-    bond: (id) => data.lookup('bonds', id),
-    item: (id) => data.lookup('items', id),
-    band: (id) => data.lookup('bands', id),
-    enemy: (k) => data.lookup('enemies', k),
-    boss: (id) => data.lookup('bosses', id),
-    stage: (id) => data.lookup('stages', id),
-    token: (id) => data.lookup('tokens', id),
-    effect: (id) => data.lookup('effects', id),
-    garrison: (id) => data.lookup('garrisons', id),
-    factions: data.get('factions'),
-    choices: data.get('choices'),
-    list: (name) => data.list(name),
+    m: source.get('assets'),
+    config: source.get('config'),
+    chess: (id) => source.lookup('chess', id),
+    bond: (id) => source.lookup('bonds', id),
+    item: (id) => source.lookup('items', id),
+    band: (id) => source.lookup('bands', id),
+    enemy: (k) => source.lookup('enemies', k),
+    boss: (id) => source.lookup('bosses', id),
+    stage: (id) => source.lookup('stages', id),
+    // (a 自选 operator's summons are data/backups.json tokens — 0.2.0, the hand piece of a placeable one)
+    token: (id) => source.lookup('tokens', id) || diyToken(id),
+    effect: (id) => source.lookup('effects', id),
+    garrison: (id) => source.lookup('garrisons', id),
+    factions: source.get('factions'),
+    choices: source.get('choices'),
+    backups: source.get('backups'),
+    list: (name) => source.list(name),
   };
 }
 
@@ -58,9 +72,33 @@ export function Img({ src, class: cls, alt = '', fallback = null, style }) {
   return html`<img class=${cls} src=${src} alt=${alt} draggable=${false} loading="lazy" style=${style} onError=${() => setBad(src)} />`;
 }
 
+/** Owner-aware operator pictures, with live selection / settings updates even on an already open card.
+ * `ownerId` omitted = local picker; null = unowned catalogue art. Callers resolve stand-ins / DIY first.
+ * B6, maintainer option A (2026-10-18); docs/SKINS.md and §35.4. Model outfits retain their models.
+ */
+export function OperatorImage({ m, chess, ownerId, skin = null, portrait = false, avatarFallback = false,
+  portraitClass, avatarClass, ...props }) {
+  useData('assets');
+  m = data.get('assets') || m;
+  const localSkins = useStore((s) => s.skins, Object.is, skinsStore);
+  const otherSkins = useStore((s) => s.otherSkins, Object.is, settingsStore);
+  const selected = useStore((s) => ownerSkin(chess?.charId, { ownerId, skin, myId: s.me.playerId,
+    players: s.match.public?.players || [], localSkins, otherSkins }));
+  const art = portrait ? chessPortraitUrl(m, chess, { skin: selected }) : null;
+  const src = art || (!portrait || avatarFallback ? chessAvatarUrl(m, chess, { skin: selected }) : null);
+  return html`<${Img} ...${props} src=${src} class=${art ? portraitClass ?? props.class : avatarClass ?? props.class} />`;
+}
+
 /** Official UI sprite by 'group/key' with a fallback. */
 export function Sprite({ k, class: cls, fallback = null }) {
   return html`<${Img} src=${uiUrl(data.get('assets'), k)} class=${cx('sprite', cls)} fallback=${fallback} />`;
+}
+
+/** Official promotion phase from the resolved record's status (not its shop tier or normal / golden form). */
+export function PromotionIcon({ m, phase, class: cls }) {
+  if (!Number.isInteger(phase) || phase < 0 || phase > 2) return null;
+  return html`<${Img} src=${uiUrl(m, `elite/elite_${phase}`)} class=${cls}
+    fallback=${html`<small class=${cls}>E${phase}</small>`} />`;
 }
 
 /**
@@ -92,16 +130,33 @@ export const isGoldenPiece = (piece, chess) => !!(piece?.golden || chess?.isGold
 /**
  * Square unit thumbnail for a piece / chess / item / token / enemy: art + tier chip + elite frame.
  * @param {{ kind?: 'chess'|'item'|'token'|'enemy', id: string, golden?: boolean, size?: 'xs'|'sm'|'md'|'lg', tier?: number,
- *   showTier?: boolean, class?: string, dim?: boolean, badge?: any, title?: string }} props
+ *   showTier?: boolean, class?: string, dim?: boolean, badge?: any, title?: string, rec?: any, ownerId?: string|null, skin?: string|null }} props
+ *   `rec`: the chess record to draw instead of the data's (a 自选 piece's composed record — 0.2.0, gameLogic/diy.js; a
+ *   补位 stand-in's — gameLogic/standIn.js: drawn with a small 「替补」 mark in the corner)
  */
-export function UnitThumb({ kind = 'chess', id, golden, size = 'md', tier, showTier = true, class: cls, dim = false, badge = null, title, skinId=null, manifest=null, record=null }) {
-  const m = manifest || data.get('assets');
+/** The summon outfit this viewer may see (#876; round-54 audit): read without hooks — thumbnails and the detail head are
+ * also rendered as plain functions — and only when there is a skin to gate. */
+function shownTokenSkin(skin, ownerId) {
+  if (!skin) return null;
+  return tokenSkinShown(skin, { ownerId, myId: store.get()?.me?.playerId ?? null, otherSkins: settingsStore.get()?.otherSkins !== false });
+}
+
+/** A summon's avatar in its owner's outfit (#876) under the operators' 显示其他玩家的皮肤 gate (round-54 audit). */
+export function TokenAvatar({ m, tokenId, ownerId = null, skin = null, fallback = null }) {
+  return html`<${Img} src=${tokenAvatarUrl(m, tokenId, { skin: shownTokenSkin(skin, ownerId) })} fallback=${fallback} />`;
+}
+
+export function UnitThumb({ kind = 'chess', id, golden, size = 'md', tier, showTier = true, class: cls, dim = false, badge = null, title, rec = null, ownerId, skin = null }) {
+  const m = data.get('assets');
+  // a summon wears its owner's outfit (#876) under the operators' 显示其他玩家的皮肤 gate (round-54 audit)
+  const tokenSkin = kind === 'token' ? shownTokenSkin(skin, ownerId) : null;
   let src = null;
   let name = '';
   let t = tier;
+  let si = null;
   if (kind === 'chess') {
-    const c = record || data.lookup('chess', id);
-    src = chessAvatarUrl(m, c, skinId);
+    const c = rec || data.lookup('chess', id);
+    si = rec && typeof rec.standInFor === 'string' && rec.standInFor ? rec : null;
     name = c?.name || '';
     t = t ?? c?.tier;
     golden = golden ?? !!c?.isGolden;
@@ -113,7 +168,7 @@ export function UnitThumb({ kind = 'chess', id, golden, size = 'md', tier, showT
     golden = golden ?? !!it?.isGolden;
   } else if (kind === 'token') {
     const tk = data.lookup('tokens', id);
-    src = tokenAvatarUrl(m, id);
+    src = tokenAvatarUrl(m, id, { skin: tokenSkin });
     name = tk?.name || '';
   } else if (kind === 'enemy') {
     const e = data.lookup('enemies', id);
@@ -124,10 +179,13 @@ export function UnitThumb({ kind = 'chess', id, golden, size = 'md', tier, showT
   return html`<span class=${cx('uthumb', `uthumb--${size}`, `uthumb--${kind}`, golden && 'is-golden', dim && 'is-dim', t && `uthumb--t${Math.max(1, Math.min(6, t | 0))}`, cls)}
       title=${title ?? name}>
     <span class="uthumb__art">
-      <${Img} src=${src} fallback=${html`<span class="uthumb__glyph">${glyph}</span>`} />
+      ${kind === 'chess'
+        ? html`<${OperatorImage} m=${m} chess=${rec || data.lookup('chess', id)} ownerId=${ownerId} skin=${skin} fallback=${html`<span class="uthumb__glyph">${glyph}</span>`} />`
+        : html`<${Img} src=${src} fallback=${html`<span class="uthumb__glyph">${glyph}</span>`} />`}
     </span>
     ${showTier && t && kind !== 'enemy' && kind !== 'token' ? html`<${TierChip} tier=${t} golden=${golden} size="sm" class="uthumb__tier" />` : null}
-    ${kind === 'token' ? html`<span class="uthumb__tag">召唤</span>` : null}
+    ${kind === 'token' ? html`<span class="uthumb__tag">${tr('召唤')}</span>` : null}
+    ${si ? html`<span class="uthumb__si" data-standin=${si.charId} aria-hidden="true">${tr('替补')}</span>` : null}
     ${badge}
   </span>`;
 }
@@ -136,7 +194,7 @@ export function UnitThumb({ kind = 'chess', id, golden, size = 'md', tier, showT
 export function PieceThumb({ piece, size = 'md', class: cls, badge }) {
   if (!piece) return null;
   return html`<${UnitThumb} kind=${piece.kind === 'item' ? 'item' : piece.kind === 'token' ? 'token' : 'chess'} id=${piece.id}
-    golden=${!!piece.golden} tier=${piece.tier} size=${size} class=${cls} badge=${badge} skinId=${piece.skinId} />`;
+    golden=${!!piece.golden} tier=${piece.tier} size=${size} class=${cls} badge=${badge} />`;
 }
 
 /**
@@ -186,18 +244,19 @@ export function GIcon({ name, class: cls, title }) {
 
 /**
  * Green LP tower + number. `pending` (> 0): the loss the running battle's leaks will cost at settlement (user
- * playtest #3 item 2) — the number shows value − pending in red followed by a −N tick that pops again on every change
- * (keyed); `note` a small tag after it (联防中); `tip` the title text.
+ * playtest #3 item 2) — the number keeps the settled LP (owner-approved #479 / #504),
+ * shown in red with a −N tick that pops again on every change (keyed); `note` a
+ * small tag after it (联防中); `tip` the title text.
  * @param {{ value: any, size?: 'sm'|'md'|'lg', class?: string, tone?: string|null, pending?: number, note?: string|null, tip?: string|null }} props
  */
 export function LpTower({ value, size = 'md', class: cls, tone, pending = 0, note = null, tip = null }) {
   const ok = Number.isFinite(value);
   const p = ok && Number(pending) > 0 ? Math.min(value, Math.trunc(Number(pending))) : 0;
-  return html`<span class=${cx('lp', `lp--${size}`, tone && `lp--${tone}`, p > 0 && 'is-pending', cls)} title=${tip || '目标生命值'}
+  return html`<span class=${cx('lp', `lp--${size}`, tone && `lp--${tone}`, p > 0 && 'is-pending', cls)} title=${tip || tr('目标生命值')}
       data-pending=${p > 0 ? p : null}>
     <${Sprite} k="hudPanel/icon_hp" class="lp__icon" fallback=${html`<${Icon} name="rook" class="lp__icon" />`} />
-    <b class="num lp__val">${ok ? Math.max(0, value - p) : '--'}</b>
-    ${p > 0 ? html`<span key=${p} class="lp__pend num" aria-label=${`结算时扣除 ${p}`}>−${p}</span>` : null}
+    <b class="num lp__val">${ok ? Math.max(0, value) : '--'}</b>
+    ${p > 0 ? html`<span key=${p} class="lp__pend num" aria-label=${tr('结算时扣除 {p}', { p })}>−${p}</span>` : null}
     ${note ? html`<span class="lp__note">${note}</span>` : null}
   </span>`;
 }
@@ -210,19 +269,19 @@ export function CoinGlyph({ class: cls }) {
 }
 
 /** Bond glyph image (white mask tinted by CSS) or first-letter fallback. */
-export function BondGlyph({ bondId, class: cls }) {
-  const b = data.lookup('bonds', bondId);
-  const src = bondIconUrl(data.get('assets'), bondId);
+export function BondGlyph({ bondId, class: cls, gd }) {
+  const b = gd?gd.bond(bondId):data.lookup('bonds', bondId);
+  const src = bondIconUrl(gd?.m||data.get('assets'), bondId);
   return html`<span class=${cx('bglyph', cls)} title=${b?.name || bondId}>
     <${Img} src=${src} fallback=${html`<span class="bglyph__txt">${[...(b?.name || '?')][0]}</span>`} />
   </span>`;
 }
 
 /** Band (strategy) icon. */
-export function BandIcon({ bandId, class: cls, size = 'md', manifest=null, record=null }) {
-  const b = record || data.lookup('bands', bandId);
+export function BandIcon({ bandId, class: cls, size = 'md', gd }) {
+  const b = gd?gd.band(bandId):data.lookup('bands', bandId);
   return html`<span class=${cx('bandicon', `bandicon--${size}`, cls)} title=${b?.name || ''}>
-    <${Img} src=${bandIconUrl(manifest || data.get('assets'), bandId)} fallback=${html`<span class="bandicon__txt">${[...(b?.name || '?')][0]}</span>`} />
+    <${Img} src=${bandIconUrl(gd?.m||data.get('assets'), bandId)} fallback=${html`<span class="bandicon__txt">${[...(b?.name || '?')][0]}</span>`} />
   </span>`;
 }
 
@@ -251,7 +310,7 @@ export function PlayerAvatar({ player, size = 'md', self = false, class: cls }) 
     <span class="pavatar__img">
       <${Img} src=${src} fallback=${player?.isBot ? html`<${Icon} name="robot" class="pavatar__bot" />` : html`<span class="pavatar__glyph">${glyph}</span>`} />
     </span>
-    ${dead ? html`<span class="pavatar__x" aria-label="已淘汰"><${Icon} name="close" /></span>` : null}
-    ${left ? html`<span class="pavatar__door" aria-label="已离开"><${Icon} name="exit" /></span>` : null}
+    ${dead ? html`<span class="pavatar__x" aria-label=${tr('已淘汰')}><${Icon} name="close" /></span>` : null}
+    ${left ? html`<span class="pavatar__door" aria-label=${tr('已离开')}><${Icon} name="exit" /></span>` : null}
   </span>`;
 }

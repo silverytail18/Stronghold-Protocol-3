@@ -1,8 +1,20 @@
+import { ZHAJING_VARIANT, ZHAJING_DIFFICULTY, ZHAJING_CAPACITIES } from './zhajing-constants.js';
 // Normative message catalogue (DESIGN §8). Used by server (validation) and client (building requests).
 // Every client→server message is `{ t, rid?, ...fields }`. Unknown `t` or invalid fields ⇒ ERR.BAD_MSG.
 
-import { chatText } from './chat.js';
-import { DIFFICULTIES, NAME_MAX_LEN, ROOM_CODE_LEN, MAX_SEATS, EMOTES, GEO } from './constants.js';
+import { MIZUKI_VARIANT } from './mizuki-constants.js';
+import { DIFFICULTIES, NAME_MAX_LEN, ROOM_CODE_LEN, MAX_SEATS, CYCLOPS_MAX_SEATS, CYCLOPS_VARIANT, EMOTES, GEO, REHEARSAL_MAX_CANDIDATES } from './constants.js';
+import { isDroppableChess } from './standIn.js';
+import { diySlotIds, validateDiyPicks } from './diy.js';
+import { cultivatedStats, isPotential, isCultivate, POTENTIAL_DEFAULT, CULTIVATE_DEFAULT, hasPotentialData } from './potential.js';
+import { isContentHash } from './plugins/identity.js';
+import { isPluginId } from './plugins/manifest.js';
+import { isTestCommand } from './testMode.js';
+import { PLUGIN_OFFER_SLOTS } from './plugins/limits.js';
+
+// Personalized emotes are administered at runtime; the catalogue lives on the server, so the
+// protocol accepts the stable id shape and the match validates/renders it.
+const PACK_EMOTE_ID = /^(?:sifeng_[a-z0-9_]+|pack\.[a-z0-9][a-z0-9_-]{0,31}\.\d{1,2})$/;
 
 // ---- tiny validators -------------------------------------------------------
 const isInt = (v, lo = -Infinity, hi = Infinity) => Number.isInteger(v) && v >= lo && v <= hi;
@@ -23,6 +35,12 @@ const isMap = (v, max, key, val) => {
   return true;
 };
 const isList = (v, max, item) => Array.isArray(v) && v.length <= max && v.every(item);
+const isScalar = (v) => isStr(v, 64) || isNum(v) || isBool(v);
+/** An official version id (shared/versions.js: the activity id, `@<sub-version>` for a sub-version) — structural only; the lobby answers VERSION_UNKNOWN for one this server does not enable (DESIGN §35.23). */
+export const isVersionId = (v) => typeof v === 'string' && v.length <= 40 && /^[a-z0-9]{1,32}(?:@[A-Za-z0-9_]{1,16})?$/.test(v);
+const isPeerDescription = (v) => isPlain(v) && (v.type === 'offer' || v.type === 'answer') && isStr(v.sdp, 16 * 1024);
+const isPeerCandidate = (v) => isPlain(v) && isStr(v.candidate, 2048)
+  && (v.sdpMid === null || isStr(v.sdpMid, 256)) && (v.sdpMLineIndex === null || isInt(v.sdpMLineIndex, 0, 65535));
 
 // ---- client-side combat (DESIGN §14): b.progress / b.result payloads -------------------------------------------
 
@@ -34,18 +52,23 @@ const isModVal = (v) => v === null || isNum(v, -BIG, BIG) || isStr(v, 64) || isB
 const isLeak = (l) => isPlain(l) && isId(l.enemyKey)
   && (l.mods === undefined || l.mods === null || isMap(l.mods, RESULT_LIMITS.mods, (k) => isStr(k, 32), isModVal))
   && optional((v) => isNum(v, 0, 1000))(l.lpr) && nullable(isId)(l.sourcePlayerId) && nullable((v) => isStr(v, 16))(l.tag)
-  && optional(isBool)(l.counted) && optional(isBool)(l.boss) && optional(isBool)(l.spawned);
+  && optional(isBool)(l.counted) && optional(isBool)(l.boss) && optional(isBool)(l.spawned) && optional(isBool)(l.uniteRuntime);
 const isUnitEnd = (u) => isPlain(u) && nullable(isUid)(u.uid) && isNum(u.hpPct, 0, 1) && isNum(u.sp, 0, 1e5) && isBool(u.alive)
   && optional(isBool)(u.skillActive) && nullable(isId)(u.defId);
 const isUnitStat = (u) => isPlain(u) && nullable(isUid)(u.uid) && nullable(isId)(u.defId) && optional((v) => isStr(v, 16))(u.kind)
   && isStat(u.dmg) && isStat(u.kills) && isStat(u.heal) && isStat(u.taken) && isStat(u.attacks);
-const isPerPlayer = (p) => isPlain(p) && isInt(p.killed, 0, 1e5) && isInt(p.total, 0, 1e5) && p.killed <= p.total
+const isPerPlayer = (p) => isPlain(p) && isInt(p.killed, 0, 1e5) && isInt(p.total, 0, 1e5)
+  // `resolved` = the HUD capsule's numerator of this player's own field (the round's own scheduled enemies knocked out
+  // or leaked: server/sim/battle/deploy.js killedInTotal / leakedInTotal, Battle.resolved). `killed` counts every counted
+  // knock-out — a runtime split child / summon too — and may therefore exceed `total`, which counts only the round's own
+  // scheduled enemies (server/match/fields.js validateClientResult bounds it against maxTotal instead).
+  && optional((x) => isInt(x, 0, 1e5))(p.resolved)
+  && optional((x) => isInt(x, 0, 1e9))(p.creditedKills)
   && isList(p.leaked, RESULT_LIMITS.leaked, isLeak) && isBool(p.perfect)
   && isMap(p.layerGains, RESULT_LIMITS.layerGains, isId, (v) => isNum(v, 0, 1e4))
   && isStat(p.coins) && isStat(p.damageDealt) && isStat(p.bossDamage) && isStat(p.healingDone) && isStat(p.deaths)
   && isList(p.unitsEnd, RESULT_LIMITS.unitsEnd, isUnitEnd)
-  && (p.unitStats === undefined || isList(p.unitStats, RESULT_LIMITS.unitStats, isUnitStat))
-  && (p.rhineCarry === undefined || isPlain(p.rhineCarry) && isList(p.rhineCarry.controllerUsed, 64, isUid));
+  && (p.unitStats === undefined || isList(p.unitStats, RESULT_LIMITS.unitStats, isUnitStat));
 const isUnspawned = (u) => isPlain(u) && isId(u.enemyKey) && nullable(isId)(u.sourcePlayerId) && nullable((v) => isStr(v, 16))(u.tag)
   && optional((v) => isNum(v, 0, 1e6))(u.time);
 
@@ -56,6 +79,7 @@ const isUnspawned = (u) => isPlain(u) && isId(u.enemyKey) && nullable(isId)(u.so
 export function isBattleResult(v) {
   return isPlain(v) && ['cleared', 'timeout', 'forced'].includes(v.reason) && isNum(v.time, 0, 1e5)
     && optional((x) => isInt(x, 0, 1e5))(v.killed) && optional((x) => isInt(x, 0, 1e5))(v.total)
+    && optional((x) => isInt(x, 0, 1e5))(v.resolved)
     && isMap(v.perPlayer, RESULT_LIMITS.players, isId, isPerPlayer) && Object.keys(v.perPlayer).length > 0
     && (v.unspawned === undefined || isList(v.unspawned, RESULT_LIMITS.unspawned, isUnspawned))
     && optional((x) => isInt(x, 0, 1e9))(v.errors) && optional((x) => isNum(x, 0, BIG))(v.bossHpLeft);
@@ -64,16 +88,19 @@ export function isBattleResult(v) {
 // ---- operator loadout (DESIGN §16): room.loadout { entries } -------------------------------------------------
 
 /**
- * `room.loadout { entries }`: `entries` = `{ [baseChessId]: { skill?: skillIndex, module?: uniEquipId | 'none' } }`
- * (the per-browser loadout of the 干员调配 screen). Structural limits below; the semantic check against the game data
- * (known visible chess, legal skill index for the normal AND the elite status, legal module of the elite) is
- * `checkLoadout` — used by the server (lobby, match) and by the client to sanitise a stored loadout before sending.
+ * `room.loadout { entries, ops? }`: `entries` = `{ [baseChessId]: { skill?: skillIndex, module?: uniEquipId | 'none' } }`
+ * (the per-browser loadout of the 干员调配 screen); `ops` (0.2.2) = `{ [charId]: { potential?: 1–6, cultivate?: 0–3 } }`,
+ * the player's per-operator 潜能 and 练度 (shared/potential.js; absent / missing = 潜能 6, 精英2 Lv.60 — the owner's
+ * decision of 2026-10-08). Structural limits below; the semantic checks against the game data — known visible chess,
+ * legal skill index for the normal AND the elite status, legal module of the elite (`checkLoadout`); an operator of the
+ * 干员调配 roster or the 自选 owned pool (`checkLoadoutOps`) — are used by the server (lobby, match) and by the client to
+ * sanitise a stored loadout before sending.
  */
-export const LOADOUT_LIMITS = Object.freeze({ entries: 160, skillIndex: 9 });
+export const LOADOUT_LIMITS = Object.freeze({ entries: 160, skillIndex: 9, ops: 256 });
 /** The "no module" choice of an elite (模组: 不装备). */
 export const MODULE_NONE = 'none';
-const isLoadoutEntry = (e) => isPlain(e) && Object.keys(e).length > 0 && Object.keys(e).every((k) => k === 'skill' || k === 'module' || k === 'skin')
-  && optional((v) => isInt(v, 0, LOADOUT_LIMITS.skillIndex))(e.skill) && optional(isId)(e.module) && optional(isId)(e.skin);
+const isLoadoutEntry = (e) => isPlain(e) && Object.keys(e).length > 0 && Object.keys(e).every((k) => k === 'skill' || k === 'module')
+  && optional((v) => isInt(v, 0, LOADOUT_LIMITS.skillIndex))(e.skill) && optional(isId)(e.module);
 /** Structural check of `room.loadout.entries`. */
 export const isLoadoutEntries = (v) => isMap(v, LOADOUT_LIMITS.entries, isId, isLoadoutEntry);
 
@@ -129,7 +156,7 @@ export function loadoutOptions(base, golden = null) {
  * @param {(id: string) => any} getChess chess record lookup (normal and golden ids)
  * @returns {{ ok: true, loadout: Record<string, { skill: number, module: string|null }> } | { error: 'BAD_MSG'|'BAD_TARGET', detail: string }}
  */
-export function checkLoadout(entries, getChess, getSkinIds = () => []) {
+export function checkLoadout(entries, getChess) {
   if (!isLoadoutEntries(entries)) return { error: 'BAD_MSG', detail: 'bad loadout entries' };
   const out = {};
   for (const id of Object.keys(entries)) {
@@ -145,9 +172,8 @@ export function checkLoadout(entries, getChess, getSkinIds = () => []) {
     if (e.module !== undefined && !golden) return { error: 'BAD_TARGET', detail: `${id} has no elite module` };
     const module = golden ? (e.module ?? opt.defaultModule) : null;
     if (golden && !opt.modules.includes(module)) return { error: 'BAD_TARGET', detail: `module ${e.module} not available for ${id}` };
-    if (e.skin !== undefined && !getSkinIds(base).includes(e.skin)) return { error: 'BAD_TARGET', detail: `skin not available for ${id}` };
-    if (skill === opt.defaultSkill && module === opt.defaultModule && e.skin === undefined) continue;
-    out[id] = { skill, module, ...(e.skin !== undefined ? {skin:e.skin} : {}) };
+    if (skill === opt.defaultSkill && module === opt.defaultModule) continue;
+    out[id] = { skill, module };
   }
   return { ok: true, loadout: out };
 }
@@ -174,6 +200,239 @@ export function resolveLoadout(loadout, chess, getChess) {
   return { skillIndex, moduleId };
 }
 
+/** One `room.loadout.ops` entry: `{ potential?: 1–6, cultivate?: 0–3 }`, at least one of them. */
+const isOpsEntry = (e) => isPlain(e) && Object.keys(e).length > 0 && Object.keys(e).every((k) => k === 'potential' || k === 'cultivate')
+  && optional(isPotential)(e.potential) && optional(isCultivate)(e.cultivate);
+/** Structural check of `room.loadout.ops` (0.2.2): a map of ≤ 256 charIds → `{ potential?, cultivate? }`. */
+export const isLoadoutOps = (v) => isMap(v, LOADOUT_LIMITS.ops, isId, isOpsEntry);
+
+/**
+ * The operators a player sets a potential / 练度 for (0.2.2): the charIds of the 干员调配 roster — the visible normal chess
+ * (checkLoadout's targets; a hidden chess shares its visible twin's charId: 锡人, 耶拉 …) — and the owned 6★ 自选 picks
+ * (data/backups.json `diy.ownedPool`). A PRESET (特许) operator the player does not own is set by hand (潜能 1, 未精英化:
+ * the official 「未持有的特许按1潜」 and +0 %); a 补位 stand-in or a prototype pick takes neither.
+ * @param {Record<string, any>|null|undefined} chess data/chess.json
+ * @param {any} [backups] data/backups.json
+ * @returns {Set<string>}
+ */
+export function cultivationCharIds(chess, backups = null) {
+  const out = new Set();
+  for (const c of Object.values(chess && typeof chess === 'object' ? chess : {})) {
+    if (c && !c.isGolden && !c.isDiy && c.visible !== false && !c.isHidden && (!c.baseId || c.baseId === c.chessId) && isId(c.charId)) out.add(c.charId);
+  }
+  for (const id of Array.isArray(backups?.diy?.ownedPool) ? backups.diy.ownedPool : []) if (isId(id)) out.add(id);
+  return out;
+}
+
+/**
+ * Whether a non-default potential changes this operator. Official characters always may: a PRESET without `potDown`
+ * (char_616_pithst) is stored as written and changes no stat, and that stays allowed. A plugin `char_x_` with no
+ * `potDown` and no chained talent curve does not. [ASSUMED] only the plugin prefix is restricted (DESIGN §32.5).
+ * @param {{ chess?: Record<string, any>, backups?: any }|null|undefined} data
+ * @param {string} charId
+ */
+export function charPotentialChanges(data, charId) {
+  if (typeof charId !== 'string' || !charId.startsWith('char_x_')) return true;
+  const chess = data?.chess;
+  if (chess && typeof chess === 'object') {
+    for (const c of Object.values(chess)) if (c?.charId === charId && hasPotentialData(c)) return true;
+  }
+  const unit = data?.backups?.units?.[charId];
+  if (unit) {
+    if (hasPotentialData(unit)) return true;
+    for (const f of Object.values(unit.forms ?? {})) if (hasPotentialData(f)) return true;
+  }
+  return false;
+}
+
+/**
+ * Semantic check + normalisation of `room.loadout.ops` (0.2.2) — strict like checkLoadout: an operator `isOperator` does
+ * not know (cultivationCharIds) rejects the whole message. Entries equal to the defaults (潜能 6, 练度 3) are dropped, the
+ * rest stored complete `{ potential, cultivate }`. `undefined` / `null` = no settings (`{}`).
+ * `changesWithPotential(charId)`, when passed, rejects a non-default potential for an operator whose record has no curve.
+ * Callers that omit it keep the previous behaviour.
+ * @param {any} ops
+ * @param {(charId: string) => boolean} isOperator
+ * @param {(charId: string) => boolean} [changesWithPotential]
+ * @returns {{ ok: true, ops: Record<string, { potential: number, cultivate: number }> } | { error: 'BAD_MSG'|'BAD_TARGET', detail: string }}
+ */
+export function checkLoadoutOps(ops, isOperator, changesWithPotential = null) {
+  if (ops == null) return { ok: true, ops: {} };
+  if (!isLoadoutOps(ops)) return { error: 'BAD_MSG', detail: 'bad operator settings' };
+  const out = {};
+  for (const id of Object.keys(ops)) {
+    if (typeof isOperator !== 'function' || !isOperator(id)) return { error: 'BAD_TARGET', detail: `unknown operator ${id}` };
+    const potential = ops[id].potential ?? POTENTIAL_DEFAULT;
+    const cultivate = ops[id].cultivate ?? CULTIVATE_DEFAULT;
+    if (potential !== POTENTIAL_DEFAULT && typeof changesWithPotential === 'function' && changesWithPotential(id) === false) {
+      return { error: 'BAD_TARGET', detail: `potential does not change ${id}` };
+    }
+    if (potential === POTENTIAL_DEFAULT && cultivate === CULTIVATE_DEFAULT) continue;
+    out[id] = { potential, cultivate };
+  }
+  return { ok: true, ops: out };
+}
+
+// ---- 干员皮肤 (docs/SKINS.md): room.skins { skins } ------------------------------------------------------------
+
+/**
+ * `room.skins { skins }`: `skins` = `{ [charId]: skinId }` — which appearance each operator wears, one entry per
+ * OPERATOR, so it covers the normal chess, its elite and a 自选 slot fielding the same operator (the skin catalogue of
+ * the composed asset manifest is grouped per operator too: `chars[charId].skins`, docs/PLUGINS.md §9).
+ *
+ * A skin comes from an enabled cosmetic plugin's overlay (one the server's owner installed, switched on by each player
+ * in 设置 → 外观插件 — `scope: ["personal"]`, so a room is never part of it). Unlike `room.loadout` these are PUBLIC:
+ * they ride in `Match.publicView().players[]`, which is how a teammate sees your skin.
+ *
+ * The wire refuses the shape of the whole map (a non-plain object, a key that is not an operator charId, a value that
+ * is not a skinId, or more than `SKIN_LIMITS.entries` pairs). Whether the operator is one this room's content has is
+ * `checkSkinSelection`: that entry is dropped and the rest kept. A skinId the manifest does not hold still draws the
+ * operator's default model (`spineEntry`).
+ */
+export const SKIN_LIMITS = Object.freeze({
+  // [ASSUMED] absolute ceiling of one message. The practical cap is the operator count of the room's content
+  // (checkSkinSelection drops the rest); 256 is above the vanilla roster (210) and the same order as the loadout's
+  // operator map. A larger map is refused whole, the way an over-long loadout is.
+  entries: 256, idLen: 64, charIdLen: 64,
+});
+/** A skinId. NOT `isId`: that allows only `[A-Za-z0-9_\-.:]`, while a skin key carries `@` and `#` (`char_002_amiya@winter#1`). The same character class as shared/plugins/visual.js `isSkinKey`. */
+export const isSkinId = (v) => typeof v === 'string' && v.length > 0 && v.length <= SKIN_LIMITS.idLen && /^[A-Za-z0-9_][A-Za-z0-9_@#+.\-]*$/.test(v);
+/**
+ * An operator charId. Official ids are `char_<digits>_<token>` (character_table / data/chess.json: `char_498_inside`,
+ * `char_1012_skadi2`, `char_4145_ulpia`, `char_616_pithst`). A plugin operator is `char_x_<id>`
+ * (shared/plugins/recordsSchema.js). A chess id (`chess_char_1_01_a`) is not one: `isId` would accept it.
+ */
+export const CHAR_ID = /^char_(?:x_[A-Za-z0-9_-]+|[0-9]+_[A-Za-z0-9_]+)$/;
+export const isCharId = (v) => typeof v === 'string' && v.length <= SKIN_LIMITS.charIdLen && CHAR_ID.test(v);
+/**
+ * Structural check of `room.skins.skins`: a plain object of ≤ 256 entries, keyed by an operator charId, each value a
+ * skinId. Anything else — an array, a null-prototype object, a chess id, a bad skin id, one more entry — is refused
+ * as a whole (BAD_MSG). The room's own operator list is not known here.
+ */
+export const isSkinSelection = (v) => isMap(v, SKIN_LIMITS.entries, isCharId, isSkinId);
+
+const SKIN_OPS = new WeakMap();
+/**
+ * The operators a room's content has, as charIds: every chess record (hidden and golden share the base charId), the
+ * stand-in bodies (`backups.units`), and the 自选 picks (`diy.ownedPool`, `diy.operators`). Not chess ids.
+ * @param {{ chess?: Record<string, any>, backups?: any }|null|undefined} data
+ * @returns {Set<string>}
+ */
+export function operatorCharIds(data) {
+  if (!data || typeof data !== 'object') return new Set();
+  let ids = SKIN_OPS.get(data);
+  if (ids) return ids;
+  ids = new Set();
+  const chess = data.chess && typeof data.chess === 'object' ? data.chess : null;
+  if (chess) for (const c of Object.values(chess)) if (c && isCharId(c.charId)) ids.add(c.charId);
+  const backups = data.backups && typeof data.backups === 'object' ? data.backups : null;
+  const units = backups?.units && typeof backups.units === 'object' ? backups.units : null;
+  if (units) for (const id of Object.keys(units)) if (isCharId(id)) ids.add(id);
+  const diy = backups?.diy && typeof backups.diy === 'object' ? backups.diy : null;
+  if (Array.isArray(diy?.ownedPool)) for (const id of diy.ownedPool) if (isCharId(id)) ids.add(id);
+  const ops = diy?.operators && typeof diy.operators === 'object' ? diy.operators : null;
+  if (ops) for (const id of Object.keys(ops)) if (isCharId(id)) ids.add(id);
+  SKIN_OPS.set(data, ids);
+  return ids;
+}
+
+/**
+ * A skin selection the room may store. The shape is `isSkinSelection` (a failure refuses the whole map). A charId the
+ * room's content does not have is dropped; the rest is kept, so the stored map is at most the operator count, and at
+ * most `SKIN_LIMITS.entries` [ASSUMED].
+ * @param {any} skins
+ * @param {(charId: string) => boolean} [hasOperator]
+ * @returns {{ ok: true, skins: Record<string, string>, dropped: number } | { error: 'BAD_MSG', detail: string }}
+ */
+export function checkSkinSelection(skins, hasOperator) {
+  if (!isSkinSelection(skins)) return { error: 'BAD_MSG', detail: 'bad skin selection' };
+  const out = {};
+  let dropped = 0;
+  for (const id of Object.keys(skins)) {
+    if (typeof hasOperator === 'function' && !hasOperator(id)) { dropped++; continue; }
+    out[id] = skins[id];
+  }
+  return { ok: true, skins: out, dropped };
+}
+
+// ---- operator ownership (干员持有, 0.2.0 补位): room.ownership { notOwned } -------------------------------------------
+
+/**
+ * `room.ownership { notOwned }`: the base chess ids the player marked as not owned on the 干员持有 screen (the
+ * per-browser setting next to 干员调配; default: every operator owned ⇒ []). Such a chess keeps its identity (name,
+ * bonds, 特质, tier, price, merge) and fights as its official stand-in (shared/standIn.js standInRecord). Structural
+ * limit below; the semantic check (`checkNotOwned`) is LENIENT, unlike checkLoadout: an id that is not a droppable chess
+ * (unknown, elite, PRESET / 自选, a stale id of another build) is dropped, never the whole list.
+ */
+export const OWNERSHIP_LIMITS = Object.freeze({ notOwned: 160 });
+/** Structural check of `room.ownership.notOwned`: an array of ≤ 160 ids. */
+export const isNotOwnedList = (v) => isList(v, OWNERSHIP_LIMITS.notOwned, isId);
+
+/**
+ * Semantic check + normalisation of a not-owned list against the game data: keeps the ids of droppable chess
+ * (shared/standIn.js isDroppableChess — NORMAL base chess with a stand-in), deduplicated and sorted; drops the rest.
+ * Used by the server (lobby, match) and by the client before it sends or imports a list.
+ * @param {any} list `room.ownership.notOwned`
+ * @param {(id: string) => any} getChess chess record lookup
+ * @returns {{ ok: true, notOwned: string[], dropped: number } | { error: 'BAD_MSG', detail: string }}
+ */
+export function checkNotOwned(list, getChess) {
+  if (!isNotOwnedList(list)) return { error: 'BAD_MSG', detail: 'bad notOwned list' };
+  const keep = new Set();
+  for (const id of list) {
+    const c = typeof getChess === 'function' ? getChess(id) : null;
+    if (c && c.chessId === id && isDroppableChess(c)) keep.add(id);
+  }
+  const notOwned = [...keep].sort();
+  return { ok: true, notOwned, dropped: list.length - notOwned.length };
+}
+
+// ---- 自选编队 (0.2.0 DIY): room.diy { picks } ------------------------------------------------------------------------
+
+/**
+ * `room.diy { picks }`: the player's 自选编队 — `{ [slotBaseId]: { charId, skillIndex?, uniEquipId? } | null }` for the
+ * four DIY slots (data/backups.json `diy.slots`: two at tier 5, two at tier 6; shared/diy.js). An out-of-match setting
+ * like 干员持有: stored per session / seat, a match takes the picks its seat had at its start. Structural limit below
+ * (room for more slots in a later season); the semantic check (`checkDiyPicks`) is LENIENT, like checkNotOwned: an
+ * illegal pick — not a pick of the slot's tier, an operator without a kit, a prototype off its locked skill, an unknown
+ * skill / module, the same operator twice in a tier, an owned operator in a second slot, an unknown slot — is dropped,
+ * never the whole roster; only malformed input is BAD_MSG.
+ */
+export const DIY_LIMITS = Object.freeze({ slots: 8 });
+const isDiyPickWire = (p) => p === null || (isPlain(p) && isId(p.charId)
+  && nullable((v) => isInt(v, 0, 9))(p.skillIndex) && nullable(isId)(p.uniEquipId));
+/** Structural check of `room.diy.picks`: a map of ≤ 8 slot ids → a pick `{ charId, skillIndex?, uniEquipId? }` or null. */
+export const isDiyPicks = (v) => isMap(v, DIY_LIMITS.slots, isId, isDiyPickWire);
+
+/**
+ * Semantic check + normalisation of a 自选 roster against the game data (`{ chess, backups }` or a sim DataSource) and
+ * the kit registry (`kitted`: server/sim/content/kits/index.js KITTED_CHARS — an operator without a kit is never fielded):
+ * the slots are taken in data order (tier 5, then tier 6), and each pick is kept when the roster so far plus it still
+ * passes shared/diy.js validateDiyPicks — so the result always passes it, and of two picks that clash (one owned operator
+ * in two slots, one operator twice in a tier) the first slot keeps it. Kept picks are complete
+ * (`{ charId, skillIndex, uniEquipId }`: a prototype's locked selection, uniEquipId null = no module).
+ * @param {any} picks `room.diy.picks`
+ * @param {{ data: any, kitted?: Iterable<string>|((id: string) => boolean)|null }} opts
+ * @returns {{ ok: true, picks: Record<string, { charId: string, skillIndex: number, uniEquipId: string|null }>, dropped: number }
+ *   | { error: 'BAD_MSG', detail: string }}
+ */
+export function checkDiyPicks(picks, { data, kitted = null } = { data: null }) {
+  if (!isDiyPicks(picks)) return { error: 'BAD_MSG', detail: 'bad 自选 picks' };
+  const slots = diySlotIds(data);
+  /** @type {Record<string, { charId: string, skillIndex: number, uniEquipId: string|null }>} */
+  const kept = {};
+  let dropped = 0;
+  for (const id of Object.keys(picks)) if (picks[id] != null && !slots.includes(id)) dropped++;
+  for (const slotId of slots) {
+    const pick = Object.hasOwn(picks, slotId) ? picks[slotId] : null;
+    if (pick == null) continue;
+    const res = validateDiyPicks({ ...kept, [slotId]: pick }, { data, kitted });
+    if ('ok' in res) kept[slotId] = res.picks[slotId];
+    else dropped++;
+  }
+  return { ok: true, picks: kept, dropped };
+}
+
 // ---- unit stats (user playtest #4 item 7): m.unitStats units and the browser battle's live stats ---------------------
 
 const fin = (v, d = 0) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
@@ -193,22 +452,25 @@ const statView = (x) => ({
 
 /**
  * The detail card's stats of a sim unit (server/sim/units.js Unit): its effective stats `s` (the aggregated `unit.s`,
- * or the last ones the sim computed) next to its own `unit.base` (no buffs) — max HP, ATK, DEF, RES, attack interval
+ * or the last ones the sim computed) next to its own numbers — `unit.base` with its 练度 multiplier (`unit.cultMul`,
+ * 0.2.2: part of the operator's own numbers, as on the record cards; no buffs) — max HP, ATK, DEF, RES, attack interval
  * (s), block, move speed — rounded for display (the sim keeps floats), plus the current HP. The shape of the
  * `m.unitStats` units (Match.unitStats: what the board's units start their next battle with) and of the browser
  * runner's live battle stats (public/js/battle/runner.js unitStats). An ally with a range also carries `range`: the grid
  * (`[dRow, dCol]`, facing RIGHT) it attacks with now — a running skill's range, rangeExtend included, not a kit's
  * target-selection grid (the sim's `unit.liveRangeGrid`, Battle._refreshRange; community report E1 after 0.1.0: 烛煌
- * S3's 4-11 never reached the card).
- * @param {{ id?: number, uid?: number|null, defId?: string, hp?: number, alive?: boolean, base?: any, liveRangeGrid?: any } | null} u
+ * S3's 4-11 never reached the card). `dir`: the unit's facing now (UP / RIGHT / DOWN / LEFT; UnitInfo.dir is the facing
+ * at send time and the snapshot tuples carry none) — the detail card's range overlay rotates by it (GitHub PR #281).
+ * @param {{ id?: number, uid?: number|null, defId?: string, hp?: number, alive?: boolean, base?: any, liveRangeGrid?: any, dir?: string } | null} u
  * @param {any} [s] aggregated stats (missing ⇒ the base)
  * @returns {{ id: number|null, uid: number|null, defId: string|null, hp: number, alive: boolean, maxHp: number, atk: number,
  *   def: number, res: number, interval: number|null, blockCnt: number, moveSpeed: number,
  *   base: { maxHp: number, atk: number, def: number, res: number, interval: number|null, blockCnt: number, moveSpeed: number },
- *   range?: Array<[number, number]> }}
+ *   range?: Array<[number, number]>, dir?: string }}
  */
 export function unitStatsEntry(u, s = null) {
-  const base = u && u.base && typeof u.base === 'object' ? u.base : {};
+  const own = u && u.base && typeof u.base === 'object' ? u.base : {};
+  const base = u && u.cultMul ? cultivatedStats(own, u.cultMul) : own;
   const cur = s && typeof s === 'object' ? s : base;
   const range = u?.side !== 'enemy' && Array.isArray(u?.liveRangeGrid)
     ? u.liveRangeGrid.filter((p) => Array.isArray(p) && Number.isInteger(p[0]) && Number.isInteger(p[1])).map((p) => [p[0], p[1]])
@@ -222,7 +484,9 @@ export function unitStatsEntry(u, s = null) {
     ...statView(cur),
     base: statView(base),
     ...(range ? { range } : {}),
-    ...(u?.kazdelTraitState ? {kazdelTrait:{...u.kazdelTraitState}} : {}),
+    ...(isDir(u?.dir) ? { dir: u.dir } : {}),
+    // the enemy card greys a SILENCE-format line (折射) from this; absent flags ⇒ not silenced
+    silenced: !!(cur.flags && cur.flags.silence),
   };
 }
 
@@ -239,27 +503,99 @@ const target = (v) => {
 
 /** @type {Record<string, Record<string, (v:any)=>boolean> & { $optional?: string[] }>} */
 export const C2S = {
+  'g.zhajing': { intent: v => isPlain(v) && typeof v.t === 'string' && v.t.startsWith('g.') && Object.keys(v).length <= 8 && JSON.stringify(v).length <= 4096 },
   // session & lobby
-  hello: { name: (v) => isStr(v, NAME_MAX_LEN) && v.trim().length > 0, token: (v) => v == null || isStr(v, 64), version: (v) => v == null || isInt(v, 0, 1e6), testContentVersion: (v) => isInt(v, 0, 1e6), $optional: ['token', 'version', 'testContentVersion'] },
+  // `delta`: the client speaks the state-delta transport (shared/stateDelta.js) and wants m.public / m.private as
+  // `m.state` frames. Omitted by every client that cannot decode them — those keep receiving the plain frames, and a
+  // server that does not know the field ignores it (it is only read after a full validateC2S pass).
+  hello: { name: (v) => isStr(v, NAME_MAX_LEN) && v.trim().length > 0, token: (v) => v == null || isStr(v, 64), version: (v) => v == null || isInt(v, 0, 1e6),
+    noReplace: isBool, claimAt: (v) => isNum(v, 0, Number.MAX_SAFE_INTEGER), delta: (v) => v == null || isInt(v, 0, 1e6),
+    $optional: ['token', 'version', 'noReplace', 'claimAt', 'delta'] },
   ping: { c: (v) => typeof v === 'number' && Number.isFinite(v) },
-  'room.create': { mode: (v) => v === 'solo' || v === 'coop', difficulty: (v) => DIFFICULTIES.includes(v), ranked: isBool, $optional: ['ranked'] },
-  'room.join': { code: (v) => isStr(v, ROOM_CODE_LEN + 2) && /^[A-Za-z0-9]+$/.test(v) },
+  // test: only the literal true (DESIGN §34.8). Omit it for a normal room — `false` is a bad field, so a
+  // string cannot sneak in as "not a test". The server still refuses it unless SP_TEST_MODE is on.
+  // difficulty: may be left out — the room starts at the server's default (server/lobby.js DEFAULT_DIFFICULTY) and the
+  // host changes it in the room (room.setDifficulty), as in the event's 联合模拟; a value given must be a difficulty.
+  // soloUnlimited: the timed-solo opt-out 「不限时」 (DESIGN §35.23.10). Optional, and only the literal boolean —
+  // the server applies `true` solely to a solo room of a version whose solo is timed, and ignores it otherwise, so a
+  // default create stays the message it was.
+  'room.create': { mode: (v) => v === 'solo' || v === 'coop', difficulty: (v) => DIFFICULTIES.includes(v) || v === ZHAJING_DIFFICULTY, capacity: v => ZHAJING_CAPACITIES.includes(v), test: (v) => v === true, version: isVersionId, variant: (v) => v === CYCLOPS_VARIANT || v === MIZUKI_VARIANT || v === ZHAJING_VARIANT, mizukiDifficultyGrade: (v) => isInt(v, 0, 18), soloUnlimited: isBool, $optional: ['test', 'difficulty', 'version', 'variant', 'soloUnlimited', 'mizukiDifficultyGrade', 'capacity'] },
+  'room.join': { $optional: ['testAck'], testAck: (v) => v === true, code: (v) => isStr(v, ROOM_CODE_LEN + 2) && /^[A-Za-z0-9]+$/.test(v) },
+  'p2p.enable': { enabled: isBool },
+  'p2p.signal': { epoch: isId, to: isId, description: isPeerDescription, candidate: isPeerCandidate, $optional: ['description', 'candidate'] },
+  'p2p.ready': { epoch: isId, ready: isBool, seq: (v) => Number.isSafeInteger(v) && v >= 0 },
   'room.leave': {},
-  'room.list': {},
-  'spectate.join': { code: (v) => isStr(v, ROOM_CODE_LEN + 2) && /^[A-Za-z0-9]+$/.test(v) },
-  'spectate.watch': { playerId: isId },
-  'spectate.leave': {},
   'room.ready': { ready: isBool },
+  'room.setCapacity': { capacity: (v) => isInt(v, 1, 4) },
   'room.setDifficulty': { difficulty: (v) => DIFFICULTIES.includes(v) },
-  'room.setRanked': { ranked: isBool },
+  // the co-op room option 「AI 队友最后选择」 (GitHub #338; host, before the match): the strategy and 机变 drafts order every
+  // human seat before every AI seat (server/match/match/phases.js humansFirst); room.state.aiPicksLast
+  'room.setAiPicksLast': { on: isBool },
+  // 「不限时」 (DESIGN §35.23.10; host, before the match, a solo room of a version whose solo is timed): the match's
+  // preparation and 机变 stay untimed (Match opts.soloUnlimited). Off by default; room.state omits the key unless it is on.
+  'room.setSoloUnlimited': { on: isBool },
+  'room.setRanked': { on: isBool },
+  'room.setVersion': { version: isVersionId },
+  'room.setProductContent': { version: isVersionId, revision: (v) => isInt(v, 0, Number.MAX_SAFE_INTEGER), ids: (v) => isList(v, 16, (id) => typeof id === 'string' && /^[a-z0-9-]{1,100}$/.test(id)) },
+  'room.resume': { code: (v) => isStr(v, ROOM_CODE_LEN + 2) && /^[A-Za-z0-9]+$/.test(v) },
+
+  // Remake-only spectator handover: host opt-in before play, default off (§35.100).
+  'room.setAiTakeover': { on: isBool },
+  'room.aiRequest': { botId: isId },
+  'room.aiVote': { voteId: (v) => typeof v === 'string' && v.length <= 16, approve: isBool },
   'room.addBot': {},
-  'room.removeBot': { seat: (v) => isInt(v, 0, MAX_SEATS - 1) },
-  'room.start': { tests: v=>!!v&&typeof v==='object'&&!Array.isArray(v)&&isStr(v.version,64)&&Array.isArray(v.ids)&&v.ids.length<=16&&v.ids.every(isId)&&new Set(v.ids).size===v.ids.length, $optional: ['tests'] },
-  // operator loadout (DESIGN §16): stored per session/seat; accepted until the match leaves INFO_CHECK
-  'room.loadout': { entries: isLoadoutEntries },
+  'room.removeBot': { seat: (v) => isInt(v, 0, Math.max(MAX_SEATS, CYCLOPS_MAX_SEATS) - 1) },
+  // the host removes another human before the match (server/lobby.js kick; community report #17); playerId = the one the
+  // host confirmed — a seat that changed hands meanwhile is refused
+  'room.kick': { seat: (v) => isInt(v, 0, Math.max(MAX_SEATS, CYCLOPS_MAX_SEATS) - 1), playerId: isId },
+  'room.start': {},
+  'room.rerollSetup': { setupRevision: (v) => isInt(v, 0, 2 ** 31) },
+  'room.cancelReroll': { voteId: (v) => isInt(v, 1, 2 ** 31) },
+  // official versions (DESIGN §35.23, M1; before the match): the host proposes the room's version; the seated humans vote
+  // like 重刷 (unanimous, a decline cancels, a lone human switches at once); room.state.version / versionVote
+  'room.proposeVersion': { version: isVersionId },
+  'room.versionVote': { voteId: (v) => isInt(v, 1, 2 ** 31), agree: isBool },
+  'room.cancelVersionVote': { voteId: (v) => isInt(v, 1, 2 ** 31) },
+  // operator loadout (DESIGN §16): stored per session/seat; accepted until the match leaves INFO_CHECK — `ops` (0.2.2):
+  // the per-operator 潜能 / 练度 (absent = none set: every operator at 潜能 6, 精英2 Lv.60)
+  'room.loadout': { entries: isLoadoutEntries, ops: isLoadoutOps, $optional: ['ops'] },
+  // 干员皮肤 (docs/SKINS.md): the appearances the player wears, keyed by operator charId; PUBLIC, so it is accepted in
+  // any room phase (the loadout locks at INFO_CHECK because it changes what a unit does; a skin changes only the model)
+  'room.skins': { skins: isSkinSelection },
+  // 名片干员 (PR #643 split 6): the operator whose portrait fills the player's seat card in the waiting room — an
+  // operator charId ('' for none; the server keeps only a visible charId of the room's chess.json); cosmetic, any room phase
+  'room.card': { charId: (v) => v === '' || isCharId(v) },
+  // operator ownership (干员持有, 0.2.0 补位): stored per session / seat; a match takes the list its seat had when it
+  // started (an out-of-match setting — during a match it is stored for the next one: ROOM_STARTED)
+  'room.ownership': { notOwned: isNotOwnedList },
+  // 自选编队 (0.2.0 DIY): the player's DIY slot picks; stored per session / seat like room.ownership (a match takes the
+  // picks its seat had when it started; during a match they are stored for the next one: ROOM_STARTED)
+  'room.diy': { picks: isDiyPicks },
+  // spectator seats (remake feature, community report #26; MAX_SPECTATORS): take one of a co-op room's spectator seats —
+  // in its lobby or while its match runs — never a player seat; the host frees one by playerId (the spectator gets
+  // room.closed { reason: 'kicked' }). room.leave / g.leave leave a spectator seat like a player seat.
+  'room.spectate': { $optional: ['testAck'], testAck: (v) => v === true, code: (v) => isStr(v, ROOM_CODE_LEN + 2) && /^[A-Za-z0-9]+$/.test(v) },
+  'room.removeSpectator': { playerId: isId },
+  // the room's plugins (DESIGN §32, P1a; host, before the match — like a difficulty change it un-readies the others):
+  // the plugins of this server the room switches on, in any order (the server closes the set over their requirements
+  // and sorts it: shared/plugins/order.js); [] = the original content. Cosmetic plugins (art: the room's visual set,
+  // `vs`) and, from P1c (DESIGN §32.6), content plugins (gameplay: the room's content set, a `cs` of its own); `settings`
+  // is for the classes that have settings (a cosmetic plugin has none, so it is ignored). room.state.content names the set
+  'room.setPlugins': { plugins: (v) => isList(v, 32, (p) => isPlain(p) && isPluginId(p.id)
+    && (p.settings === undefined || isMap(p.settings, 32, (k) => isStr(k, 32), isScalar))) },
+  // the room's mode (DESIGN §32.6, P1c; host, before the match — like a difficulty change it un-readies the others): an
+  // official mode of the room's type (the one of a difficulty: it sets the difficulty) or a mode a plugin of the room's
+  // content set provides (room.state.content.modes; room.state.content.modeId while it is chosen)
+  'room.setMode': { modeId: isId },
+  // the page has loaded and checked the room's content set (DESIGN §32.6): `cs` = the room.state.content.cs it checked —
+  // every data file's bytes against /cs/<cs16>/index.json, that manifest's composition against `cs`; `ok: false` = it
+  // could not (the seat shows it). A room with gameplay plugins starts only once every player's page sent it for its cs
+  'room.consent': { cs: isContentHash, accept: isBool },
+  'room.contentReady': { cs: isContentHash, ok: isBool, $optional: ['ok'] },
 
   // match
-  'g.infoReady': {},
+  'g.infoReady': { setupRevision: (v) => isInt(v, 0, 2 ** 31), $optional: ['setupRevision'] },
+  'g.rerollVote': { voteId: (v) => isInt(v, 1, 2 ** 31), agree: isBool },
   'g.band': { bandId: isId },
   'g.bandSkip': {},
   // the strategy highlighted in the draft screen (user playtest #4 item 4): a turn that runs out takes it while it is
@@ -277,54 +613,145 @@ export const C2S = {
   'g.equip': { itemUid: isUid, targetUid: isUid, replaceUid: nullable(isUid), $optional: ['replaceUid'] },
   'g.art': { itemUid: isUid, row: (v) => isInt(v, 0, GEO.ROWS - 1), col: (v) => isInt(v, 0, GEO.COLS - 1), dir: isDir, $optional: ['dir'] },
   'g.destroy': { uid: isUid },
-  'g.reward': { idx: (v) => isInt(v, 0, 5) },
-  'g.choice': { idx: (v) => isInt(v, 0, 5) },
-  'g.ready': { ready: isBool },
+  // unequip (DESIGN §34.15): one equipped item back to the hand, else the visible temp window. Official rooms refuse it.
+  'g.unequip': { itemUid: isUid },
+  'g.investment': {action:v=>['invest','collect','claim','retrieve'].includes(v),targetId:isId,style:v=>['normal','leveraged'].includes(v),kind:v=>['normal','deep'].includes(v),$optional:['targetId','style','kind']},
   'g.rhineResearch': { id: v=>/^T[0-9]{2}$/.test(v) },
   'g.rhinePositions': { id: v=>/^T[0-9]{2}$/.test(v), positions:v=>isList(v,2,p=>isList(p,2,n=>isInt(n,0,20))&&p.length===2) },
   'g.rhineHire': { uid: nullable(isUid) },
   'g.rhineReset': {},
   'g.kazdelDonation': { ids: v=>isList(v,2,isId)&&new Set(v).size===v.length },
   'g.kazdelRecruit': { round: v=>v===3||v===5 },
-  'g.chat': { text: (v) => chatText(v) !== null },
-  'g.emote': { id: (v) => EMOTES.includes(v) },
-  'g.watch': { fieldId: (v) => isStr(v, 32) },
+  'g.reward': { idx: (v) => isInt(v, 0, 5) },
+  'g.choice': { idx: (v) => isInt(v, 0, 5), choiceId: isId, $optional: ['choiceId'] },
+  // a plugin interaction window (PLUGIN API v2, docs/PLUGINS.md §10b): offerId is the window's declared id, idx the
+  // slot picked; g.offerRefresh redraws one slot (the window's own `refresh.perSlot` bounds how often). The host
+  // applies the window's declared effect primitive — a plugin never receives these messages itself.
+  'g.offer': { offerId: isId, pluginId: isId, seq: (v) => isInt(v, 0, 1000000), cardId: optional(isId), idx: (v) => isInt(v, 0, PLUGIN_OFFER_SLOTS - 1) },
+  'g.offerRefresh': { offerId: isId, pluginId: isId, seq: (v) => isInt(v, 0, 1000000), cardId: optional(isId), idx: (v) => isInt(v, 0, PLUGIN_OFFER_SLOTS - 1) },
+  'g.ready': { ready: isBool },
+  'g.trackBond': { bondId: isId },
+  'g.adminOperatorsEnabled': {enabled:isBool},
+  'g.adminOperatorsClaim': {selections:v=>Array.isArray(v)&&v.length>0&&v.length<=16&&v.every(s=>s&&isId(s.baseId)&&isBool(s.elite))},
+  'g.chat': { text: v => typeof v === 'string' && v.length > 0 && v.length <= 400 },
+  'g.emote': { id: (v) => EMOTES.includes(v) || PACK_EMOTE_ID.test(v) },
+  // playerId: the player tapped in the team panel (a 联防 / boss pair field shows two) — what an eliminated viewer or a
+  // spectator seat follows from then on (Match.watchPref; community report of 2026-10-06, item 56)
+  'g.watch': { fieldId: (v) => isStr(v, 32), playerId: isId, $optional: ['playerId'] },
   'g.autoplay': { on: isBool },
-  'g.testOperators': { elite: optional(isBool), selections: optional(v=>isList(v,16,s=>isPlain(s)&&isId(s.baseId)&&isBool(s.elite))) },
-  'g.testOperatorsEnabled': { enabled: isBool },
   // solo pause (official PauseUp / ResumeUp, DESIGN §14): freezes the running battle (field clock, deadlines, the
   // browser's local runner) — solo matches only (co-op ⇒ WRONG_PHASE), only while a battle runs; m.public.paused
   'g.pause': { on: isBool },
   // the stats the own board's units start their next battle with (user playtest #4 item 7; prep phases): answered by
   // the push m.unitStats { seq, round, units: [unitStatsEntry] }; `seq` is echoed so the client keeps the newest answer
   'g.unitStats': { seq: (v) => isInt(v, 0, 2 ** 31), $optional: ['seq'] },
+  'g.cyclopsHex': { slot: (v) => isInt(v, 0, 2), bondId: optional(isId), $optional: ['bondId'] },
+  'g.cyclopsHexReroll': { slot: (v) => isInt(v, 0, 2) },
+  'g.cyclopsDraft': { idx: (v) => isInt(v, 0, 9) },
+  'g.cyclopsRisk': { uid: optional(isInt), $optional: ['uid'] },
+  'g.mizuki.squad': { squadId: isId },
+  'g.mizuki.difficulty': { grade: (v) => isInt(v, 0, 18) },
+  'g.mizuki.strategy': { bandId: isId },
+  'g.mizuki.initialSupply': { choiceId: isId },
+  'g.mizuki.sanVote': { id: isId, choice: (v) => v === 'accept' || v === 'reroll' },
+  'g.mizuki.route': { nodeId: isId },
+  'g.mizuki.routeStart': {},
+  'g.mizuki.splitRequest': { nodeId: isId },
+  'g.mizuki.splitDecide': { requestId: isId, approve: isBool },
+  'g.mizuki.recallPropose': { targetIds: (v) => isList(v, 3, isId) && v.length > 0 && new Set(v).size === v.length },
+  'g.mizuki.recallVote': { requestId: isId, agree: isBool },
+  'g.mizuki.recallRespond': { requestId: isId, accept: isBool },
+  'g.mizuki.event': { choiceId: isId },
+  'g.mizuki.recruitGroup': { groupId: isId },
+  'g.mizuki.lineup': { uids: (v) => isList(v, 100, isUid) },
+  'g.mizuki.loadout': { uid: isUid, skillIndex: (v) => isInt(v, 0, LOADOUT_LIMITS.skillIndex), moduleId: isId },
+  'g.mizuki.move': { uid: isUid, to: (v) => isPlain(v) && ((v.area === 'board' && isInt(v.row, 0, 63) && isInt(v.col, 0, 63)) || target(v)
+    || (v.area === 'hand' && v.idx === undefined)), dir: isDir, $optional: ['dir'] },
+  'g.mizuki.dismiss': { uid: isUid, requestId: isId, $optional: ['requestId'] },
+  'g.mizuki.equip': { itemUid: isUid, targetUid: isUid, replaceUid: isUid, requestId: isId, $optional: ['replaceUid', 'requestId'] },
+  'g.mizuki.equipmentPick': { offerId: isId, operatorId: isId, itemId: isId, requestId: isId, $optional: ['operatorId', 'itemId', 'requestId'] },
+  'g.mizuki.useItem': { itemId: (v) => v === 'rogue_2_pill' || v === 'rogue_2_bigpill' },
+  'g.mizuki.bank': { action: (v) => v === 'deposit' || v === 'withdraw', count: (v) => isInt(v, 1, 8), $optional: ['count'] },
+  'g.mizuki.recruit': { offerId: nullable(isId) },
+  'g.mizuki.buy': { offerId: isId },
+  'g.mizuki.shopRefresh': {},
+  'g.mizuki.ready': { on: isBool },
+  'g.mizuki.reward': { rewardId: isId },
+  'room.mizukiAbandon': { runId: isId },
+  'g.mizuki.deploy': { battleId: isId, uid: isUid, row: (v) => isInt(v, 0, 63), col: (v) => isInt(v, 0, 63), dir: isDir },
+  'g.mizuki.retreat': { battleId: isId, uid: isUid },
+  'g.mizuki.skill': { battleId: isId, uid: isUid },
+  'g.mizuki.facility': { battleId: isId, key: isId, row: (v) => isInt(v, 0, 63), col: (v) => isInt(v, 0, 63), dir: isDir, $optional: ['dir'] },
+  'g.mizuki.missionClaim': { missionId: isId },
+  'g.mizuki.shopBattle': {},
+  'room.mizukiDifficulty': { grade: (v) => isInt(v, 0, 18) },
+  'room.mizukiResume': { runId: isId },
   'g.leave': {},
+  // host test commands (DESIGN §34.8 phase 2). The server applies them only in a test match. `args` is checked
+  // again by shared/testMode.js parseTestArgs (ids, bounds). Unknown keys inside args fail there, not here.
+  'g.test': { cmd: isTestCommand, args: (v) => v === undefined || (isPlain(v) && Object.keys(v).length <= 8), $optional: ['args'] },
 
   // client-side combat (DESIGN §14): the authoritative client of a field reports its battle; a 联防 field adds
   // `left` = { [leakerId]: its enemies still standing (unspawned, alive, or through again) } (server/sim/spec.js
-  // uniteLeft; user playtest #6 item 7 — the leakers' live counter)
+  // uniteLeft; user playtest #6 item 7 — the leakers' live counter). `resolved` = the HUD capsule's numerator: the
+  // field's own scheduled enemies that were knocked out **or leaked** (official: 漏一个 1/3, 打死一个 2/3,
+  // 打死会分裂的 3/3 — Battle.leakedInTotal; runtime splits / summons stay out of both parts of the capsule). A boss / hidden field adds
+  // `leaksBy` = { [playerId]: the cumulative LP the enemies that reached that player's goal cost } — `leaks` minus its
+  // sum is the leader's own "扣除目标生命" effects; the server holds the b.result's leaked lists to it (Match._bossLeaksAgree)
   'b.progress': {
     battleId: isId, gt: (v) => isNum(v, 0, 1e5), killed: (v) => isInt(v, 0, 1e5), total: (v) => isInt(v, 0, 1e5),
+    resolved: (v) => isInt(v, 0, 1e5),
     leaks: (v) => isNum(v, 0, 1e6), bossDmg: (v) => isNum(v, 0, BIG),
     by: (v) => isMap(v, RESULT_LIMITS.players, isId, (x) => isNum(x, 0, BIG)), done: isBool,
     left: (v) => isMap(v, RESULT_LIMITS.players, isId, (x) => isInt(x, 0, 1e5)),
-    $optional: ['leaks', 'bossDmg', 'by', 'done', 'left'],
+    leaksBy: (v) => isMap(v, RESULT_LIMITS.players, isId, (x) => isNum(x, 0, 1e6)),
+    $optional: ['resolved', 'leaks', 'bossDmg', 'by', 'done', 'left', 'leaksBy'],
   },
-  'b.result': { battleId: isId, result: isBattleResult },
+  // `cs` (DESIGN §32, optional): the content hash the reporting browser ran the battle on — its spec's `cs`. In a room
+  // with gameplay plugins (P1c, DESIGN §32.6) the match refuses a result without it or with another one (and runs the
+  // battle itself); a vanilla room's browser sends none
+  'b.result': { battleId: isId, result: isBattleResult, cs: isContentHash, $optional: ['cs'] },
+  // A delegated bot layout rehearsal (DESIGN §14): the match's current host answers the candidates it was handed with
+  // the S2C 'b.rehearsal' frame. `choice` is the index of the candidate its browser picked, in the order the task sent
+  // them — a malicious or buggy client can only name one of the server's own candidate layouts, never a layout or a
+  // match state of its own; `error: true` says this client cannot run the task at all (no module Worker, or the
+  // simulation data did not load), so the server takes the rehearsal over at once instead of waiting for its timeout.
+  // An unknown task, another sender or a task the server already took over is ignored; an invalid `choice` makes the
+  // server run the candidates itself. `choice` stops below REHEARSAL_MAX_CANDIDATES, the most one prep rehearses.
+  'b.rehearsalResult': {
+    taskId: isId, choice: (v) => v === undefined || isInt(v, 0, REHEARSAL_MAX_CANDIDATES - 1), error: (v) => v === undefined || v === true,
+    $optional: ['choice', 'error'],
+  },
+  // State-delta transport (shared/stateDelta.js): the client asks for one full frame after it missed one. The server
+  // answers with a full frame on each state channel it speaks (m.public / m.private), which is what restores the
+  // baseline; it is rate-limited like the other resend-heavy intents (server/net.js HEAVY_TYPES, and the lobby's
+  // resyncMinGapMs). An old client never sends it and keeps receiving the frames it always got.
+  'state.resync': {},
 };
 
 // Server → client message types (documentation + client dispatch table keys).
 export const S2C = [
-  'rank.profile', 'rank.result',
   'welcome', 'ok', 'error', 'pong',
-  'room.state', 'room.closed',
-  'm.public', 'm.private', 'm.field', 'm.toast', 'm.ticker', 'm.emote', 'm.chat', 'm.chatHistory', 'm.result',
+  'p2p.config', 'p2p.signal', 'p2p.frame',
+  'room.state', 'room.closed', 'versions.policy',
+  'm.public', 'm.private', 'm.field', 'm.toast', 'm.ticker', 'm.emote', 'm.result', 'm.musicPlay',
+  // In-match text chat: a new line, and the bounded history sent on reconnect. Both must be listed here because a
+  // hosted match's MatchProxy validates every worker broadcast/send against this S2C list (server/match/host/ipc.js).
+  'chatStickers.changed',
+  'm.chat', 'm.chatHistory', 'm.deathReturn',
+  // m.layer { playerId, bondId, add } — own live prep layer gain; ephemeral, never replayed on resync.
+  'm.layer',
   // m.unitStats { seq, round, units: [unitStatsEntry] } — the answer to g.unitStats (the requester only)
   'm.unitStats',
   // client-side combat (DESIGN §14): b.start { battleId, fieldId, kind, spec, authoritative, startAt, serverNow, elapsed,
   // speed, watch? } · b.pool { hp, max, teamLp, acked: { [fieldId]: cumulative boss damage counted } } ·
   // b.end { battleId, fieldId, reason }
   'b.start', 'b.pool', 'b.end',
+  // a delegated bot layout rehearsal (DESIGN §14): b.rehearsal { taskId, playerId, cap, specs } — the host's browser
+  // runs the candidate BattleSpecs off the page's main thread and answers with a C2S b.rehearsalResult ·
+  // b.rehearsalCancel { taskId } — the server dropped that task (it timed out, the host changed, the prep ended):
+  // the executor drops it too, and only a running simulation (the Worker) is really stopped
+  'b.rehearsal', 'b.rehearsalCancel',
   // server-run combat streaming (legacy / SP_COMBAT=server only)
   'b.snap', 'b.ev',
 ];
@@ -337,8 +764,12 @@ export function validateC2S(msg) {
   if (!msg || typeof msg !== 'object' || Array.isArray(msg)) return 'not an object';
   const spec = typeof msg.t === 'string' && Object.hasOwn(C2S, msg.t) ? C2S[msg.t] : null;
   if (!spec) return `unknown type ${String(msg.t).slice(0, 32)}`;
+  if (msg.t === 'p2p.signal' && (msg.description !== undefined) === (msg.candidate !== undefined)) return 'exactly one signal required';
   if (msg.rid != null && !isInt(msg.rid, 0, 2 ** 31)) return 'bad rid';
-  if(msg.t==='g.testOperators'&&(msg.selections===undefined?typeof msg.elite!=='boolean':msg.elite!==undefined||!Array.isArray(msg.selections)||!msg.selections.length))return 'bad test operator selection';
+  if (msg.t === 'room.create' && msg.mizukiDifficultyGrade !== undefined && msg.variant !== MIZUKI_VARIANT) return 'unexpected mizukiDifficultyGrade';
+  if (msg.t === 'room.create' && ((msg.difficulty === ZHAJING_DIFFICULTY) !== (msg.variant === ZHAJING_VARIANT))) return 'bad zhajing mode';
+  if (msg.t === 'room.create' && msg.capacity !== undefined && ![ZHAJING_VARIANT, MIZUKI_VARIANT].includes(msg.variant)) return 'unexpected capacity';
+  if (msg.opId !== undefined && !isId(msg.opId)) return 'bad opId';
   const optional = spec.$optional || [];
   for (const [k, check] of Object.entries(spec)) {
     if (k === '$optional') continue;
@@ -349,16 +780,28 @@ export function validateC2S(msg) {
   return null;
 }
 
-// Event tuple kinds inside `b.ev` (DESIGN §8.2).
+// Event tuple kinds inside `b.ev` (DESIGN §8.2). 'cast' ['cast', id, slot, dur?, clip?] is display only: an enemy uses the
+// skill of that slot of its data record's skills[] (server/sim/content/enemies/helpers.js castSlot; the client's skill
+// clip and official skill effects — render/app.js); `clip` (s) when it is an attack-class skill cast in the attack's
+// turn: the clip played in place of the attack, 0 = the attack clip (DESIGN §35.57).
 export const EV = Object.freeze({
-  SPAWN: 'spawn', ATK: 'atk', DMG: 'dmg', HEAL: 'heal', SKILL: 'skill', DIE: 'die', LEAK: 'leak',
-  STATUS: 'status', FX: 'fx', LAYER: 'layer', BOUNTY: 'bounty', DEPLOY: 'deploy',
+  SPAWN: 'spawn', ATK: 'atk', DMG: 'dmg', HEAL: 'heal', SKILL: 'skill', ENGAGE: 'engage', DIE: 'die', LEAK: 'leak',
+  STATUS: 'status', FX: 'fx', LAYER: 'layer', BOUNTY: 'bounty', DEPLOY: 'deploy', CAST: 'cast',
+  // ['rate', id, seconds] - the unit's OWN attack interval (`u.s.interval`, buffs and skills included) changed. Sent
+  // once per change: the FIRST value travels in the spawn UnitInfo (`atkInterval`) and is not repeated, and a change is
+  // never swallowed by that seed; an event's value outranks the spawn-time UnitInfo for the rest of the battle (ordinary
+  // snapshots do not refresh it). Display
+  // only: the renderer paces the attack clip over it (render/attackRate.js) instead of waiting to measure two attacks,
+  // which is what made the first swing of a skill / buff change slow-motion for a while.
+  RATE: 'rate',
+  // ['resource', id, 'cost'|'sp', actual signed delta, source reason]: optional live-display receipts (#657).
+  RESOURCE: 'resource',
 });
 
 /**
- * The model form a `b.ev` 'fx' tuple ['fx', kind, x, y, extra] puts its unit in: `extra.form` (sim content/enemies.js
- * setForm — 转译基底·α's forms, a 逐火 余烬 and its revival, a leader's 重生, 守墓石像's modes, 掠海漂移体's crawl; a string is
- * that clip set, null the base one), undefined for any other tuple. A form is state, not decoration: a view that misses
+ * The model form a `b.ev` 'fx' tuple ['fx', kind, x, y, extra] puts its unit in: `extra.form` (sim content/enemies/helpers.js
+ * setForm — 转译基底·α's forms, a 逐火 余烬 and its revival, a leader's 重生, 守墓石像's modes, 掠海漂移体's crawl; a 傀儡师's 替身,
+ * sim professions.js; a string is that clip set, null the base one), undefined for any other tuple. A form is state, not decoration: a view that misses
  * the fx keeps drawing the old model (player report #5 after 0.1.0), so the client's catch-up frames, its hidden-tab
  * backlog (battle/runner.js) and the events buffered before a field is entered (screens/game.js) keep these tuples.
  */

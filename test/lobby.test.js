@@ -1,5 +1,5 @@
 // test/lobby.test.js — platform tests: static HTTP server, WebSocket session layer, lobby, match wiring,
-// reconnect, data loader. Boots real servers in-process on random ports (startServer({ auth: false, port: 0 })).
+// reconnect, data loader. Boots real servers in-process on random ports (startServer({ port: 0 })).
 
 import { describe, test, before, after, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
@@ -11,15 +11,16 @@ import path from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 
-import { startServer, parseRange, acceptsGzip, parseTrustProxy } from '../server/index.js';
+import { startServer, parseRange, acceptsGzip, pickEncoding, parseTrustProxy } from '../server/index.js';
 import { loadData, lookup, getChess, getBond, getBand, getMode, getConfig, INDEXED_FILES } from '../server/data.js';
 import * as dataModule from '../server/data.js';
-import { CODE_ALPHABET, BOT_NAMES } from '../server/lobby.js';
+import { CODE_ALPHABET, BOT_NAMES, DEFAULT_DIFFICULTY } from '../server/lobby.js';
 import { sanitizeName, TokenBucket, SessionRegistry, clientAddress, normalizeIp, isLocalIp, limitKeyOf } from '../server/net.js';
 import { StubMatch as Match } from '../server/match/StubMatch.js';
 import { Match as RealMatch } from '../server/match/Match.js';
 import { TestClient } from './helpers/wsClient.js';
-import { ERR, MAX_SEATS, PHASE } from '../shared/constants.js';
+import { ERR, MAX_SEATS, MAX_SPECTATORS, PHASE, EMOTES } from '../shared/constants.js';
+import { DEFAULT_VERSION, VERSIONS } from '../shared/versions.js';
 
 const CODE_RE = new RegExp(`^[${CODE_ALPHABET}]{4}$`);
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
@@ -31,7 +32,7 @@ const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..')
 /** Raw HTTP request (the path is sent verbatim, no normalization). */
 function httpReq(port, rawPath, { method = 'GET', headers = {} } = {}) {
   return new Promise((resolve, reject) => {
-    const req = http.request({ host: '127.0.0.1', port, path: rawPath, method, headers: { 'User-Agent': 'StrongholdProtocolApp/1', ...headers }, agent: false }, (res) => {
+    const req = http.request({ host: '127.0.0.1', port, path: rawPath, method, headers, agent: false }, (res) => {
       const chunks = [];
       res.on('data', (c) => chunks.push(c));
       res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, body: Buffer.concat(chunks) }));
@@ -109,6 +110,8 @@ describe('static http server', () => {
   const js = `// app\n${'export const x = 1;\n'.repeat(200)}`;
   const mp3 = randomBytes(5000);
   const skel = Buffer.from('skel'.repeat(400));
+  // over the 8 MB compression cache limit: compressed as a stream
+  const big = `// big\n${Array.from({ length: 360000 }, (_, i) => `export const v${i} = ${i % 97};`).join('\n')}\n`;
 
   before(async () => {
     tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sp-static-'));
@@ -127,6 +130,7 @@ describe('static http server', () => {
     w('public/assets/spine/x.skel', skel);
     w('public/assets/spine/x.atlas', 'x.png\nsize: 64,64\n'.repeat(40));
     w('public/assets/img/a.png', randomBytes(32));
+    w('public/js/huge.js', big);
     w('public/assets/img/a.webp', randomBytes(32));
     w('public/fonts/f.woff2', randomBytes(32));
     w('public/fonts/f.ttf', randomBytes(32));
@@ -135,10 +139,13 @@ describe('static http server', () => {
     w('public/sub/index.html', '<p>sub</p>');
     w('data/config.json', JSON.stringify({ hello: 'world', nested: { a: [1, 2] } }));
     w('shared/x.js', 'export const y = 2;');
-    srv = await startServer({ auth: false,
+    srv = await startServer({
       port: 0, host: '127.0.0.1', quiet: true,
       publicDir: path.join(tmp, 'public'), dataDir: path.join(tmp, 'data'), sharedDir: path.join(tmp, 'shared'),
+      assetIndex: { delayMs: 0 },
     });
+    // the content hashes of public/assets + public/fonts (the ETags of those files): ready before the first request
+    await srv.assetIndex.whenReady();
   });
 
   after(async () => {
@@ -161,17 +168,20 @@ describe('static http server', () => {
     assert.equal(redirect.headers.location, '/sub/?x=1');
   });
 
-  test('javascript: correct MIME, gzip when accepted, identity otherwise', async () => {
-    const gz = await httpReq(srv.port, '/js/app.js', { headers: { 'accept-encoding': 'gzip, deflate, br' } });
-    assert.equal(gz.status, 200);
-    assert.equal(gz.headers['content-type'], 'text/javascript; charset=utf-8');
-    assert.equal(gz.headers['content-encoding'], 'gzip');
-    assert.equal(gz.headers.vary, 'Accept-Encoding');
-    assert.equal(Number(gz.headers['content-length']), gz.body.length);
+  test('javascript: correct MIME, brotli when named, gzip when accepted, identity otherwise', async () => {
+    const br = await httpReq(srv.port, '/js/app.js', { headers: { 'accept-encoding': 'gzip, deflate, br' } });
+    assert.equal(br.status, 200);
+    assert.equal(br.headers['content-type'], 'text/javascript; charset=utf-8');
+    assert.equal(br.headers['content-encoding'], 'br', 'a browser on an HTTPS page (or localhost) names br');
+    assert.equal(br.headers.vary, 'Accept-Encoding');
+    assert.equal(Number(br.headers['content-length']), br.body.length);
+    assert.equal(zlib.brotliDecompressSync(br.body).toString(), js);
+    const gz = await httpReq(srv.port, '/js/app.js', { headers: { 'accept-encoding': 'gzip, deflate' } });
+    assert.equal(gz.headers['content-encoding'], 'gzip', 'a LAN http:// page: gzip');
     assert.equal(zlib.gunzipSync(gz.body).toString(), js);
-    // cached second response is identical
-    const gz2 = await httpReq(srv.port, '/js/app.js', { headers: { 'accept-encoding': 'gzip' } });
-    assert.deepEqual(gz2.body, gz.body);
+    // cached second responses are identical
+    assert.deepEqual((await httpReq(srv.port, '/js/app.js', { headers: { 'accept-encoding': 'gzip' } })).body, gz.body);
+    assert.deepEqual((await httpReq(srv.port, '/js/app.js', { headers: { 'accept-encoding': 'br' } })).body, br.body);
 
     const plain = await httpReq(srv.port, '/js/app.js');
     assert.equal(plain.headers['content-encoding'], undefined);
@@ -206,12 +216,33 @@ describe('static http server', () => {
     }
     const skelGz = await httpReq(srv.port, '/assets/spine/x.skel', { headers: { 'accept-encoding': 'gzip' } });
     assert.deepEqual(zlib.gunzipSync(skelGz.body), skel);
+    const skelBr = await httpReq(srv.port, '/assets/spine/x.skel', { headers: { 'accept-encoding': 'gzip, br' } });
+    assert.equal(skelBr.headers['content-encoding'], 'br');
+    assert.deepEqual(zlib.brotliDecompressSync(skelBr.body), skel);
+    // media is never compressed, whatever the client names
+    assert.equal((await httpReq(srv.port, '/assets/audio/bgm.mp3', { headers: { 'accept-encoding': 'br, gzip' } })).headers['content-encoding'], undefined);
+    assert.equal((await httpReq(srv.port, '/assets/img/a.png', { headers: { 'accept-encoding': 'br' } })).headers['content-encoding'], undefined);
+  });
+
+  test('a file over the compression cache limit is compressed as a stream (brotli and gzip); HEAD sends no body', async () => {
+    const br = await httpReq(srv.port, '/js/huge.js', { headers: { 'accept-encoding': 'br' } });
+    assert.equal(br.headers['content-encoding'], 'br');
+    assert.equal(br.headers['content-length'], undefined, 'streamed: no length up front');
+    assert.equal(zlib.brotliDecompressSync(br.body).toString(), big);
+    assert.ok(br.body.length < big.length / 4);
+    const gz = await httpReq(srv.port, '/js/huge.js', { headers: { 'accept-encoding': 'gzip' } });
+    assert.equal(gz.headers['content-encoding'], 'gzip');
+    assert.equal(zlib.gunzipSync(gz.body).toString(), big);
+    const head = await httpReq(srv.port, '/js/huge.js', { method: 'HEAD', headers: { 'accept-encoding': 'br' } });
+    assert.equal(head.status, 200);
+    assert.equal(head.body.length, 0);
+    assert.equal(head.headers['content-encoding'], 'br');
   });
 
   test('ETag / Last-Modified revalidation and Cache-Control policy', async () => {
     const first = await httpReq(srv.port, '/js/app.js');
     const { etag } = first.headers;
-    assert.match(etag, /^"[0-9a-f]{64}"$/, 'App responses validate file content, independent of size/mtime');
+    assert.match(etag, /^"[0-9a-f]+-[0-9a-f]+"$/);
     assert.ok(first.headers['last-modified']);
     assert.equal(first.headers['cache-control'], 'no-cache');
     const revalidated = await httpReq(srv.port, '/js/app.js', { headers: { 'if-none-match': etag } });
@@ -225,10 +256,16 @@ describe('static http server', () => {
     assert.equal(stale.status, 200);
     const gzEtag = (await httpReq(srv.port, '/js/app.js', { headers: { 'accept-encoding': 'gzip' } })).headers.etag;
     assert.notEqual(gzEtag, etag, 'gzip variant has its own ETag');
+    const brEtag = (await httpReq(srv.port, '/js/app.js', { headers: { 'accept-encoding': 'br' } })).headers.etag;
+    assert.equal(brEtag, etag.replace(/"$/, '-br"'), 'so has the brotli variant');
+    assert.equal((await httpReq(srv.port, '/js/app.js', { headers: { 'accept-encoding': 'br', 'if-none-match': brEtag } })).status, 304);
+    assert.equal((await httpReq(srv.port, '/js/app.js', { headers: { 'accept-encoding': 'gzip', 'if-none-match': brEtag } })).status, 200, 'not the gzip variant');
 
-    // unversioned art/fonts/vendor: cached for a day (files can be rewritten in place by the asset tools)
+    // unversioned art/fonts/vendor: cached for a day (files can be rewritten in place by the asset tools); the art and
+    // fonts carry their content hash as ETag (server/http/assetIndex.js), so a rewrite with the same bytes is a 304
     const asset = await httpReq(srv.port, '/assets/img/a.png');
     assert.equal(asset.headers['cache-control'], 'public, max-age=86400');
+    assert.match(asset.headers.etag, /^"[0-9a-f]{16}"$/);
     const font = await httpReq(srv.port, '/fonts/f.woff2');
     assert.equal(font.headers['cache-control'], 'public, max-age=86400');
     const assetV = await httpReq(srv.port, '/assets/img/a.png?v=abc');
@@ -279,6 +316,75 @@ describe('static http server', () => {
     assert.equal(textRange.status, 206, 'ranges are served identity-encoded');
     assert.equal(textRange.headers['content-encoding'], undefined);
     assert.equal(textRange.body.toString(), js.slice(0, 2));
+  });
+
+  for (const url of ['/assets/audio/bgm.mp3', '/media/bgm']) {
+    for (const range of ['bytes=0-0', `bytes=${mp3.length}-`]) {
+      test(`HEAD ignores Range ${range} on ${url}`, async () => {
+        const full = await httpReq(srv.port, url);
+        const head = await httpReq(srv.port, url, { method: 'HEAD', headers: { range } });
+        assert.equal(head.status, 200);
+        assert.equal(head.headers['content-length'], String(full.body.length));
+        assert.equal(head.headers['content-range'], undefined);
+        assert.equal(head.headers['content-type'], full.headers['content-type']);
+        assert.equal(head.headers.etag, full.headers.etag);
+        assert.equal(head.body.length, 0);
+      });
+    }
+  }
+
+  for (const encoding of ['gzip', 'br']) {
+    test(`HEAD ignores Range when selecting the ${encoding} representation`, async () => {
+      const url = '/js/app.js';
+      const headers = { 'accept-encoding': encoding };
+      const full = await httpReq(srv.port, url, { headers });
+      assert.equal(full.status, 200);
+      assert.equal(full.headers['content-encoding'], encoding);
+      for (const range of ['bytes=0-0', `bytes=${Buffer.byteLength(js)}-`]) {
+        const head = await httpReq(srv.port, url, { method: 'HEAD', headers: { ...headers, range } });
+        assert.equal(head.status, 200);
+        assert.equal(head.headers['content-encoding'], encoding);
+        assert.equal(head.headers['content-length'], String(full.body.length));
+        assert.equal(head.headers['content-range'], undefined);
+        assert.equal(head.headers.etag, full.headers.etag);
+        assert.equal(head.headers.vary, full.headers.vary);
+        assert.equal(head.body.length, 0);
+
+        const cached = await httpReq(srv.port, url, {
+          method: 'HEAD', headers: { ...headers, range, 'if-none-match': full.headers.etag },
+        });
+        assert.equal(cached.status, 304, 'Range must not change the selected validator');
+        assert.equal(cached.headers.etag, full.headers.etag);
+        assert.equal(cached.headers['content-range'], undefined);
+        assert.equal(cached.body.length, 0);
+      }
+    });
+  }
+
+  test('HEAD ignores Range while honoring cache validators and ignoring If-Range', async () => {
+    for (const url of ['/assets/audio/bgm.mp3', '/media/bgm']) {
+      const full = await httpReq(srv.port, url);
+      for (const condition of [
+        { 'if-none-match': full.headers.etag },
+        { 'if-modified-since': full.headers['last-modified'] },
+      ]) {
+        const cached = await httpReq(srv.port, url, {
+          method: 'HEAD', headers: { range: `bytes=${mp3.length}-`, ...condition },
+        });
+        assert.equal(cached.status, 304);
+        assert.equal(cached.headers['content-range'], undefined);
+        assert.equal(cached.body.length, 0);
+      }
+      for (const ifRange of [full.headers.etag, '"stale"']) {
+        const head = await httpReq(srv.port, url, {
+          method: 'HEAD', headers: { range: 'bytes=0-0', 'if-range': ifRange },
+        });
+        assert.equal(head.status, 200);
+        assert.equal(head.headers['content-length'], String(mp3.length));
+        assert.equal(head.headers['content-range'], undefined);
+        assert.equal(head.body.length, 0);
+      }
+    }
   });
 
   test('extension-less /media audio route (download managers sniff .mp3 URLs)', async () => {
@@ -391,12 +497,23 @@ describe('static http server', () => {
     assert.equal(acceptsGzip('*;q=0'), false);
     assert.equal(acceptsGzip('br'), false);
     assert.equal(acceptsGzip(undefined), false);
+    // brotli when named at least as high as gzip; `*` alone never picks it
+    assert.equal(pickEncoding('gzip, deflate, br, zstd'), 'br');
+    assert.equal(pickEncoding('gzip, deflate'), 'gzip');
+    assert.equal(pickEncoding('br;q=0, gzip'), 'gzip');
+    assert.equal(pickEncoding('br;q=0.5, gzip'), 'gzip');
+    assert.equal(pickEncoding('gzip;q=0.5, br'), 'br');
+    assert.equal(pickEncoding('br'), 'br');
+    assert.equal(pickEncoding('*'), 'gzip');
+    assert.equal(pickEncoding('*;q=0'), null);
+    assert.equal(pickEncoding('identity'), null);
+    assert.equal(pickEncoding(undefined), null);
   });
 });
 
 describe('static http server (real repository roots)', () => {
   let srv;
-  before(async () => { srv = await startServer({ auth: false, port: 0, host: '127.0.0.1', quiet: true }); });
+  before(async () => { srv = await startServer({ port: 0, host: '127.0.0.1', quiet: true }); });
   after(async () => { await srv?.close(); });
 
   test('serves shared/ ESM and never exposes server code or package.json', async () => {
@@ -423,7 +540,17 @@ describe('websocket lobby', () => {
   const cap = captureLog();
 
   before(async () => {
-    srv = await startServer({ auth: false, port: 0, host: '127.0.0.1', log: cap.log, MatchClass: Match });
+    // The healthz case below pins the unset default (every official version). Read that, then put the environment back.
+    const saved = ['SP_VERSIONS', 'SP_VERSION_DEFAULT', 'SP_MAX_VERSION_HOSTS'].map((k) => [k, process.env[k]]);
+    for (const [k] of saved) delete process.env[k];
+    try {
+      srv = await startServer({ port: 0, host: '127.0.0.1', log: cap.log, MatchClass: Match });
+    } finally {
+      for (const [k, v] of saved) {
+        if (v === undefined) delete process.env[k];
+        else process.env[k] = v;
+      }
+    }
     pool = clientPool(() => `ws://127.0.0.1:${srv.port}/ws`);
   });
   afterEach(async () => { await pool.closeAll(); });
@@ -481,7 +608,8 @@ describe('websocket lobby', () => {
     }
     await expectError(c, { t: 'room.create', mode: 'pvp', difficulty: 'NORMAL' }, ERR.BAD_MSG);
     await expectError(c, { t: 'room.create', mode: 'coop', difficulty: 'EASY' }, ERR.BAD_MSG);
-    await expectError(c, { t: 'room.create', mode: 'coop' }, ERR.BAD_MSG);
+    await expectError(c, { t: 'room.create', mode: 'coop', difficulty: null }, ERR.BAD_MSG);
+    await expectError(c, { t: 'room.create', difficulty: 'NORMAL' }, ERR.BAD_MSG);
     await expectError(c, { t: 'room.join', code: 'AB CD' }, ERR.BAD_MSG);
     await expectError(c, { t: 'room.join', code: { $gt: '' } }, ERR.BAD_MSG);
     await expectError(c, { t: 'room.ready', ready: 'yes' }, ERR.BAD_MSG);
@@ -510,7 +638,10 @@ describe('websocket lobby', () => {
     assert.equal(pong.t, 'pong');
   });
 
-  test('rate limit: bursts beyond 40 msg/s get RATE, connection survives, bucket refills', async () => {
+  test('rate limit: bursts beyond 40 msg/s get RATE, connection survives, bucket refills', async (t) => {
+    // Transport/compression scheduling must not refill a supposedly instantaneous burst.
+    let now = Date.now();
+    t.mock.method(srv.network, 'now', () => now);
     const c = await pool.player('Spammer');
     const N = 100;
     const rids = [];
@@ -520,19 +651,39 @@ describe('websocket lobby', () => {
     const pongs = replies.filter((m) => m.t === 'pong').length;
     const limited = replies.filter((m) => m.t === 'error' && m.code === ERR.RATE).length;
     assert.equal(pongs + limited, N);
-    assert.ok(pongs >= 39 && pongs <= 45, `pongs ${pongs}`); // hello used one token
-    assert.ok(limited >= 55, `limited ${limited}`);
+    assert.equal(pongs, 39); // hello used one of the 40 tokens
+    assert.equal(limited, 61);
     assert.ok(c.isOpen);
-    await delay(1100);
+    now += 24; // 40/s: less than one token
+    await expectError(c, { t: 'ping', c: 0 }, ERR.RATE);
+    now += 1;
     const ok = await c.request({ t: 'ping', c: 0 });
     assert.equal(ok.t, 'pong');
+    await expectError(c, { t: 'ping', c: 0 }, ERR.RATE);
+    now += 1100; // refill, capped at 40 tokens
+    for (let i = 0; i < 40; i++) assert.equal((await c.request({ t: 'ping', c: i })).t, 'pong');
+    await expectError(c, { t: 'ping', c: 0 }, ERR.RATE);
+    assert.ok(c.isOpen);
   });
 
-  test('flooding far beyond the limit closes the socket (1008)', async () => {
+  test('flooding far beyond the limit closes the socket (1008)', { timeout: 60000 }, async (t) => {
+    const now = Date.now();
+    t.mock.method(srv.network, 'now', () => now);
     const c = await pool.player('Flood');
-    for (let i = 0; i < 600; i++) c.send({ t: 'ping', c: i, rid: null });
+    // Keep one rate window and await replies instead of building a compressed send queue ahead of the close frame.
+    // A slow runner (Windows, Node 24) took more than the client's 2 s default for one of the ~430 round trips, so each
+    // waits up to 10 s; and the drops stop short of the 400 budget so a frame more or less cannot move the boundary.
+    for (let i = 0; i < 39; i++) assert.equal((await c.request({ t: 'ping', c: i }, 10_000)).t, 'pong');
+    for (let i = 0; i < 390; i++) {
+      const r = await c.request({ t: 'ping', c: i }, 10_000);
+      assert.equal(r.t, 'error'); assert.equal(r.code, ERR.RATE);
+    }
+    assert.ok(c.isOpen, '390 drops do not close the socket');
+    // past the budget (400 drops a second) the server closes the socket instead of answering
+    for (let i = 0; i < 40 && c.isOpen; i++) c.send({ t: 'ping', c: 400 + i, rid: null });
     const info = await c.closed;
     assert.equal(info.code, 1008);
+    assert.equal(info.reason, 'rate limit');
   });
 
   test('create / join / leave', async () => {
@@ -584,6 +735,30 @@ describe('websocket lobby', () => {
     await expectError(host, { t: 'room.join', code: own.code }, ERR.ROOM_NOT_FOUND);
   });
 
+  test('room.create without a difficulty: the room starts at the default (标准 [ASSUMED]), the host changes it in the room', async () => {
+    // the event's 联合模拟 creates the room first and its creator changes the difficulty there (research 06 §3.2)
+    const host = await pool.player('Host');
+    const r = await host.request({ t: 'room.create', mode: 'coop' });
+    assert.equal(r.t, 'ok', JSON.stringify(r));
+    const st = await host.waitFor('room.state', (s) => s.hostId === host.id && s.mode === 'coop');
+    assert.equal(st.difficulty, DEFAULT_DIFFICULTY);
+    assert.equal(DEFAULT_DIFFICULTY, 'FUNNY');
+    const guest = await pool.player('Guest');
+    await joinRoom(guest, st.code);
+    await expectOk(guest, { t: 'room.ready', ready: true });
+    await host.waitFor('room.state', (s) => seatOf(s, guest.id)?.ready === true);
+    await expectError(guest, { t: 'room.setDifficulty', difficulty: 'HARD' }, ERR.NOT_HOST);
+    await expectOk(host, { t: 'room.setDifficulty', difficulty: 'HARD' });
+    const changed = await guest.waitFor('room.state', (s) => s.difficulty === 'HARD');
+    assert.equal(seatOf(changed, guest.id).ready, false, 'the change un-readies the guest');
+    const solo = await pool.player('Solo');
+    assert.equal((await solo.request({ t: 'room.create', mode: 'solo' })).t, 'ok');
+    assert.equal((await solo.waitFor('room.state', (s) => s.hostId === solo.id)).difficulty, DEFAULT_DIFFICULTY);
+    await expectOk(guest, { t: 'room.leave' });
+    await expectOk(host, { t: 'room.leave' });
+    await expectOk(solo, { t: 'room.leave' });
+  });
+
   test('room full, solo rooms admit one human and no AI', async () => {
     const host = await pool.player('H');
     const st = await createRoom(host);
@@ -604,6 +779,121 @@ describe('websocket lobby', () => {
     assert.equal(soloState.mode, 'solo');
     await expectError(late, { t: 'room.join', code: soloState.code }, ERR.ROOM_FULL);
     await expectError(solo, { t: 'room.addBot' }, ERR.ROOM_FULL);
+  });
+
+  // community report #26 (a remake feature): spectator seats — server/lobby.js header
+  test('spectator seats: join / cap / leave / host removal; never a player, never acting, never keeping a room', async () => {
+    const host = await pool.player('Host');
+    const st = await createRoom(host);
+    assert.deepEqual(st.spectators, []);
+    const guest = await pool.player('Guest');
+    await joinRoom(guest, st.code);
+    const s1 = await pool.player('Watcher1');
+    await expectOk(s1, { t: 'room.spectate', code: st.code.toLowerCase() });
+    const v1 = await s1.waitFor('room.state', (s) => s.spectators.some((x) => x.playerId === s1.id));
+    assert.deepEqual(v1.spectators, [{ playerId: s1.id, name: 'Watcher1', connected: true }]);
+    assert.ok(!v1.seats.some((x) => x && x.playerId === s1.id), 'never in a player seat');
+    await host.waitFor('room.state', (s) => s.spectators.length === 1);
+    await expectOk(s1, { t: 'room.spectate', code: st.code }); // idempotent
+    await expectError(guest, { t: 'room.spectate', code: st.code }, ERR.ALREADY); // a player never switches in place
+    // a spectator may not act
+    await expectError(s1, { t: 'room.ready', ready: true }, ERR.SPECTATOR);
+    for (const msg of [{ t: 'room.start' }, { t: 'room.addBot' }, { t: 'room.setDifficulty', difficulty: 'HARD' }, { t: 'room.removeSpectator', playerId: s1.id }]) {
+      await expectError(s1, msg, ERR.NOT_HOST);
+    }
+    await expectError(s1, { t: 'g.ready', ready: true }, ERR.WRONG_PHASE);
+    // the cap; spectators never count toward the players: two player seats still free
+    const s2 = await pool.player('Watcher2');
+    await expectOk(s2, { t: 'room.spectate', code: st.code });
+    assert.equal(MAX_SPECTATORS, 2);
+    const s3 = await pool.player('Watcher3');
+    await expectError(s3, { t: 'room.spectate', code: st.code }, ERR.ROOM_FULL);
+    await joinRoom(s3, st.code);
+    await expectOk(host, { t: 'room.addBot' });
+    const full = await host.waitFor('room.state', (s) => s.seats.every(Boolean));
+    assert.equal(full.spectators.length, 2);
+    await expectOk(s3, { t: 'room.ready', ready: true });
+    await expectOk(guest, { t: 'room.ready', ready: true });
+    // a spectator in the lobby takes a free player seat with room.join of the same code
+    await expectError(s2, { t: 'room.join', code: st.code }, ERR.ROOM_FULL);
+    await expectOk(host, { t: 'room.removeBot', seat: 3 });
+    const sat = await joinRoom(s2, st.code);
+    assert.equal(seatOf(sat, s2.id).seat, 3);
+    assert.deepEqual(sat.spectators.map((x) => x.playerId), [s1.id]);
+    // leave
+    host.clearInbox();
+    await expectOk(s1, { t: 'room.leave' });
+    await host.waitFor('room.state', (s) => s.spectators.length === 0);
+    await expectError(s1, { t: 'room.leave' }, ERR.NOT_IN_ROOM);
+    await expectError(s1, { t: 'room.ready', ready: true }, ERR.NOT_IN_ROOM);
+    // host removal: room.closed {kicked}
+    const s4 = await pool.player('Watcher4');
+    await expectOk(s4, { t: 'room.spectate', code: st.code });
+    await host.waitFor('room.state', (s) => s.spectators.length === 1);
+    await expectError(host, { t: 'room.removeSpectator', playerId: guest.id }, ERR.BAD_TARGET);
+    await expectError(guest, { t: 'room.removeSpectator', playerId: s4.id }, ERR.NOT_HOST);
+    await expectOk(host, { t: 'room.removeSpectator', playerId: s4.id });
+    assert.equal((await s4.waitFor('room.closed')).reason, 'kicked');
+    await host.waitFor('room.state', (s) => s.spectators.length === 0);
+    await expectError(s4, { t: 'room.leave' }, ERR.NOT_IN_ROOM);
+    // an offline spectator removed: freed at once, told on its next resume
+    const s5 = await pool.player('Watcher5');
+    await expectOk(s5, { t: 'room.spectate', code: st.code });
+    await s5.terminate();
+    await host.waitFor('room.state', (s) => s.spectators.find((x) => x.playerId === s5.id)?.connected === false);
+    await expectOk(host, { t: 'room.removeSpectator', playerId: s5.id });
+    const s5back = await pool.connect();
+    await s5back.hello('Watcher5', s5.token);
+    assert.equal((await s5back.waitFor('room.closed')).reason, 'kicked');
+    await s5back.expectNone('room.state');
+    // solo rooms have no spectator seat; unknown codes
+    const solo = await pool.player('Solo');
+    const soloSt = await createRoom(solo, 'solo', 'FUNNY');
+    await expectError(s4, { t: 'room.spectate', code: soloSt.code }, ERR.ROOM_FULL);
+    await expectError(s4, { t: 'room.spectate', code: st.code === 'ZZZZ' ? 'YYYY' : 'ZZZZ' }, ERR.ROOM_NOT_FOUND);
+    // a spectator never keeps a room alive: its last human leaving closes it for the spectator
+    const lone = await pool.player('Lone');
+    const loneSt = await createRoom(lone);
+    await expectOk(s4, { t: 'room.spectate', code: loneSt.code });
+    await lone.waitFor('room.state', (s) => s.spectators.length === 1);
+    await expectOk(lone, { t: 'room.leave' });
+    assert.equal((await s4.waitFor('room.closed')).reason, 'empty');
+    await expectError(s4, { t: 'room.spectate', code: loneSt.code }, ERR.ROOM_NOT_FOUND);
+  });
+
+  test('spectators during a match: broadcasts but no private view, join mid-match, only watching, reconnect gets the seat back', async () => {
+    const host = await pool.player('Host');
+    const st = await createRoom(host);
+    const spec = await pool.player('Spec');
+    await expectOk(spec, { t: 'room.spectate', code: st.code });
+    await expectOk(host, { t: 'room.start' }); // the spectator is no player to wait for
+    const pub = await spec.waitFor('m.public');
+    assert.deepEqual(pub.players.map((p) => p.playerId), [host.id], 'never one of the match\'s players');
+    const late = await pool.player('Late');
+    await expectError(late, { t: 'room.join', code: st.code }, ERR.ROOM_STARTED);
+    await expectOk(late, { t: 'room.spectate', code: st.code }); // a running match: a spectator seat is still free
+    const lateState = await late.waitFor('room.state', (s) => s.inMatch);
+    assert.deepEqual(lateState.spectators.map((x) => x.playerId), [spec.id, late.id]);
+    for (const msg of [{ t: 'g.infoReady' }, { t: 'g.buy', slot: 0 }, { t: 'g.ready', ready: true }, { t: 'g.emote', id: EMOTES[0] }, { t: 'g.autoplay', on: true }]) {
+      await expectError(spec, msg, ERR.SPECTATOR);
+    }
+    await expectOk(spec, { t: 'room.loadout', entries: {} }); // kept for its session, never handed to the match
+    // drop and resume with the token: the seat is kept meanwhile and given back
+    await late.terminate();
+    await host.waitFor('room.state', (s) => s.spectators.find((x) => x.playerId === late.id)?.connected === false);
+    const back = await pool.connect();
+    const w = await back.hello('Late', late.token);
+    assert.equal(w.resumed, true);
+    const rs = await back.waitFor('room.state');
+    assert.deepEqual(rs.spectators.find((x) => x.playerId === late.id), { playerId: late.id, name: 'Late', connected: true });
+    await expectError(back, { t: 'g.infoReady' }, ERR.SPECTATOR);
+    // the match ends: the spectators see the result (a broadcast) and stay in the room, which returns to its lobby
+    await expectOk(host, { t: 'g.infoReady' });
+    await spec.waitFor('m.result');
+    const lobby = await spec.waitFor('room.state', (s) => !s.inMatch && s.spectators.length === 2);
+    assert.deepEqual(lobby.spectators.map((x) => x.playerId), [spec.id, late.id]);
+    assert.equal(spec.log.filter((x) => x.t === 'm.private').length, 0, 'no private view, ever');
+    assert.equal(back.log.filter((x) => x.t === 'm.private').length, 0);
   });
 
   test('host-only commands, difficulty change un-readies guests, host migration on leave', async () => {
@@ -855,7 +1145,7 @@ describe('websocket lobby', () => {
     const clients = [];
     for (let i = 0; i < 5; i++) clients.push(await pool.player(`F${i}`));
     const codes = () => [...srv.lobby.rooms.keys()];
-    const gTypes = ['g.infoReady', 'g.band', 'g.bandSkip', 'g.buy', 'g.refresh', 'g.freeze', 'g.levelUp', 'g.sell', 'g.move', 'g.equip', 'g.art', 'g.destroy', 'g.reward', 'g.choice', 'g.ready', 'g.emote', 'g.watch', 'g.autoplay', 'g.leave'];
+    const gTypes = ['g.infoReady', 'g.band', 'g.bandSkip', 'g.buy', 'g.refresh', 'g.freeze', 'g.levelUp', 'g.sell', 'g.move', 'g.equip', 'g.unequip', 'g.art', 'g.destroy', 'g.reward', 'g.choice', 'g.ready', 'g.emote', 'g.watch', 'g.autoplay', 'g.leave'];
     const junk = [1, -1, 1.5, 'x', '', null, true, [], {}, { area: 'board', row: 1, col: 1 }, 'A'.repeat(70), 2 ** 40];
     const gen = () => {
       const r = rnd();
@@ -872,6 +1162,12 @@ describe('websocket lobby', () => {
         for (const k of ['bandId', 'slot', 'uid', 'to', 'itemUid', 'targetUid', 'row', 'col', 'idx', 'ready', 'id', 'fieldId', 'on']) if (rnd() < 0.3) m[k] = pick(junk);
         if (m.t === 'g.emote' && rnd() < 0.5) m.id = 'autochess_battle_happy';
         return m;
+      }
+      // spectator seats (community report #26)
+      if (r < 0.95) {
+        return rnd() < 0.7
+          ? { t: 'room.spectate', code: pick([...codes(), 'ZZZZ', ...codes().map((c) => c.toLowerCase())]) || 'QQQQ' }
+          : { t: 'room.removeSpectator', playerId: pick([...clients.map((x) => x.id), 'p_nope', 1]) };
       }
       return pick([{ t: 'hello', name: pick(['Re', '', 'x'.repeat(20)]) }, { t: 'ping', c: pick([1, 'x']) }, { t: pick(['nope', '__proto__', 'toString']) }, { t: 'room.join', code: pick(junk) }]);
     };
@@ -910,9 +1206,20 @@ describe('websocket lobby', () => {
         assert.ok(sess, 'seated session exists');
         assert.equal(sess.roomCode, room.code);
       }
+      // spectator seats: capped, none in solo rooms, never also a player (here or elsewhere), never the host
+      assert.ok(room.spectators.length <= MAX_SPECTATORS, `room ${room.code} spectator cap`);
+      if (room.mode === 'solo') assert.equal(room.spectators.length, 0, 'no spectator seat in a solo room');
+      for (const sp of room.spectators) {
+        assert.ok(!seen.has(sp.playerId), 'a spectator is seated (or spectating) twice');
+        seen.add(sp.playerId);
+        assert.ok(!room.seatOf(sp.playerId) && room.hostId !== sp.playerId);
+        assert.equal(srv.registry.byId(sp.playerId)?.roomCode, room.code, 'the spectator\'s session points at its room');
+      }
     }
+    if (okCounts['room.spectate'] == null) assert.fail('fuzz never took a spectator seat');
     for (const sess of srv.registry.all()) {
-      if (sess.roomCode) assert.ok(srv.lobby.rooms.get(sess.roomCode)?.seatOf(sess.playerId), 'session points at its seat');
+      const r = sess.roomCode ? srv.lobby.rooms.get(sess.roomCode) : null;
+      if (sess.roomCode) assert.ok(r?.seatOf(sess.playerId) || r?.spectatorOf(sess.playerId), 'session points at its seat');
     }
     const h = JSON.parse((await httpReq(srv.port, '/healthz')).body.toString());
     assert.equal(h.ok, true);
@@ -978,6 +1285,11 @@ describe('websocket lobby', () => {
     assert.ok(h.rooms >= 1);
     assert.ok(h.sockets >= 1);
     assert.ok(h.sessions >= 1);
+    assert.deepEqual(h.versions.enabled, VERSIONS.map((v) => v.id), 'nothing set enables every version (DESIGN §35.23.11)');
+    assert.equal(h.versions.default, DEFAULT_VERSION);
+    assert.equal(h.versions.hosts.workers, 0, 'an idle server has forked no version match host');
+    assert.equal(h.versions.hosts.matches, 0);
+    assert.equal(srv.versionHosts.stats().workers, 0);
   });
 });
 
@@ -1012,6 +1324,8 @@ class RecordingMatch extends Match {
   onDisconnect(playerId) { this.calls.push(['onDisconnect', playerId]); super.onDisconnect(playerId); }
   onReconnect(playerId) { this.calls.push(['onReconnect', playerId]); super.onReconnect(playerId); }
   onLeave(playerId) { this.calls.push(['onLeave', playerId]); super.onLeave(playerId); }
+  addSpectator(playerId) { this.calls.push(['addSpectator', playerId]); }
+  removeSpectator(playerId) { this.calls.push(['removeSpectator', playerId]); }
   dispose() { this.calls.push(['dispose']); super.dispose(); }
 }
 
@@ -1023,7 +1337,7 @@ describe('lobby timers and match interface', () => {
   const WINDOW = 1200;
 
   before(async () => {
-    srv = await startServer({ auth: false,
+    srv = await startServer({
       port: 0, host: '127.0.0.1', log: cap.log, MatchClass: RecordingMatch, seedFn: () => 123456789,
       lobbyGraceMs: GRACE, reconnectWindowMs: WINDOW,
     });
@@ -1061,6 +1375,49 @@ describe('lobby timers and match interface', () => {
     const migrated = await guest.waitFor('room.state', (s) => s.hostId === guest.id, GRACE + 1000);
     assert.equal(migrated.seats[0], null);
     await expectOk(guest, { t: 'room.addBot' });
+  });
+
+  test('spectator seats: lobby grace like a player; never the host; the match hooks (opts.spectators, addSpectator / removeSpectator, only g.watch)', async () => {
+    const host = await pool.player('Host');
+    const st = await createRoom(host);
+    const spec = await pool.player('Spec');
+    await expectOk(spec, { t: 'room.spectate', code: st.code });
+    // a dropped spectator keeps its seat for the lobby grace, then is freed and told room.closed {timeout} on resume
+    const gone = await pool.player('Gone');
+    await expectOk(gone, { t: 'room.spectate', code: st.code });
+    await gone.terminate();
+    await host.waitFor('room.state', (s) => s.spectators.find((x) => x.playerId === gone.id)?.connected === false);
+    host.clearInbox();
+    await host.waitFor('room.state', (s) => s.spectators.length === 1, GRACE + 1000);
+    const goneBack = await pool.connect();
+    await goneBack.hello('Gone', gone.token);
+    assert.equal((await goneBack.waitFor('room.closed')).reason, 'timeout');
+    // the match: the spectator is passed apart from the seats
+    RecordingMatch.instances.length = 0;
+    await expectOk(host, { t: 'room.start' });
+    const m = RecordingMatch.instances[0];
+    assert.deepEqual(m.opts.spectators, [spec.id]);
+    assert.deepEqual(m.opts.seats.map((s) => s.playerId), [host.id]);
+    // only g.watch of a spectator reaches the match
+    await expectError(spec, { t: 'g.levelUp' }, ERR.SPECTATOR);
+    await spec.request({ t: 'g.watch', fieldId: `n:${host.id}` });
+    assert.deepEqual(m.calls.filter((c) => c[0] === 'handle' && c[1] === spec.id).map((c) => c[2]), ['g.watch']);
+    // joining mid-match, a drop (the match is not told), a resume (resync) → addSpectator; leaving → removeSpectator
+    const late = await pool.player('Late');
+    await expectOk(late, { t: 'room.spectate', code: st.code });
+    await late.terminate();
+    await host.waitFor('room.state', (s) => s.spectators.find((x) => x.playerId === late.id)?.connected === false);
+    host.clearInbox();
+    const back = await pool.connect();
+    await back.hello('Late', late.token);
+    await host.waitFor('room.state', (s) => s.spectators.find((x) => x.playerId === late.id)?.connected === true);
+    await expectOk(back, { t: 'g.leave' });
+    await host.waitFor('room.state', (s) => s.spectators.length === 1);
+    const hooks = m.calls.filter((c) => c[1] === late.id).map((c) => c[0]);
+    assert.deepEqual(hooks, ['addSpectator', 'addSpectator', 'removeSpectator'], 'never onDisconnect / onReconnect / onLeave');
+    // the host leaves mid-match: a spectator never becomes the host and never keeps the room
+    await expectOk(host, { t: 'room.leave' });
+    assert.equal((await spec.waitFor('room.closed')).reason, 'empty');
   });
 
   test('match number: every match of a room gets the next matchNo (battleIds stay unique even with the same seed)', async () => {
@@ -1132,12 +1489,17 @@ describe('lobby timers and match interface', () => {
     assert.ok(cap.errors.some((e) => e.includes('intentional handler crash')));
   });
 
-  test('repeated hellos during a match coalesce into at most one match resync per window', async () => {
+  test('user Given a running match When sending repeated hellos Then resyncs coalesce within the time window', { timeout: 10000 }, async (t) => {
     const host = await pool.player('Host');
     await createRoom(host, 'solo', 'NORMAL');
     RecordingMatch.instances.length = 0;
     await expectOk(host, { t: 'room.start' });
     await host.waitFor('m.private');
+    // Real socket processing may cross the resync window on a busy runner.
+    t.mock.timers.enable({ apis: ['Date', 'setTimeout'], now: Date.now() });
+    const clock = srv.lobby.now;
+    srv.lobby.now = () => Date.now();
+    t.after(() => { srv.lobby.now = clock; });
     const m = RecordingMatch.instances[0];
     const resyncs = () => m.calls.filter((c) => c[0] === 'onReconnect').length;
     host.clearInbox();
@@ -1145,9 +1507,12 @@ describe('lobby timers and match interface', () => {
     for (let i = 0; i < 12; i++) await host.waitFor('room.state'); // the cheap part answers every hello
     assert.equal(resyncs(), 1, 'first repeated hello resyncs at once, the rest wait for the window');
     await host.waitFor('m.private');
+    t.mock.timers.tick(999);
+    assert.equal(resyncs(), 1, 'no deferred resync before the window ends');
+    t.mock.timers.tick(1);
     await host.waitFor('m.private', () => true, 1500); // one coalesced resync answers the other 11
     assert.equal(resyncs(), 2);
-    await delay(1100);
+    t.mock.timers.tick(1100);
     assert.equal(resyncs(), 2, 'nothing else was queued');
     // a (re)connect is never delayed
     await host.terminate();
@@ -1235,7 +1600,7 @@ describe('solo resume window', () => {
   const cap = captureLog();
 
   before(async () => {
-    srv = await startServer({ auth: false,
+    srv = await startServer({
       port: 0, host: '127.0.0.1', log: cap.log, MatchClass: RealMatch, seedFn: () => 20260929,
       reconnectWindowMs: WINDOW, soloReconnectWindowMs: SOLO_WINDOW, lobbyGraceMs: 200,
     });
@@ -1339,7 +1704,7 @@ describe('match result replay', () => {
   const GRACE = 400;
 
   before(async () => {
-    srv = await startServer({ auth: false, port: 0, host: '127.0.0.1', log: cap.log, MatchClass: ReplayMatch, lobbyGraceMs: GRACE, resyncMinGapMs: 200 });
+    srv = await startServer({ port: 0, host: '127.0.0.1', log: cap.log, MatchClass: ReplayMatch, lobbyGraceMs: GRACE, resyncMinGapMs: 200 });
     pool = clientPool(() => `ws://127.0.0.1:${srv.port}/ws`);
   });
   afterEach(async () => {
@@ -1445,7 +1810,7 @@ describe('match result replay', () => {
   });
 
   test('real Match: a human who is away when the match finishes gets its m.result on resume', async () => {
-    const real = await startServer({ auth: false, port: 0, host: '127.0.0.1', log: cap.log, MatchClass: RealMatch, seedFn: () => 1312887319 });
+    const real = await startServer({ port: 0, host: '127.0.0.1', log: cap.log, MatchClass: RealMatch, seedFn: () => 1312887319 });
     const matches = [];
     try {
       const url = `ws://127.0.0.1:${real.port}/ws`;
@@ -1489,7 +1854,7 @@ describe('per-network limits', () => {
   const cap = captureLog();
 
   before(async () => {
-    srv = await startServer({ auth: false,
+    srv = await startServer({
       port: 0, host: '127.0.0.1', log: cap.log, MatchClass: Match,
       maxRoomsPerAddr: 3, maxMatchesPerAddr: 2, maxConnectionsPerAddr: 4,
     });
@@ -1583,7 +1948,7 @@ describe('per-network limits', () => {
 
 describe('heartbeat and shutdown', () => {
   test('dead sockets are terminated by the heartbeat; silent sockets hit the hello timeout', async () => {
-    const srv = await startServer({ auth: false, port: 0, host: '127.0.0.1', quiet: true, heartbeatMs: 80, helloTimeoutMs: 150 });
+    const srv = await startServer({ port: 0, host: '127.0.0.1', quiet: true, heartbeatMs: 80, helloTimeoutMs: 150 });
     try {
       const url = `ws://127.0.0.1:${srv.port}/ws`;
       const deaf = await TestClient.connect(url, { wsOptions: { autoPong: false } });
@@ -1606,7 +1971,7 @@ describe('heartbeat and shutdown', () => {
   });
 
   test('close() notifies rooms (room.closed shutdown) and closes sockets with 1001', async () => {
-    const srv = await startServer({ auth: false, port: 0, host: '127.0.0.1', quiet: true });
+    const srv = await startServer({ port: 0, host: '127.0.0.1', quiet: true });
     const c = await TestClient.connect(`ws://127.0.0.1:${srv.port}/ws`);
     const w = await c.hello('Last');
     c.id = w.playerId;
@@ -1729,10 +2094,11 @@ describe('platform units', () => {
       fs.writeFileSync(path.join(dir, 'chess.json'), JSON.stringify([{ id: 'x', stats: { hp: 1 } }]));
       fs.writeFileSync(path.join(dir, 'broken.json'), '{oops');
       fs.writeFileSync(path.join(dir, 'notes.txt'), 'ignored');
+      fs.writeFileSync(path.join(dir, 'local-fx.json'), JSON.stringify({ version: 1, format: 'fx-manifest', groups: {} }));
       const warnings = [];
       const errors = [];
       const data = loadData(dir, { log: { warn: (m) => warnings.push(m), error: (m) => errors.push(m) } });
-      assert.deepEqual(Object.keys(data).sort(), ['chess', 'config']);
+      assert.deepEqual(Object.keys(data).sort(), ['chess', 'config'], 'data/local-fx.json (the official effects\' file list, UNLOADED_DATA) is never loaded');
       assert.equal(data.config.modes.a.rounds[1], 2);
       assert.ok(Object.isFrozen(data));
       assert.ok(Object.isFrozen(data.config.modes.a.rounds));

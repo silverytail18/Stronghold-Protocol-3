@@ -1,4 +1,3 @@
-import {appPage} from '../helpers/appPage.mjs';
 // test/render/phalanx-aoe.browser.test.js — community report E3 after 0.1.0 ("干员卡涅利安的攻击不是真群攻") in headless
 // Chrome: a real battle (卡涅利安 S2 沙缚镣锁 with five enemies spread over her range, no two within a 1.1-tile splash)
 // is simulated in Node and its frames are fed to the real field view (public/dev/render-demo.html, real Spine models)
@@ -46,7 +45,7 @@ describe('阵法术师 group attack in headless Chrome (community report E3)', {
   before(async () => {
     const puppeteer = (await import('puppeteer-core')).default;
     const { startServer } = await import('../../server/index.js');
-    srv = await startServer({ auth: false, port: 0, host: '127.0.0.1', quiet: true });
+    srv = await startServer({ port: 0, host: '127.0.0.1', quiet: true });
     browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--no-first-run'] });
     mkdirSync(OUT, { recursive: true });
   });
@@ -60,7 +59,7 @@ describe('阵法术师 group attack in headless Chrome (community report E3)', {
     const attacks = frames.filter((f) => f.ev.some((e) => e[0] === 'atk' && e[1] === opId));
     assert.ok(attacks.length >= 3, 'she attacked');
     for (const f of attacks) assert.equal(new Set(f.ev.filter((e) => e[0] === 'atk' && e[1] === opId).map((e) => e[2])).size, 5, 'one attack, five targets');
-    const page = await appPage(await browser.newPage());
+    const page = await browser.newPage();
     const problems = [];
     page.on('console', (m) => { if (m.type() === 'error') problems.push(`console: ${m.text()}`); });
     page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));

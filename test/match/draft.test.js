@@ -33,6 +33,7 @@ test('INFO_CHECK: ends when every human confirmed (bots/departed count as ready)
 });
 
 test('band draft (co-op): random order, one pick per turn, NOT_YOUR_TURN, one skip each (moves to the end), 队友已选 refused', () => {
+  // find a seed where both humans are not first... just use the order the match chose
   const h = makeMatch({ mode: 'coop', humans: 3, seed: 5 }).start();
   const m = h.m;
   for (const id of ['p_0', 'p_1', 'p_2']) m.handle(id, { t: 'g.infoReady' });
@@ -112,6 +113,7 @@ test('band draft timers (user playtest #4 item 4): one countdown of BAND_TURN_SE
   assert.equal(new Set([...h2.m.players.values()].map((ps) => ps.bandId)).size, 4, 'the rest get distinct free strategies');
   h2.m.dispose();
   // data and code say the same: data/config.json timers.bandTurn (tools/build-data.mjs) = Match.BAND_TURN_SECONDS
+  assert.equal(BAND_TURN_SECONDS, 50, 'owner official-play report: 50 seconds per multiplayer pick');
   assert.equal(DATA.config.timers.bandTurn, BAND_TURN_SECONDS);
 });
 
@@ -149,6 +151,8 @@ test('机变 (co-op): 6 shared cards, random order, 30 s first / 16 s others, ti
   assert.deepEqual(sp.order.slice().sort(), ['p_0', 'p_1', 'p_2']);
   assert.equal(Math.round((m2.deadline - h2.sched.now()) / 1000), 30, 'first picker 30 s');
   const [a, b, c] = sp.order;
+  assert.equal(m2.handle(a, { t: 'g.choice', idx: 2, choiceId: 'old.choice.1' }).error, ERR.WRONG_PHASE);
+  assert.deepEqual(m2.sp.picks, {}, 'personal IDs never fall through to the global draft');
   assert.equal(m2.handle(b, { t: 'g.choice', idx: 0 }).error, ERR.NOT_YOUR_TURN);
   assert.deepEqual(m2.handle(a, { t: 'g.choice', idx: 2 }), { ok: true });
   assert.equal(m2.handle(a, { t: 'g.choice', idx: 3 }).error, ERR.ALREADY);

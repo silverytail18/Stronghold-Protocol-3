@@ -1,4 +1,3 @@
-import {appPage} from '../helpers/appPage.mjs';
 // test/render/flash.browser.test.js — user playtest #4 item 13 in headless Chrome ("屏幕很偶尔的情况下会有个巨大的ui的一部分
 // 遮挡一两秒": once in a while a huge piece of UI covered the screen for a second or two).
 // Found by sampling long real-server sessions every 80 ms (DOM boxes > 25 % of the viewport, images drawn > 300 px, Pixi
@@ -29,7 +28,7 @@ describe('user playtest #4 item 13: no screen-sized UI flash (mock battle, headl
   before(async () => {
     const puppeteer = (await import('puppeteer-core')).default;
     const { startServer } = await import('../../server/index.js');
-    srv = await startServer({ auth: false, port: 0, host: '127.0.0.1', quiet: true });
+    srv = await startServer({ port: 0, host: '127.0.0.1', quiet: true });
     browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--no-first-run', '--force-device-scale-factor=1'] });
     mkdirSync(OUT, { recursive: true });
   });
@@ -40,7 +39,7 @@ describe('user playtest #4 item 13: no screen-sized UI flash (mock battle, headl
 
   for (const [w, h] of [[1920, 1080], [1280, 720]]) {
     test(`${w}×${h}: a bond layer gained in battle pops its icon at ~46 px — also the first time (icon still loading)`, async () => {
-      const page = await appPage(await browser.newPage());
+      const page = await browser.newPage();
       const problems = [];
       page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));
       await page.setViewport({ width: w, height: h });

@@ -6,6 +6,7 @@ const distinct=es=>{const m=new Map();for(const e of es){const id=e.c.baseId||e.
 const members=(ctx,es,bond)=>es.filter(e=>metaBonds(ctx,e.p).includes(bond));
 function progress(ctx,id,name,desc,count){ctx.addEffect({id:'rm:progress:'+id,name,desc,iconKind:'band',iconId:ctx.bandId(),counter:count,battle:false});}
 export function registerMeta(reg){
+ reg.garrison('rm_personal',{onBattleStart(){}});
  for(const k of ['podenco','amiya','dolris','amoris','mortis','tmoris','oblvns','kalts2','nearl'])reg.garrison('rm_growth_'+k,{onPrepEnd(){}});
  reg.global('rm_growth',{
   onMerge(ctx,ev){if(!ctx.gd.bond(RI)||ev.kind!=='chess'||!ctx.gd.chess(ev.piece?.id)?.isGolden||!metaBonds(ctx,ev.piece).includes(RI))return;if(board(ctx).some(e=>e.c.baseId===AMORIS))ctx.setCounter('rm:amoris:eligible',ctx.round);},
@@ -13,12 +14,8 @@ export function registerMeta(reg){
    const all=board(ctx),es=distinct(all),rs=members(ctx,es,RI),gs=es.filter(e=>e.c.bonds.includes(GIRL)),profs=new Set(rs.map(e=>e.c.profession));const tier=Math.min(2,Math.max(0,(ctx.bond(RI)?.tier||1)-1));let n=R.growth[tier]+(profs.size>=R.professions[tier]?R.composition[tier]:0);
    for(const e of es){const id=e.c.baseId,v=e.c.isGolden?2:1;
     if(e.c.name==='波登可'&&e.c.bonds.includes(RI))n+=G.prep*v;
-    if(id===AMIYA&&rs.length>=3&&profs.size>=3)n+=2*v;
     if(id===DOLRIS&&gs.length>=2)n+=v;
     if(id===AMORIS&&(ctx.counter('rm:amoris:eligible')===ctx.round||rs.filter(a=>a.c.isGolden).length>=2))n+=2*v;
-    if(id===MORTIS&&rs.length>=3&&profs.size>=3)n+=v;
-    if(id===TMORIS&&rs.some(a=>a.c.profession==='WARRIOR')&&rs.some(a=>a.c.profession==='SPECIAL'))n+=v;
-    if(id===OBLVNS&&rs.filter(a=>a.p.items?.length>=1).length>=2)n+=v;
     if(id===KALTS2&&rs.some(a=>['WARRIOR','TANK'].includes(a.c.profession)))n+=v;
    }if(n>0)ctx.addLayers(RI,n,{requireActive:true,reason:'rm:prepGrowth'});
   }

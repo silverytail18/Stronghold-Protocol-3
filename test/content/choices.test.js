@@ -406,6 +406,9 @@ test('机密商店 E2E (co-op): two identical cards are two cards — both can b
   // six 变形同构体: every slot draws the one item `coin` names
   const one = Object.values(DATA.items).find((i) => i.name === '变形同构体' && !i.isGolden).id;
   const data = dataWith('mode_multi_hard', 3, 'shop');
+  // This case isolates card-index ownership with sufficient stock; shared-stock.test.js covers exhaustion.
+  data.config = { ...data.config, economy: { ...data.config.economy,
+    itemPoolCopiesOverrides: { ...data.config.economy.itemPoolCopiesOverrides, [one]: 8 } } };
   data.choices = { ...data.choices, shopDraft: { ...data.choices.shopDraft, rounds: [3], slots: Array.from({ length: 6 }, () => ({ coin: 1 })), coin: one } };
   const h = makeMatch({ mode: 'coop', difficulty: 'HARD', humans: 2, bots: 2, seed: 43, data, registry: REG, fake: true });
   const m = h.m;
@@ -531,7 +534,9 @@ test('战术决策 E2E (co-op 3): team cards reach every teammate (AI included),
   for (const ps of all) {
     const had = before.get(ps.playerId).items;
     const now = new Set(itemsOf(ps).map((p) => p.uid));
-    const fresh = itemsOf(ps).filter((p) => !had.has(p.uid));
+    // a strategy's 「进入休整期时」 item (昆图斯's R3 突变细胞 …) now comes at the prep start, after the draft (GitHub #851)
+    const bandItems = new Set((DATA.bands[ps.bandId]?.buffs || []).filter((x) => /^prep(aration)?_start_/.test(x.key)).map((x) => x.bbStr?.chess).filter(Boolean));
+    const fresh = itemsOf(ps).filter((p) => !had.has(p.uid) && !bandItems.has(p.id));
     // an identical normal pair merges into the 进阶 item (counts 2); an owned copy consumed by a merge counts −1
     const n = fresh.reduce((k, p) => k + (DATA.items[p.id].isGolden ? 2 : 1), 0) - [...had].filter((u) => !now.has(u)).length;
     assert.equal(n, 2, `${ps.playerId}: 列装 gives 2 items`);

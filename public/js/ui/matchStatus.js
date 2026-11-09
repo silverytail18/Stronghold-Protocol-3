@@ -30,7 +30,7 @@ export const OVERTIME_WARN_BEFORE = 30;
 export function bossLevelSeconds(pub, config) {
   if (!isObj(pub) || !BOSS_PHASES.has(pub.phase)) return null;
   const mode = isObj(config?.modes) ? config.modes[pub.modeId] : null;
-  const v = (pub.roundRules ?? mode?.rounds?.[String(pub.round)])?.levelMaxPlayTime;
+  const v = mode?.rounds?.[String(pub.round)]?.levelMaxPlayTime;
   return Number.isFinite(v) && v > 0 ? v : BOSS_LEVEL_SECONDS;
 }
 

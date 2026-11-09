@@ -37,7 +37,7 @@ const { morphPairings, modeOffBonds, grantedBonds, harmonyMembers, HARMONY_BOND,
 const { data, getMode } = await import('../../public/js/data.js');
 await data.loadAll('bonds', 'chess', 'items', 'assets', 'garrisons', 'config');
 const { ItemDetail, ChessDetail, MorphPairings, MorphGrantLine, BondChips } = await import('../../public/js/ui/detailPanel.js');
-const { BondPopupBody: BondPopup, BondStrip } = await import('../../public/js/ui/bondStrip.js');
+const { BondPopup, BondStrip } = await import('../../public/js/ui/bondStrip.js');
 const { popupView } = await import('../../public/js/ui/watchBonds.js');
 const { HARMONY_BOND: SERVER_HARMONY_BOND } = await import('../../server/match/bondsMeta.js');
 const { makeMatch, give, giveItem, legalTileFor } = await import('../match/harness.js');

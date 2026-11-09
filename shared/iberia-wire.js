@@ -1,0 +1,10 @@
+const obj=x=>!!x&&Object.getPrototypeOf(x)===Object.prototype;
+const num=(x,max)=>Number.isFinite(x)&&x>=0&&x<=max;
+const int=(x,max)=>Number.isInteger(x)&&num(x,max);
+const id=x=>typeof x==='string'&&x.length>0&&x.length<=64&&!['__proto__','constructor','prototype'].includes(x);
+const map=(x,max,f)=>obj(x)&&Object.keys(x).length<=max&&Object.entries(x).every(([k,v])=>id(k)&&f(v));
+export const isIberiaEnemy=x=>obj(x)&&Object.keys(x).every(k=>['version','instance','hpRatio','marks','pending'].includes(k))&&x.version===1&&id(x.instance)&&num(x.hpRatio,1)&&Array.isArray(x.marks)&&x.marks.length<=4&&x.marks.every(m=>Array.isArray(m)&&m.length===5&&id(m[0])&&int(m[1],5)&&num(m[2],8.001)&&num(m[3],3.001)&&num(m[4],.601))&&(x.pending===null||obj(x.pending)&&id(x.pending.ownerId)&&num(x.pending.remaining,1.001)&&typeof x.pending.boss==='boolean'&&(x.pending.bossDamage===undefined||x.pending.boss&&num(x.pending.bossDamage,299999)));
+export function isIberiaResult(x){if(!obj(x)||x.version!==1||Object.keys(x).length!==3||!obj(x.metrics)||!obj(x.carry))return false;const c=x.carry,m=x.metrics;
+ return c.version===1&&Object.keys(c).length===(c.sunPermanent===undefined?8:9)+(c.sunPulseCount===undefined?0:2)&&((c.sunPulseCount===undefined&&c.sunPulseRemaining===undefined)||int(c.sunPulseCount,1e5)&&num(c.sunPulseRemaining,12.001))&&(c.sunPermanent===undefined||typeof c.sunPermanent==='boolean')&&num(c.fuel,23)&&num(c.sunRemaining,12.001)&&int(c.lit,1e5)&&int(c.growthUsed,24)&&map(c.windows,32,w=>obj(w)&&Object.keys(w).length===2&&num(w.remaining,4.001)&&typeof w.worked==='boolean')&&map(c.native,64,v=>obj(v)&&Object.keys(v).length===2&&int(v.thornsCasts,10000)&&int(v.castSerial,10000))&&map(c.traits,8,f=>obj(f)&&num(f.progress,12)&&num(f.used,12)&&num(f.auxUsed,12)&&Array.isArray(f.seen)&&f.seen.length<=4000&&f.seen.every(id)&&(f.lastGate===null||typeof f.lastGate==='string'&&f.lastGate.length<=64||Number.isFinite(f.lastGate)))&&Object.keys(m).length===4&&['lights','explosions','judgments'].every(k=>int(m[k],1e6))&&num(m.damage,1e13);
+}
+export const compactIberiaResult=p=>isIberiaResult(p?.iberia)?{iberia:structuredClone(p.iberia)}:{};

@@ -8,7 +8,12 @@ export function validKazdelChoice(ps,offer,id){const c=ps.gd.chess(id);return el
 export function kazdelRecruitPending(ps){if(!eligible(ps))return[];return RECRUIT_ROUNDS.filter(n=>ps.counters[key(n,'unlocked')]&&!ps.counters[key(n,'claimed')]).map(round=>({round,maxTier:ps.counters[key(round,'maxTier')]||null,hasOffer:ps.offers.some(o=>isKazdelRecruitOffer(o)&&o.kazdelRound===round)}));}
 export function syncKazdelRecruit(ps){
  if(!eligible(ps))return;
- for(const n of RECRUIT_ROUNDS)if(ps.m.round>=n)ps.counters[key(n,'unlocked')]=1;
+ for(const n of RECRUIT_ROUNDS)if(ps.m.round>=n){
+  ps.counters[key(n,'unlocked')]=1;
+  // Open in the ordinary shop reward queue on first entering prep, just like strategy rewards.
+  // Keep the captured tier and existing choices through deferral, reconnects and later shop upgrades.
+  if(ps.m.phase===PHASE.PREP&&!ps.counters[key(n,'claimed')])ps.counters[key(n,'maxTier')]||=ps.shop.level;
+ }
  if(ps.m.phase!==PHASE.PREP||ps.offers.some(isKazdelRecruitOffer))return;
  for(const n of RECRUIT_ROUNDS){const maxTier=ps.counters[key(n,'maxTier')];if(!ps.counters[key(n,'unlocked')]||ps.counters[key(n,'claimed')]||!maxTier)continue;
   const offer={kazdelRound:n,kazdelMaxTier:maxTier};ps.kazdelRecruitChoices||={};
@@ -16,14 +21,15 @@ export function syncKazdelRecruit(ps){
   while(ids.length<3){const id=ps.m.pool.roll(ps.m.rngMeta,{maxTier,filter:id=>!ids.includes(id)&&validKazdelChoice(ps,offer,id)});if(!id)break;ids.push(id);}
   ps.kazdelRecruitChoices[n]=ids;
   if(!ids.length)continue;
-  const pending=Object.assign(ps.pushRewardOffer(THERESA,{ids,tier:maxTier,label:`共生之约 · 第${n}回合（最高${maxTier}阶）`}),offer);
+  const pending=Object.assign(ps.pushRewardOffer(THERESA,{ids,tier:maxTier,label:'共生之约'}),offer);
   for(const s of pending.slots||[])s.price=0;
   return;
  }
 }
 export function openKazdelRecruit(ps,round){
  syncKazdelRecruit(ps);const pending=kazdelRecruitPending(ps).find(v=>v.round===round);
- if(!pending||ps.m.phase!==PHASE.PREP||ps.ready||ps.offers.some(isKazdelRecruitOffer))return false;
+ if(!pending||ps.m.phase!==PHASE.PREP||ps.ready)return false;
+ if(pending.hasOffer)return true;
  // Opening captures the tier once; upgrading after seeing choices cannot reroll them.
  ps.counters[key(round,'maxTier')]||=ps.shop.level;syncKazdelRecruit(ps);ps.dirty();return true;
 }

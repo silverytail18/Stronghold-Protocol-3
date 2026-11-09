@@ -1,3 +1,4 @@
+import {hypot as productMath_hypot} from '../../detmath.js';
 import {SUI} from './expansion-data.js';
 import {canTargetEnemy,sortEnemyTargets} from '../../targeting.js';
 import {aggregateMods} from '../../buffs.js';
@@ -30,7 +31,7 @@ export function install(battle){
     let origin=origins.get(source.ownerId);if(!origin){origin=new Unit({id:`exp:sui:${source.ownerId}`,kind:'bond',side:'ally',ownerId:source.ownerId,base:{maxHp:1,atk:0}});origin.deployed=true;origin.alive=true;origins.set(source.ownerId,origin);}
     const deal=(e,amount,type)=>battle.dealDamage(origin,e,{amount,type,isSkill:false,tags:['exp:sui:combo']});
     deal(main,A*(2.2+0.015*L),'arts');if(four&&main.alive)deal(main,A*(1.2+0.01*L),'phys');
-    const rest=battle.enemies.filter(e=>e!==main&&live(e)&&canTargetEnemy(origin,e,profile)&&Math.hypot(e.x-main.x,e.y-main.y)<=1.2);sortEnemyTargets(battle,source,rest);for(const e of rest.slice(0,four?4:2))deal(e,A*(2.2+0.015*L)*0.6,'arts');
+    const rest=battle.enemies.filter(e=>e!==main&&live(e)&&canTargetEnemy(origin,e,profile)&&productMath_hypot(e.x-main.x,e.y-main.y)<=1.2);sortEnemyTargets(battle,source,rest);for(const e of rest.slice(0,four?4:2))deal(e,A*(2.2+0.015*L)*0.6,'arts');
     battle.fx('exp-sui',{x:main.x,y:main.y,owner:source.ownerId,participants:2,atk:A,layers:L});
   }
   battle.on('damageResolved',({source,target,dmg,dealt})=>{if(dealt>0&&(dmg?.isAttack||dmg?.isSkill)&&!dmg.sourceless&&!dmg.tags?.some(t=>/combo|counter|reflect/.test(t)))participate(source,target);});

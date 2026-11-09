@@ -1,0 +1,106 @@
+/* The upstream theme and panel/button classes provide the visual vocabulary; this page scrolls independently. */
+html { font-size: 100px; min-height: 100%; }
+body.account-page { height: auto; min-height: 100svh; overflow: auto; font-size: 16px; user-select: text; }
+.account-page [hidden] { display: none !important; }
+#account-root { width: min(1120px, 100%); margin: 0 auto; padding: max(24px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(32px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); }
+.account-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+.account-header h1 { font-size: clamp(23px, 4vw, 32px); letter-spacing: .08em; }
+.account-subtitle { margin-top: 6px; color: var(--text-lo); font-size: 14px; }
+.account-page .btn { min-height: 44px; height: auto; padding: 12px 18px; font-size: 15px; white-space: normal; }
+.account-page .panel__title { font-size: 19px; }
+.account-page .panel__head { padding: 16px 20px; }
+.account-page .panel__body { padding: 20px; }
+.account-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+.account-tabs .is-active { border-color: var(--mint-500); color: var(--mint-400); }
+.account-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; }
+.account-form { display: grid; gap: 16px; }
+.account-field { display: grid; gap: 7px; min-width: 0; font-size: 14px; color: var(--text-md); }
+.account-field input, .account-field select, .account-input, .version-default { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line-2); background: var(--bg-0); border-radius: 0; font-size: 16px; }
+.account-input { resize: vertical; }
+.account-form label { display: grid; gap: 7px; }
+.account-form input { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line-2); background: var(--bg-0); border-radius: 0; font-size: 16px; }
+.account-status { min-height: 24px; margin: 0 0 16px; color: var(--mint-400); overflow-wrap: anywhere; }
+.account-status.is-error { color: var(--red-premium); }
+.account-hint { margin-bottom: 18px; color: var(--text-md); font-size: 14px; line-height: 1.75; }
+.account-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 20px; }
+.account-badge { display: inline-flex; align-items: center; min-height: 28px; padding: 3px 9px; border: 1px solid var(--mint-800); color: var(--mint-400); font-size: 13px; }
+.account-badge--gold { color: var(--gold); border-color: var(--gold); }
+.version-list { display: grid; gap: 10px; margin-bottom: 20px; }
+.version-row { display: flex; align-items: center; gap: 12px; padding: 14px; border: 1px solid var(--line); background: var(--bg-0); min-height: 52px; }
+.version-row input { width: 22px; height: 22px; accent-color: var(--mint-500); flex: none; }
+.version-row span { flex: 1; }
+.version-row small { color: var(--text-lo); }
+.account-user { display: flex; align-items: center; gap: 12px; justify-content: space-between; flex-wrap: wrap; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.account-user-info { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; overflow-wrap: anywhere; }
+.account-user-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.account-user-editor { flex: 1 1 100%; min-width: 0; padding: 16px; border: 1px solid var(--line); background: var(--bg-0); }
+.account-user-form { max-width: 520px; }
+.account-user-form .account-hint { margin: 0; }
+.account-user-form .account-actions { margin-top: 0; }
+.account-delete { color: var(--red-premium); border-color: var(--red-premium); }
+.account-metric { padding: 12px 0; display: flex; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--line); }
+.account-metric strong { color: var(--mint-400); }
+.account-records { list-style: none; padding: 0; margin: 0; }
+.account-records li { padding: 12px 0; border-bottom: 1px solid var(--line); }
+.account-records small { display: block; color: var(--text-lo); margin-top: 4px; }
+.account-login { max-width: 480px; margin: 40px auto; }
+@media (max-width: 760px) {
+  #account-root { padding-left: max(14px, env(safe-area-inset-left)); padding-right: max(14px, env(safe-area-inset-right)); }
+  .account-grid { grid-template-columns: minmax(0, 1fr); }
+  .account-page .panel__body, .account-page .panel__head { padding: 16px; }
+  .account-tabs .btn { flex: 1 1 auto; }
+}
+@media (prefers-reduced-motion: reduce) { .account-page * { animation: none !important; transition: none !important; } }
+
+.content-admin-row{display:grid;gap:10px;padding:16px 0;border-bottom:1px solid var(--line,#666)}.content-admin-options{display:flex;flex-wrap:wrap;gap:8px 20px}.content-admin-row label{display:flex;align-items:center;gap:8px;min-height:44px}.content-admin-row input{width:22px;height:22px}
+.content-admin-row input[type=number] { width: 100px; min-height: 44px; padding: 8px; font-size: 16px; background: var(--bg-0); color: var(--text); border: 1px solid var(--line); }
+
+.player-stats-layout{display:grid;grid-template-columns:minmax(180px,260px) minmax(0,1fr);gap:20px}.player-list{display:grid;gap:8px;max-height:65vh;overflow:auto}.player-stats-layout pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;max-height:55vh;overflow:auto}.player-records{max-height:50vh;overflow:auto}.player-records details{padding:10px 0;border-bottom:1px solid var(--line)}.player-stats-layout summary{cursor:pointer;min-height:32px}@media(max-width:760px){.player-stats-layout{grid-template-columns:minmax(0,1fr)}.player-list{max-height:22vh}}
+
+/* Independent management shell inspired by Emi. */
+body.account-page{background:radial-gradient(ellipse at 0 0,#284e3d66,transparent 60%),#0b1310;color:#e4eee7}
+#account-root{display:grid;grid-template-columns:210px minmax(0,1fr);gap:0 28px;width:min(1480px,100%);padding-top:28px}
+.account-header{grid-column:1/-1;margin-bottom:10px}.account-status{grid-column:1/-1}.account-tabs{display:flex;flex-direction:column;align-self:start;position:sticky;top:20px;padding:20px 12px;background:#203a2b55;border-left:2px solid #77dbaa77;gap:8px}.account-tabs .btn{justify-content:flex-start;text-align:left;border:0;border-left:2px solid transparent;background:transparent}.account-tabs .is-active{border-color:#8ee0b5;background:#87d3a81a;color:#b4f5cd}#account-content{min-width:0;display:grid;gap:22px}.account-page .panel{background:#19302555;border-color:#51725e66}.account-page .panel__head{border-bottom:1px solid #47665166}.account-page .panel__title{letter-spacing:.04em}.admin-columns{display:grid;grid-template-columns:1fr 1fr;gap:22px}.admin-season-status strong{font-size:28px;color:#b9e8c9}.admin-season-status span{margin-left:20px}.admin-season-status p{margin-top:12px;color:#a8bfb0}.admin-match-list{display:grid;gap:16px}.account-records article{padding:14px 0;border-bottom:1px solid #48645066}.account-records small{display:block;color:#a9bfb0}.account-page input,.account-page select{color:#e2eee7}.account-page .account-login{grid-column:1/-1;width:min(480px,100%)}
+@media(max-width:900px){#account-root{grid-template-columns:170px minmax(0,1fr);gap:0 16px}.admin-columns,.account-grid{grid-template-columns:1fr}.account-header h1{font-size:26px}}
+@media(max-width:640px){#account-root{display:block}.account-tabs{position:static;display:grid;grid-template-columns:repeat(2,1fr);margin-bottom:20px;padding:10px}.account-tabs .btn{padding:10px}.account-header{align-items:flex-start}}
+
+/* Personalized emote pack administration */
+.emote-admin-form{display:grid;gap:12px}
+.emote-admin-form label{display:grid;gap:5px;font-size:13px;color:#b9c9c0}
+.emote-admin-form input[type=text],.emote-admin-form input:not([type]),.emote-admin-form select{min-height:36px;padding:6px 9px;background:#ffffff08;border:1px solid #ffffff24;color:#e7f1eb;font:14px/1.3 var(--font-ui,sans-serif)}
+.emote-admin-form input[type=file]{font-size:13px;color:#b9c9c0}
+.emote-admin-hint{margin:0;color:#93a79c;font-size:12px;line-height:1.6}
+.emote-admin-preview{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:8px;min-height:40px}
+.emote-admin-file{margin:0;padding:6px;border:1px solid #ffffff1c;background:#ffffff06}
+.emote-admin-file img{display:block;width:100%;aspect-ratio:1;object-fit:contain}
+.emote-admin-file figcaption{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;color:#93a79c}
+.emote-admin-empty{margin:0;color:#93a79c;font-size:12px}
+.emote-admin-packs{display:grid;gap:10px;margin-top:12px}
+.emote-admin-pack{padding:10px 12px;border:1px solid #ffffff1c;background:#ffffff05}
+.emote-admin-pack header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.emote-admin-pack header div{display:grid;gap:2px;min-width:0}
+.emote-admin-pack header b{font-size:14px;color:#e7f1eb}
+.emote-admin-pack header small{font-size:11px;color:#93a79c}
+.emote-admin-thumbs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.emote-admin-thumbs img{width:42px;height:42px;object-fit:contain;border:1px solid #ffffff1c;background:#ffffff06}
+.emote-admin-slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:5px;margin:10px 0}
+.emote-admin-slot{padding:4px 7px;border:1px dashed #ffffff20;color:#93a79c;font-size:11px}
+@media(max-width:640px){.emote-admin-thumbs img{width:36px;height:36px}.emote-admin-slots{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Match appeals administration */
+.appeal-admin-list{display:grid;gap:12px}
+.appeal-admin-card{padding:12px 14px;border:1px solid #ffffff1c;background:#ffffff05}
+.appeal-admin-card header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.appeal-admin-card header div{display:grid;gap:2px;min-width:0}
+.appeal-admin-card header b{font-size:14px;color:#e7f1eb}
+.appeal-admin-card header small{font-size:11px;color:#93a79c;overflow-wrap:anywhere}
+.appeal-admin-state{flex:none;padding:2px 8px;border:1px solid #ffffff24;color:#b9c9c0;font-size:11px}
+.appeal-admin-card.is-pending .appeal-admin-state{border-color:#e7c57788;color:#e7c577}
+.appeal-admin-card.is-approved .appeal-admin-state{border-color:#8ee5bc66;color:#8ee5bc}
+.appeal-admin-reason{margin:10px 0;color:#d7e3db;line-height:1.6;white-space:pre-wrap}
+.appeal-admin-card footer{display:flex;align-items:center;justify-content:space-between;gap:10px;color:#93a79c;font-size:11px}
+.gameplay-admin-list { display: grid; gap: 16px; }
+.gameplay-admin-card { padding: 18px; border: 1px solid var(--line); background: rgba(16,32,29,.65); }
+.gameplay-admin-toggle { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; min-height: 44px; }
+.gameplay-admin-toggle input { width: 22px; height: 22px; accent-color: var(--mint-400); }
+.gameplay-admin-card p, .gameplay-admin-card li { line-height: 1.7; }

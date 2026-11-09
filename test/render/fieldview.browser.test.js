@@ -1,10 +1,11 @@
-import {appPage} from '../helpers/appPage.mjs';
 // test/render/fieldview.browser.test.js — field-view features in headless Chrome through the dev demo
 // (public/dev/render-demo.html): the enemy preview pen (research 09 §2.2 / 08 §4.2) on the 3D and the 2D board and
 // the 0.25 s pan to it and back, the Final Assault prep on the player's half of the boss field (research 09 §1.2:
-// drop targets / directions stay in board space, the right half mirrored), damage numbers that never touch, the
+// drop targets / directions stay in board space, the right half mirrored; a dragged unit stands on its target's
+// boss-field tile) with the round's leader on its spawn tile and
+// its red hit tiles beside a range preview (community report #12), damage numbers that never touch, the
 // automatic rebuild of a 3D board whose WebGL context was lost, and frame rates on a 4× throttled CPU.
-// Screenshots → test/e2e/out/pen-*.png, fa-prep-*.png, dmgnum-*.png; perf → test/e2e/out/fieldview-perf.json.
+// Screenshots → test/e2e/out/pen-*.png, fa-prep-*.png, fa-leader-*.png, dmgnum-*.png; perf → test/e2e/out/fieldview-perf.json.
 //
 // Opt-in (starts Chrome): RENDER_E2E=1 node --test test/render/fieldview.browser.test.js
 // Run browser test files one at a time. Chrome path: $CHROME_PATH or the macOS default.
@@ -28,7 +29,7 @@ describe('field view features in headless Chrome', { skip }, () => {
   before(async () => {
     const puppeteer = (await import('puppeteer-core')).default;
     const { startServer } = await import('../../server/index.js');
-    srv = await startServer({ auth: false, port: 0, host: '127.0.0.1', quiet: true });
+    srv = await startServer({ port: 0, host: '127.0.0.1', quiet: true });
     browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--no-first-run', '--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] });
     mkdirSync(OUT, { recursive: true });
   });
@@ -39,7 +40,7 @@ describe('field view features in headless Chrome', { skip }, () => {
   });
 
   async function open(query, w = 1920, h = 1080) {
-    const page = await appPage(await browser.newPage());
+    const page = await browser.newPage();
     const problems = [];
     page.on('console', (m) => { if (m.type() === 'error') problems.push(`console: ${m.text()}`); });
     page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));
@@ -147,6 +148,96 @@ describe('field view features in headless Chrome', { skip }, () => {
     assert.equal(r2.battle, 0, 'cleared at combat start');
   });
 
+  // The maintainer's decision of 2026-10-15 (their recording of the official 休整期; supersedes user playtest #2 item 6):
+  // the prep camera shows the pen — the next round's enemies at the top right of the prep view, the pen's gates built
+  // with its block —, a battle start drops the block and figures at once (not at the end of the camera flight), the next prep brings them
+  // back as its flight begins, the pen view and 返回战场 keep it, the Final Assault prep (the boss field) never shows it.
+  for (const board of ['3d', '2d']) {
+    test(`the pen with the prep camera (${board}): at the top right of the prep view, gone at once with a battle start, back with the next prep`, async () => {
+      if (board === '3d' && !hasArt) return;
+      const { page, problems } = await open(`scene=prep&pen=late-m01-r13&board=${board}`, 1280, 720);
+      await wait(2500);
+      await page.screenshot({ path: path.join(OUT, `pen-prep-topright-${board}.png`) });
+      const r = await page.evaluate(async () => {
+        const v = window.__demo.view, d = v.debug;
+        const W = d.app.view.clientWidth, H = d.app.view.clientHeight;
+        const RECT = { r0: 9, r1: 12, c0: 0, c1: 10 };
+        // the pen's gates: the 3D board's built start boxes / the 2D board's wire boxes in the pen rows
+        const gates = () => (d.board3d ? (d.board3d.board?.gates || []) : d.tiles.boxes).filter((g) => g.r >= 14).map((g) => `${g.r},${g.c}`).sort();
+        const visible = () => [...d.penViews.values()].filter((p) => p.root && p.root.visible !== false);
+        const onScreen = () => visible().filter((p) => p.screen && p.screen.x > 0 && p.screen.x < W && p.screen.y > 0 && p.screen.y < H);
+        const snap = () => ({ kind: d.camKind, band: d.tiles.band, area: d.board3d ? d.board3d.areaKey : null, gates: gates(), pen: v.stats().pen, hidden: v.stats().penHidden, visible: visible().length });
+        const out = { W, H, board3d: !!d.board3d };
+        out.prep = { ...snap(), on: onScreen().map((p) => [Math.round(p.screen.x), Math.round(p.screen.y)]) };
+        // the battle starts (a real battle empties the pen) and its camera flies in: the pen goes with the start
+        const t0 = performance.now();
+        v.enterBattle({ fieldId: 'n:me', kind: 'normal', rect: RECT, stageId: window.__demo.scene.stageId, units: [] });
+        v.setCamera('normal', { rect: RECT });
+        out.battleStartMs = Math.round(performance.now() - t0);
+        out.battleStart = snap();
+        await new Promise((res) => setTimeout(res, 1100));
+        out.battle = snap();
+        // the next prep: its camera flight brings the pen block back at once, the preview's figures with setPrep
+        v.setCamera('prep', { rect: RECT, side: 'L' });
+        v.setPrep(window.__demo.scene.state, { editable: true });
+        out.prepStart = snap();
+        await new Promise((res) => setTimeout(res, 1100));
+        out.prepBack = { ...snap(), on: onScreen().length };
+        // 🔍▶▶ and 返回战场: the same pen all the way, no rebuild of the 3D area
+        v.setCamera('pen', { side: 'L' });
+        out.penStart = snap();
+        await new Promise((res) => setTimeout(res, 500));
+        v.setCamera('prep');
+        await new Promise((res) => setTimeout(res, 500));
+        out.back = { ...snap(), on: onScreen().length };
+        // the Final Assault prep frames the boss field: no pen
+        v.setCamera('bossPrep', { side: 'L', instant: true });
+        out.fa = snap();
+        return out;
+      });
+      await page.close();
+      assert.deepEqual(problems, []);
+      const PEN_AREA = '13,18,6,14;6,13,0,10', FIELD = '6,13,0,10';
+      assert.equal(r.board3d, board === '3d', 'board layer');
+      // the prep view: the pen's rows, block and gates, its figures on screen in the top right corner
+      assert.deepEqual(r.prep.band, [6, 18], 'prep: the pen rows drawn');
+      if (r.board3d) assert.equal(r.prep.area, PEN_AREA, 'prep: the pen block built');
+      assert.deepEqual(r.prep.gates, ['15,7', '18,7'], 'prep: the pen\'s two gates');
+      assert.equal(r.prep.hidden, false, 'prep: the camera shows the pen');
+      assert.ok(r.prep.pen > 0 && r.prep.visible > 0, `prep: the pen's figures shown (${r.prep.visible} of ${r.prep.pen} not culled)`);
+      assert.ok(r.prep.on.length > 0, 'prep: some of them on screen');
+      assert.ok(r.prep.on.every(([x, y]) => x > r.W * 0.5 && y < r.H * 0.3), `prep: at the top right of the view (${JSON.stringify(r.prep.on)})`);
+      // the battle start: gone at once — while the camera still flies
+      for (const k of ['battleStart', 'battle']) {
+        assert.deepEqual(r[k].band, [6, 13], `${k}: no pen rows`);
+        if (r.board3d) assert.equal(r[k].area, FIELD, `${k}: no pen block`);
+        // #595 / §35.69: 3D S/E gates belong to the whole grid even when the pen block is absent.
+        // The 2D fallback still collects boxes only from its drawn rows. Boss isolation is checked below.
+        assert.deepEqual(r[k].gates, r.board3d ? ['15,7', '18,7'] : [], `${k}: gates follow the board renderer`);
+        assert.equal(r[k].visible, 0, `${k}: no pen figure`);
+        assert.equal(r[k].hidden, true, `${k}: the camera hides the pen`);
+      }
+      assert.equal(r.battle.pen, 0, 'the battle emptied the pen');
+      // the next prep: back as its flight begins
+      assert.deepEqual(r.prepStart.band, [6, 18], 'next prep: the pen rows at the flight start');
+      if (r.board3d) assert.equal(r.prepStart.area, PEN_AREA, 'next prep: the pen block at the flight start');
+      assert.equal(r.prepStart.hidden, false, 'next prep: shown from the flight start');
+      assert.ok(r.prepStart.visible > 0, 'next prep: the figures at the flight start');
+      assert.ok(r.prepBack.on > 0, 'next prep: on screen');
+      // the pen view and back: the same pen
+      if (r.board3d) assert.equal(r.penStart.area, PEN_AREA, 'the pen view keeps the same area (no rebuild)');
+      assert.ok(r.back.on > 0 && r.back.visible > 0, '返回战场: still shown');
+      assert.deepEqual(r.back.band, [6, 18]);
+      // the Final Assault prep
+      assert.deepEqual(r.fa.band, [0, 13], 'Final Assault prep: the boss field rows');
+      if (r.board3d) assert.equal(r.fa.area, '0,6,0,20');
+      assert.deepEqual(r.fa.gates, [], 'Final Assault prep: no pen gate');
+      assert.equal(r.fa.visible, 0, 'Final Assault prep: no pen figure');
+      assert.equal(r.fa.hidden, true, 'Final Assault prep: the camera hides the pen');
+      perf.views.push({ name: `prep→battle switch (${board})`, board, ms: r.battleStartMs });
+    });
+  }
+
   for (const side of ['L', 'R']) {
     test(`Final Assault prep on the ${side} half: pieces on the boss field, drops and directions in board space${side === 'R' ? ', mirrored' : ''}`, async () => {
       const { page, problems } = await open(`scene=prep&fa=${side}&stage=act2autochess_m02`, 1920, 1080);
@@ -194,6 +285,9 @@ describe('field view features in headless Chrome', { skip }, () => {
       await page.mouse.move(cx, cy);
       await page.mouse.down();
       for (let i = 1; i <= 12; i++) await page.mouse.move(cx + (target.x - cx) * i / 12, cy + (target.y - cy) * i / 12);
+      // over the legal target the dragged unit stands on it (the official deploy drag): on that board tile's boss-field
+      // tile, as the drop will place it — row − 7, the column mirrored on the right half
+      const stood = await page.evaluate((uid) => { const v = window.__demo.view.debug.views.get('p:' + uid); return { x: v.x, y: v.y, lift: v.lift }; }, info.hand.uid);
       await page.mouse.up();
       await wait(400);
       const drops = await page.evaluate(() => window.__drops);
@@ -222,8 +316,68 @@ describe('field view features in headless Chrome', { skip }, () => {
       await page.close();
       assert.deepEqual(problems, []);
       assert.deepEqual(drops[0], { area: 'board', row: target.row, col: target.col }, `drop target in board space: ${JSON.stringify(drops)}`);
+      assert.deepEqual(stood, { x: side === 'R' ? 20 - target.col : target.col, y: target.row - 7, lift: 0.3 }, 'while dragged over it: standing on the target\'s boss-field tile');
       assert.deepEqual(dirs, { a: side === 'R' ? 'LEFT' : 'RIGHT', u: 'UP' });
       assert.deepEqual(past, { field: true, wallBelow: null, below: null, wallAbove: true, pen: null, pad: true });
+    });
+  }
+
+  for (const side of ['L', 'R']) {
+    test(`Final Assault prep (${side}): the leader stands on its spawn tile, out of the pen; a range preview lights its hit tiles in red (report #12)`, async () => {
+      const { page, problems } = await open(`scene=prep&fa=${side}&stage=act2autochess_m02`, 1920, 1080);
+      await wait(1500);
+      const r = await page.evaluate(async () => {
+        const v = window.__demo.view, d = v.debug;
+        // m.private as the server sends it in a boss round's prep: nextEnemies with the leader's spawn tile (waves.js previewOf)
+        const st = JSON.parse(JSON.stringify(window.__demo.scene.state));
+        st.nextEnemies = [
+          { enemyKey: 'enemy_9013_acstmk', count: 1, gate: 'upper', t: 0, fly: false, elite: true, boss: true, source: 'wave', tag: 'boss', start: [3, 10] },
+          { enemyKey: 'enemy_1007_slime', count: 3, gate: 'lower', t: 2, fly: false, elite: false, boss: false, source: 'wave', tag: null },
+        ];
+        v.setPrep(st, { editable: true });
+        await new Promise((res) => setTimeout(res, 2000));
+        const L = d.leader;
+        const hl = () => (d.tiles.highlights.get('leaderHit')?.tiles || []).map((t) => t.join(','));
+        const out = { has: !!L, x: L?.view.x, y: L?.view.y, shown: !!L?.view.root.visible, facing: L?.view.visFacing, spine: !!L?.view.actor,
+          pen: [...d.penViews.values()].map((p) => p.info.defId), before: hl() };
+        v.highlightTiles([[10, 5], [10, 6], [10, 7]], { group: 'facing', color: 0xff9c33, fill: 0.36, line: 1 });
+        out.during = hl();
+        out.range = (d.tiles.highlights.get('facing')?.tiles || []).length;
+        return out;
+      });
+      await wait(300);
+      await page.screenshot({ path: path.join(OUT, `fa-leader-${side}.png`) });
+      const r2 = await page.evaluate(() => {
+        const v = window.__demo.view, d = v.debug;
+        v.highlightTiles([], { group: 'facing' });
+        const after = (d.tiles.highlights.get('leaderHit')?.tiles || []).length;
+        v.setCamera('prep', { instant: true });
+        return { after, hiddenOnBoard: !d.leader.view.root.visible };
+      });
+      // a leader that turns (盐风主教昆图斯, the regular FaceSwitcher) faces the player's half [ASSUMED look]; 假想敌：胄
+      // above faces right on either half (render/units.js FIXED_FACING, GitHub #648)
+      const turning = await page.evaluate(async (side) => {
+        const v = window.__demo.view, d = v.debug;
+        v.setCamera('bossPrep', { side, instant: true });
+        const st = JSON.parse(JSON.stringify(window.__demo.scene.state));
+        st.nextEnemies = [{ enemyKey: 'enemy_1521_dslily', count: 1, gate: 'upper', t: 0, fly: false, elite: true, boss: true, source: 'wave', tag: 'boss', start: [3, 10] }];
+        v.setPrep(st, { editable: true });
+        await new Promise((res) => setTimeout(res, 600));
+        return { key: d.leader?.view.info.defId ?? null, facing: d.leader?.view.visFacing ?? null };
+      }, side);
+      await page.close();
+      assert.deepEqual(problems, []);
+      assert.deepEqual([r.has, r.x, r.y, r.shown], [true, 10, 3, true], 'on its spawn tile (3, 10), shown by the boss-field prep camera');
+      assert.equal(r.facing, 1, '假想敌：胄 faces right on either half (FIXED_FACING, GitHub #648)');
+      assert.deepEqual(turning, { key: 'enemy_1521_dslily', facing: side === 'R' ? 1 : -1 }, 'a leader that turns faces the player\'s half');
+      assert.ok(r.spine, 'its Spine model');
+      assert.ok(!r.pen.includes('enemy_9013_acstmk') && r.pen.length === 3, `not in the pen: ${r.pen}`);
+      assert.deepEqual(r.before, [], 'no red tiles without a range preview');
+      assert.equal(r.range, 3);
+      assert.equal(r.during.length, 15, `the 5 × 3 hit tiles: ${r.during}`);
+      assert.ok(['3,8', '3,12', '5,8', '5,12', '4,10'].every((t) => r.during.includes(t)));
+      assert.equal(r2.after, 0, 'gone with the range preview');
+      assert.equal(r2.hiddenOnBoard, true, 'the own-board camera does not show it');
     });
   }
 

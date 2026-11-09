@@ -11,7 +11,7 @@ function gravityWave(b,u,p){
     for(const e of b.enemies){if(!live(e)||seen.has(e.id))continue;
       const along=(e.y-r)*dr+(e.x-c)*dc,across=(e.y-r)*dc-(e.x-c)*dr;
       if(along < -0.65 || along > travel+0.65 || Math.abs(across)>1.5)continue;
-      seen.add(e.id);if(e.isFlying)groundbind(b,u,e,p.buff_duration_ground_bound);else b.applyStatus(e,'levitate',{duration:p.buff_duration_levitate,source:u});
+      seen.add(e.id);const status=e.isFlying?'groundbind':'levitate',duration=e.isFlying?p.buff_duration_ground_bound:p.buff_duration_levitate;const applied=e.isFlying?groundbind(b,u,e,duration):b.applyStatus(e,'levitate',{duration,source:u});if(applied)b.fx('source-control',{src:u.id,id:e.id,status,duration});
     }
     if(travel>=4)timer.cancel();
   });
@@ -21,8 +21,8 @@ function flightStart(b,u){b.releaseBlocked(u);b._refreshRange(u);}
 function flightEnd(b,u){b.releaseBlocked(u);}
 function moveInFlight(b,u,r,c){
   const skill=u.skill;if(!live(u)||!skill?.active||skill.id!=='skchr_aglna2_3'||u.blocking.length)return false;
-  if(!b.relocate(u,r,c))return false;
-  b.fx('exp-aglna-move',{x:c,y:r,src:u.id});return true;
+  const fromX=u.x,fromY=u.y; if(!b.relocate(u,r,c))return false;
+  b.fx('exp-aglna-move',{x:c,y:r,src:u.id,fromX,fromY});return true;
 }
 function beginFlightTrip(b,u){
   u.mem.expAglnaOrigin=[u.tileR,u.tileC];u.mem.expAglnaNextMove=0;
@@ -33,7 +33,7 @@ function beginFlightTrip(b,u){
 function endFlightTrip(b,u){
   const at=u.mem.expAglnaOrigin;
   flightEnd(b,u);
-  if(at&&live(u))b.relocate(u,at[0],at[1]);
+  if(at&&live(u)){const fromX=u.x,fromY=u.y;if(b.relocate(u,at[0],at[1]))b.fx('exp-aglna-move',{x:at[1],y:at[0],src:u.id,fromX,fromY,returning:true});}
   if(at&&b._movementHomes?.get(at[0]*b.grid.cols+at[1])===u)b._movementHomes.delete(at[0]*b.grid.cols+at[1]);
   u.mem.expAglnaOrigin=null;
 }

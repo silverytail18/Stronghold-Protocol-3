@@ -8,6 +8,7 @@
 // Additive mod keys scale with stacks (value × stacks); *Mul keys multiply (value ^ stacks).
 
 import { COLD_ASPD, COLD_FREEZE_DURATION, FREEZE_RES_DOWN, RESIST_DEFAULT, RESIST_PALSY_DECAY } from './constants.js';
+import { powi } from './detmath.js';
 
 /** 抵抗: "麻痹等状态每5秒流失1层" — tick of the resist buff. */
 function resistPalsyDecay({ battle, unit }) {
@@ -16,22 +17,26 @@ function resistPalsyDecay({ battle, unit }) {
   if (--p.stacks <= 0) battle.removeBuff(unit, p); else unit.markDirty();
 }
 
-/** Additive mod keys (summed; × stacks). */
+/** Additive mod keys (summed; × stacks). `atkFinal` = 最终加算: added after the percentages (units.js _recalc). */
 export const ADD_KEYS = Object.freeze([
-  'atkFlat', 'atkPct', 'defFlat', 'defPct', 'hpFlat', 'hpPct', 'resFlat', 'aspd', 'batPct', 'blockCnt',
-  'rangeExtend', 'defIgnoreFlat', 'defIgnorePct', 'resIgnoreFlat', 'resIgnorePct', 'dodgePhys', 'dodgeArts',
+  'atkFlat', 'atkPct', 'atkFinal', 'defFlat', 'defPct', 'hpFlat', 'hpPct', 'resFlat', 'aspd', 'batPct', 'blockCnt',
+  'rangeExtend', 'artsAttackAddition', 'defIgnoreFlat', 'defIgnorePct', 'resIgnoreFlat', 'resIgnorePct', 'dodgePhys', 'dodgeArts',
   'spRecoveryFlat', 'maxTargets', 'taunt', 'hpRegen', 'hpRegenRatio', 'spCostFlat', 'moveFlat', 'massFlat',
+  // 阻挡半径倍率 (PRTS 数值范围 BLOCK_RADIUS_SCALE, default 1): the air-block radius 0.8944 × (1 + Σ) — Battle._checkBlock
+  'blockRadiusScale',
 ]);
 /** Multiplicative mod keys (product; ^ stacks). */
 export const MUL_KEYS = Object.freeze([
   'atkMul', 'defMul', 'hpMul', 'resMul', 'moveMul', 'dmgDealtMul', 'dmgTakenMul', 'physTakenMul', 'artsTakenMul',
   'trueTakenMul', 'elemTakenMul', 'elementalTakenMul', 'healingDealtMul', 'healingTakenMul', 'spRecoveryMul', 'redeployMul',
-  'atkScaleMul', 'physDealtMul', 'artsDealtMul',
+  'atkScaleMul', 'physDealtMul', 'artsDealtMul', 'costMul',
 ]);
 /**
  * Boolean flag keys (OR). `taunt` is also accepted as a numeric mod. `liftoff` = 起飞 of an ally (蒂比's skills): blocks
  * no ground enemy (Battle._blockerFor), 对地规避 against ground enemies (targeting.js evadesGround); it stays a ground
- * unit on its tile (`unit.ground` unchanged).
+ * unit on its tile (`unit.ground` unchanged). `noHeal` = no heal from another unit (and no heal pick of one); `healFree`
+ * = 禁疗 that also stops the unit's own heals (attack/heal.js heal: only an HP-regen attribute and a heal that "无视禁疗" pass —
+ * 史尔特尔's 余烬, which sets both). `stealthOff` = an enemy 隐匿 source switched off after a block (Battle._stealthSwitch).
  */
 export const FLAG_KEYS = Object.freeze([
   'stun', 'freeze', 'sleep', 'silence', 'disarm', 'stealth', 'invulnerable', 'unblockable', 'levitate', 'fear',
@@ -39,7 +44,9 @@ export const FLAG_KEYS = Object.freeze([
   'noBlock', 'tremble', 'hitCount', 'hitCountArts', 'attract', 'float', 'noDisplace', 'isolated', 'camou', 'liftoff',
   // 自缚 (the unit's own immobility: 守墓石像's 转换模式, the 自缚 leaders) beside its `noMove` — 束缚 sets noMove too, and
   // only 自缚 makes a unit "不视为可达目标" for 余 S2's teleport (PRTS 余 S2 备注)
-  'selfBound',
+  'selfBound', 'healFree', 'stealthOff',
+  // 缚地 (status `groundbind`): an enemy air unit counts as a ground unit meanwhile (Unit.isFlying)
+  'groundbind',
 ]);
 
 /**
@@ -53,8 +60,12 @@ export const STATUS = Object.freeze({
   stun: { flags: { stun: true, noBlock: true }, immune: 'stun' },
   // 冻结: 无法移动、攻击及使用技能; 敌方被冻结时，法术抗性-15 (the RES cut applies to enemies only)
   freeze: { flags: { freeze: true, stun: true }, mods: { resFlat: -FREEZE_RES_DOWN }, enemyOnlyMods: true, immune: 'frozen' },
+  // 寒冷: ASPD −30. A second cold while this one remains applies 冻结 for max(remaining, incoming)
+  // (Battle.applyStatus; PRTS 术语释义 寒冷 「持续时间取双方之中最高」).
   cold: { flags: { cold: true }, mods: { aspd: COLD_ASPD } },
-  // 沉睡: 无敌且无法行动 (untargetable, takes no damage — except from `hitSleep` attackers — and blocks nothing)
+  // 沉睡: 无敌且无法行动 (untargetable, takes no damage — except from `hitSleep` attackers — and blocks nothing); PRTS 异常效果
+  // SLEEPING = 无法行动+无敌+不可阻挡: an enemy asleep is not blocked either — its blocker lets go and the slot frees, it
+  // stays put until it wakes (the `sleep` flag: Battle._checkBlock / applyStatus, ai.js updateEnemy; DESIGN §24.9)
   sleep: { flags: { sleep: true, noBlock: true }, immune: 'sleep' },
   // value = fraction of speed removed (0.8 ⇒ moveMul 0.2). Default 0.5.
   slow: { mods: (v) => ({ moveMul: 1 - clamp01(v ?? 0.5) }), valued: 0.5 },
@@ -66,7 +77,7 @@ export const STATUS = Object.freeze({
   artsFragile: { mods: (v) => ({ artsTakenMul: 1 + (v ?? 0.3) }), valued: 0.3 },
   physFragile: { mods: (v) => ({ physTakenMul: 1 + (v ?? 0.3) }), valued: 0.3 },
   // 元素脆弱 (ba.elementfragile "受到的元素伤害提升相应比例（同名效果取最高）"): 元素伤害 (the 'elemental' HP damage) only —
-  // never the element gauge (元素损伤 has its own multiplier, `elemTakenMul`; damage.js)
+  // never the element gauge (元素损伤 has its own multiplier, `elemTakenMul`; attack/element.js)
   elemFragile: { mods: (v) => ({ elementalTakenMul: 1 + (v ?? 0.2) }), valued: 0.2 },
   silence: { flags: { silence: true }, immune: 'silence' },
   // 恐惧: 无法被阻挡并四散逃跑 (no attacks, unblockable; leaves its route and runs to random tiles of the fan away from the
@@ -86,6 +97,11 @@ export const STATUS = Object.freeze({
   // 浮空: 变为空中单位 (Unit.isFlying)，无法移动、攻击及使用技能; 对重量大于3的单位持续时间减半; the state holds 不可阻挡 +
   // 失衡免疫 (noDisplace: "不会被位移影响", PRTS 异常效果)
   levitate: { flags: { levitate: true, stun: true, unblockable: true, noDisplace: true }, immune: 'levitate' },
+  // 缚地 (gamedata_const ba.groundbind "目标变为地面单位，无法移动；使部分近地悬浮敌人掉落；对重量大于3的单位持续时间减半"):
+  // an air unit (data flyer, 近地悬浮) counts as a ground unit (Unit.isFlying: melee operators hit it, ground blockers
+  // block it) and cannot move; half duration on units with massLevel > 3 (Battle.applyStatus, as 浮空); a 浮空 still
+  // lands on it (PRTS 异常效果 "若单位数据上为飞行单位且不持有缚地异常…则Buff取消"). 予愿安洁莉娜 S2 (kits/ops/op-aglna2.js)
+  groundbind: { flags: { groundbind: true, noMove: true }, mods: { moveMul: 0 } },
   // 麻痹: value = stacks (default 1, max 3); each stack cancels one enemy normal attack; lasts until consumed; honours
   // 麻痹免疫 (enemy_database palsyImmune, e.g. 假想敌：铳 — PRTS 元素: a 神经 burst gives 麻痹 only "若单位不具有麻痹免疫")
   palsy: { palsy: true, immune: 'palsy' },
@@ -116,12 +132,12 @@ export const STATUS = Object.freeze({
 });
 
 /**
- * Control statuses (异常状态) shortened by 抵抗: 晕眩 冻结 寒冷 沉睡 恐惧 战栗 诱导 浮空 束缚 沉默 缴械 停顿 减速. The
+ * Control statuses (异常状态) shortened by 抵抗: 晕眩 冻结 寒冷 沉睡 恐惧 战栗 诱导 浮空 束缚 沉默 缴械 停顿 减速 缚地. The
  * official term lists 晕眩/寒冷/冻结/恐惧/诱导…; the rest follow the operator kits that grant 抵抗 [ASSUMED]. 麻痹 is
  * stack-based: it decays instead (RESIST_PALSY_DECAY).
  */
 export const RESIST_STATUSES = Object.freeze(new Set(['stun', 'freeze', 'cold', 'sleep', 'fear', 'tremble', 'attract', 'levitate',
-  'bind', 'silence', 'disarm', 'sluggish', 'slow']));
+  'bind', 'silence', 'disarm', 'sluggish', 'slow', 'groundbind']));
 
 /** Statuses that should be reported to clients as `['status', id, key, on]`. */
 export const VISIBLE_STATUS = new Set(Object.keys(STATUS));
@@ -148,9 +164,22 @@ export function makeBuff(b) {
     _acc: 0,
     onExpire: b.onExpire ?? null,
     onRemove: b.onRemove ?? null,
+    injury: b.injury ?? null,
+    observeInjury: b.observeInjury ?? null,
+    damageReduction: b.damageReduction ?? null,
+    // PRTS 伤害减免: reductions of one name keep only the strongest (attack/effects.js); the name, when not the key
+    reductionGroup: b.reductionGroup ?? null,
     tags: b.tags ?? [],
     shield: b.shield ?? (b.mods && b.mods.shield) ?? 0,
     shieldHits: b.shieldHits ?? 0,
+    // Some native barriers (Penance) retain their acquisition position while empty and may refill later.
+    keepEmptyShield: !!b.keepEmptyShield,
+    // Explicit original-game injury priority; ordinary effects use zero.
+    injuryPriority: Number.isFinite(b.injuryPriority) ? b.injuryPriority : 0,
+    // a 屏障 that absorbs one damage type only (attack/effects.js injuryEffects): 'phys' | 'arts' | 'true' | 'elemental', or a list
+    // of them (机械师's 屏障: ['phys', 'arts']); null = every type (PRTS 术语释义 屏障 "若无特殊说明，屏障可吸收全种类伤害") —
+    // 夜莺 S2 法术护盾 "能吸收…法术伤害"
+    shieldType: b.shieldType ?? null,
     persist: !!b.persist,
     status: b.status ?? null,
     visible: b.visible ?? false,
@@ -181,12 +210,12 @@ export function aggregateMods(buffs) {
         const v = m[k];
         if (typeof v !== 'number' || !Number.isFinite(v)) continue;
         if (k === 'shield') continue;
-        if (k.endsWith('Mul')) mul[k] = (mul[k] ?? 1) * (st === 1 ? v : Math.pow(v, st));
+        if (k.endsWith('Mul')) mul[k] = (mul[k] ?? 1) * (st === 1 ? v : powi(v, st));
         else if ((k === 'dodgePhys' || k === 'dodgeArts') && v > 0) {
           const p = Math.min(1, v);
           const d = dodge[k];
-          if (!d) dodge[k] = { n: st, p, miss: Math.pow(1 - p, st) };
-          else { d.n += st; d.miss *= Math.pow(1 - p, st); }
+          if (!d) dodge[k] = { n: st, p, miss: powi(1 - p, st) };
+          else { d.n += st; d.miss *= powi(1 - p, st); }
         } else {
           add[k] = (add[k] ?? 0) + v * st;
           if (k === 'rangeExtend' && b.persist && b.duration === Infinity) permRangeExtend += v * st;

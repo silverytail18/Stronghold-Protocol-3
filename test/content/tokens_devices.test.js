@@ -5,8 +5,9 @@ import assert from 'node:assert/strict';
 import { makeBattle, chessRec, enemyRec, checkInvariants } from '../helpers/battleHarness.js';
 import { hasGeneratedData, getDefaultSource } from '../../server/sim/simdata.js';
 import { genericKit } from '../../server/sim/content/generic.js';
-import { spawnYanyou, spawnMapChar, TOKEN_IDS, wolfShadows, tileFree, findSummonTile, summonToken } from '../../server/sim/content/tokens.js';
+import { spawnYanyou, spawnMapChar, TOKEN_IDS, wolfShadows, wolfShadowInterval, wolfTacticalPoint, tileFree, findSummonTile, summonToken } from '../../server/sim/content/tokens.js';
 import { startColdWind, kjeragColdWind, activateTurrets, terrainAt, deviceOverridesOf } from '../../server/sim/content/devices.js';
+import { HUSK_REBIRTH } from '../../server/sim/content/enemies.js';
 
 const REAL = { skip: !hasGeneratedData() };
 const ds = getDefaultSource();
@@ -117,7 +118,7 @@ test('“小自在”: arts melee blocker, 25 s lifetime, kills emit summonKill 
   checkInvariants(h.b);
 });
 
-test('斯卡蒂的海嗣: heals allies in its range; during the owner skill: true dmg/s + 鼓舞; expires, then redeploys after respawnTime', REAL, () => {
+test('斯卡蒂的海嗣: its owner\'s trait (生命回复速度) on the allies in its range; during the owner skill: true dmg/s + 鼓舞; expires, then redeploys after respawnTime', REAL, () => {
   const bb = tokDef(TOKEN_IDS.seaborn, 'chess_char_6_04_a').skill.bb;
   const ratio = tokDef(TOKEN_IDS.seaborn, 'chess_char_6_04_a').traitBb['attack@atk_to_hp_recovery_ratio'];
   // heal mode (owner skill idle)
@@ -129,8 +130,13 @@ test('斯卡蒂的海嗣: heals allies in its range; during the owner skill: tru
     g.hp = 1000;
     const sea = spawnOn(h, sk, TOKEN_IDS.seaborn, 10, 7);
     assert.equal(sea.s.flags.untargetable, true);
-    h.run(3.05);
-    approx(g.hp - 1000, 3 * sk.s.atk * ratio, 1e-6, 'heal 3 pulses');
+    h.run(1.05);
+    // an hpRegen buff keyed by the owner (one trait effect per ally — professions.js bardRegen), refreshed every second
+    const v = sk.s.atk * ratio;
+    approx(g.findBuff(`trait:bard:${sk.id}`)?.mods.hpRegen ?? 0, v, 1e-6, 'the owner\'s trait');
+    const hp0 = g.hp, t1 = h.b.time;
+    h.run(2);
+    assert.ok(Math.abs(g.hp - hp0 - v * (h.b.time - t1)) <= 1.5, `regenerated ${g.hp - hp0}`);
     const life = tokDef(TOKEN_IDS.seaborn, 'chess_char_6_04_a').talents[0].bb.duration;
     h.runUntil(() => !sea.alive, life + 2);
     approx(sea.deathAt - sea.deployedAt, life, 0.01, 'lifetime');
@@ -201,10 +207,11 @@ test('纸偶: appear burst = its ATK × damage_scale arts on the 8 surrounding t
   checkInvariants(h.b);
 });
 
-test('狼群: board piece becomes 伺夜\'s 援军; 2→3 狼影 (block & hits), fatal sheds a shadow, DEF ignore vs blocked, respawn', REAL, () => {
+test('狼群: board piece becomes 伺夜\'s 援军; 2→3 狼影 (block & hits), fatal sheds a shadow, DEF ignore vs blocked, 战术点形态 after the last one', REAL, () => {
   let wolfHits = 0;
   const h = makeBattle({
-    defs: { enemies: { enemy_walker: walker({ def: 200, atk: 0 }) } },
+    // DEF 250: above the pack's 200 DEF ignore (its talent at 伺夜's full potential), so a bite shows the partial ignore
+    defs: { enemies: { enemy_walker: walker({ def: 250, atk: 0 }) } },
     kits: { chess_char_3_19_a: genericNoSkill },
     // the wolf is listed before its owner (higher row): it must still be linked to 伺夜 (owner-level variant)
     units: [{ kind: 'token', tokenId: TOKEN_IDS.wolfPack, row: 9, col: 6, uid: 1, ownerUid: 2 }, { chessId: 'chess_char_3_19_b', row: 10, col: 4, uid: 2 }],
@@ -222,11 +229,12 @@ test('狼群: board piece becomes 伺夜\'s 援军; 2→3 狼影 (block & hits),
   assert.equal(wolf.s.blockCnt, 2);
   const e = h.enemy('enemy_walker');
   assert.ok(h.runUntil(() => e.blockedBy === wolf && wolfHits >= 2, 30), 'blocks and bites');
-  // DEF ignore: every bite does ATK − (200 − 175)
+  // DEF ignore: every bite does ATK − (250 − 200)
+  assert.equal(tokDef(TOKEN_IDS.wolfPack, 'chess_char_3_19_b').talents[1].bb.def_penetrate_fixed, 200, 'the pack ignores 200 DEF (175 + the potential step)');
   let dealt = null;
   h.b.on('damaged', (c) => { if (c.source === wolf && c.type === 'phys') dealt = c.amount; });
   h.runUntil(() => dealt != null, 5);
-  approx(dealt, wolf.s.atk - (200 - 175), 1e-9, 'def pen');
+  approx(dealt, wolf.s.atk - (250 - 200), 1e-9, 'def pen');
   h.runUntil(() => wolfShadows(wolf) === 3, 30);
   assert.equal(wolf.s.blockCnt, 3);
   assert.equal(wolf.profile.hitsFn(h.b, wolf), 3);
@@ -237,11 +245,19 @@ test('狼群: board piece becomes 伺夜\'s 援军; 2→3 狼影 (block & hits),
   assert.equal(wolf.hp, wolf.s.maxHp);
   h.b.dealDamage(null, wolf, { amount: 1e6, type: 'true' });
   h.b.dealDamage(null, wolf, { amount: 1e6, type: 'true' });
+  // the last shadow falls: 战术点形态 (PRTS 狼群 备注) — off the field, kept, 0 狼影, for the 狼影 interval (data), then
+  // back on its tile with one 狼影 (no longer a full pack after the token's redeploy time)
   assert.equal(wolf.alive, false, 'last shadow falls');
-  const died = h.b.time;
-  assert.ok(h.runUntil(() => wolf.alive, 20), 'respawns');
-  approx(h.b.time - died, wolf.base.respawnTime, 0.3);
-  assert.equal(wolfShadows(wolf), 2, 'fresh pack');
+  assert.ok(wolfTacticalPoint(wolf), '战术点形态');
+  assert.equal(wolf.removed, false);
+  assert.equal(wolfShadows(wolf), 0);
+  const died = h.b.time, iv = wolfShadowInterval(wolf.def);
+  assert.equal(iv, tokDef(TOKEN_IDS.wolfPack, 'chess_char_3_19_b').talents[0].bb.interval, 'the talent interval');
+  assert.ok(h.runUntil(() => wolf.alive, iv + 1), 'back');
+  approx(h.b.time - died, iv, 0.004);
+  assert.deepEqual([wolf.tileR, wolf.tileC], [9, 6], 'on its tile');
+  assert.equal(wolfShadows(wolf), 1, 'one 狼影');
+  assert.equal(wolf.s.blockCnt, 1);
   checkInvariants(h.b);
 });
 
@@ -254,14 +270,14 @@ test('hand-authored summoner kits: the board 狼群 deploys before 伺夜 (one p
   assert.equal(packs.length, 1, 'a single pack');
   assert.equal(packs[0].uid, 2, 'the player\'s piece');
   assert.equal(vigil.trait.reinforcement, packs[0]);
-  // a summoner with a hand kit (no skill here): the seaborn does not run its own heal pulses
+  // a summoner with a hand kit (no skill here): the seaborn does not run its own trait pulses
   const h2 = makeBattle({ defs: { chess: { test_guard: guard() } }, kits: { chess_char_6_04_a: bare }, units: [{ chessId: 'chess_char_6_04_a', row: 12, col: 3 }, { chessId: 'test_guard', row: 10, col: 8 }], autoFinish: false, timeLimit: 30 });
   h2.step();
   const g = h2.unit('test_guard');
   g.hp = 1000;
   const sea = spawnOn(h2, h2.unit('chess_char_6_04_a'), TOKEN_IDS.seaborn, 10, 7);
   h2.run(3);
-  assert.equal(g.hp, 1000, 'managed: no token-side heal');
+  assert.equal(g.hp, 1000, 'managed: no token-side trait');
   assert.equal(sea.mem.expiresAt, undefined, 'managed: lifetime left to the owner kit');
   checkInvariants(h.b);
 });
@@ -486,7 +502,7 @@ test('炎佑: spawnYanyou — flying ally, bond stats, 3 targets with burn + ele
   checkInvariants(h.b);
 });
 
-test('band map characters: spawnMapChar puts 预备干员-医疗 at its stage slot; Touch 恳切福音 heals ×heal_scale on ≤50 % HP allies', REAL, () => {
+test('band map characters: spawnMapChar puts 预备干员-医疗 at its stage slot; Touch 恳切福音 heals ×heal_scale on allies below 50 % HP', REAL, () => {
   const g = guard({ stats: { maxHp: 10000 } });
   const h = makeBattle({ stageId: 'act2autochess_m01', defs: { chess: { test_guard: g } }, units: [{ chessId: 'test_guard', row: 10, col: 3 }], autoFinish: false, timeLimit: 60,
     setup: (b) => b.on('heal', (c) => { if (c.source?.defId === TOKEN_IDS.touch) (b.mem ??= []).push({ amount: c.amount, ratio: c.target.hpRatio, active: c.source.skill.active }); }, { priority: -500 }) });
@@ -495,6 +511,7 @@ test('band map characters: spawnMapChar puts 预备干员-医疗 at its stage sl
   assert.ok(med);
   assert.deepEqual([med.tileR, med.tileC], [10, 2]);
   const gu = h.unit('test_guard');
+  assert.ok(med.aggroSeq > gu.aggroSeq, 'an ad-hoc map character keeps ordinary summon priority');
   gu.hp = 5000;
   h.run(4);
   assert.ok(gu.hp > 5000, 'healed');
@@ -502,11 +519,12 @@ test('band map characters: spawnMapChar puts 预备干员-医疗 at its stage sl
   h.step();
   const touch = spawnMapChar(h.b, 'p1', TOKEN_IDS.touch);
   assert.ok(touch);
+  assert.ok(touch.aggroSeq > gu.aggroSeq, 'an ad-hoc Touch also keeps ordinary summon priority');
   touch.skill.activate('test', { free: true });
   gu.hp = 3000;
   h.run(4);
   const bb = touch.skill.bb;
-  const low = h.b.mem.find((x) => x.active && x.ratio <= bb.hp_ratio);
+  const low = h.b.mem.find((x) => x.active && x.ratio < bb.hp_ratio);
   assert.ok(low, 'healed a low ally');
   approx(low.amount, touch.s.atk * bb.heal_scale, 1e-6, 'boosted heal');
   checkInvariants(h.b);
@@ -607,17 +625,40 @@ test('气流 (act2 m01 blowers): enemies moving with the flow ×(1+equal), again
   assert.ok(up.has(Math.round((1 + bb['blower_s_enemy[opposite].move_speed']) * 100) / 100), `against the flow ${[...up]}`);
 });
 
-test('沼泽 (act2 m02): +1 stack on entering and every intervalSec (ASPD −5, move −5 % each), max stacks, cleared on leaving', REAL, () => {
+test('沼泽 (act2 m02): a trigger on entering and every second — 1 layer (an enemy of 重量 ≥ 3: 2) of ASPD −5 / move −5 %, at most 10; operators ASPD only; cleared on leaving', REAL, () => {
   const mire = ds.getStage('act2autochess_m02').special.mire;
+  // PRTS 沼泽控制: "每秒将会触发一次" (sktok_mire spData maxChargeTime 1); "若其重量大于等于3，改为获得2层" (the skill's value 3)
+  assert.equal(mire.intervalSec, 1);
+  assert.equal(mire.heavyWeight, 3);
   const h = makeBattle({ stageId: 'act2autochess_m02', defs: { chess: { test_guard: guard() } }, units: [{ chessId: 'test_guard', row: 11, col: 7 }], autoFinish: false, timeLimit: 60 });
   h.step(2);
   assert.equal(terrainAt(h.b, 11, 7), 'mire');
   const g = h.unit('test_guard');
-  approx(g.s.aspd, 100 + mire.aspdPerStack * 100, 1e-9, '1 stack');
+  approx(g.s.aspd, 100 + mire.aspdPerStack * 100, 1e-9, '1 layer');
+  assert.equal(g.findBuff('terrain:mire').mods.moveMul, undefined, 'an operator gets the ASPD part only');
   h.run(mire.intervalSec);
-  approx(g.s.aspd, 100 + 2 * mire.aspdPerStack * 100, 1e-9, '2 stacks');
+  approx(g.s.aspd, 100 + 2 * mire.aspdPerStack * 100, 1e-9, '2 layers');
   h.run(mire.intervalSec * mire.maxStacks);
-  approx(g.s.aspd, 100 + mire.maxStacks * mire.aspdPerStack * 100, 1e-9, 'max stacks');
+  approx(g.s.aspd, 100 + mire.maxStacks * mire.aspdPerStack * 100, 1e-9, 'max layers');
+  // enemies standing in the mire: 重量 1 gains 1 layer a second, 重量 3 two (heavyWeight), both capped at maxStacks
+  const layersOver = (mass) => {
+    const key = `enemy_mass${mass}`;
+    const h3 = makeBattle({ stageId: 'act2autochess_m02', defs: { enemies: { [key]: walker({ key, mass }) } }, enemies: [{ key, pos: [10, 7], route: { motion: 'WALK', start: [10, 7], end: [10, 7], checkpoints: [{ type: 'WAIT', time: 99 }] } }], autoFinish: false, timeLimit: 60 });
+    h3.step();
+    const e = h3.enemy(key);
+    assert.equal(terrainAt(h3.b, 10, 7), 'mire');
+    const t0 = e.mem.terrainSince;
+    const out = [0.5, 1.5, 2.5, 4.5, 9.5, 20].map((t) => {
+      h3.run(t0 + t - h3.b.time);
+      const n = Math.round((e.s.aspd - 100) / (mire.aspdPerStack * 100));
+      approx(e.s.moveSpeed, 1 + n * mire.moveMulPerStack, 1e-9, `move ×(1 − 5 % × ${n})`);
+      return n;
+    });
+    checkInvariants(h3.b);
+    return out;
+  };
+  assert.deepEqual(layersOver(1), [1, 2, 3, 5, 10, 10], 'weight 1: a layer per second');
+  assert.deepEqual(layersOver(3), [2, 4, 6, 10, 10, 10], 'weight 3: two layers per second');
   // an enemy walking down col 7 (mire) is slowed there and recovers once it leaves
   const h2 = makeBattle({ stageId: 'act2autochess_m02', defs: { enemies: { enemy_walker: walker() } }, enemies: [{ key: 'enemy_walker', route: { motion: 'WALK', start: [12, 7], end: [9, 2], checkpoints: [] } }], autoFinish: false, timeLimit: 60 });
   let slowed = false;
@@ -658,6 +699,32 @@ test('深水 (act2 m04): ground enemies in deep water take damage/s, ASPD −60,
   checkInvariants(h.b);
 });
 
+// PRTS 涨潮控制 技能3 深水: "【水蚀】的敌方单位每秒受到40点无来源真实持续伤害（不属于环境伤害，不会触发受击回复）"
+test('深水: the 【水蚀】 tick is 无来源 true 持续伤害, not 环境伤害 (tags dot / periodic / deepsea, no terrain, no 受击回复) — 纠缠藤蔓 does not turn fragile in it', REAL, () => {
+  const bb = ds.getStage('act2autochess_m04').special.deepsea.bb;
+  const dmg = bb['sea_drown[enemy].damage'];
+  const wait = (pos) => ({ motion: 'WALK', start: pos, end: [9, 2], checkpoints: [{ type: 'WAIT', time: 99 }] });
+  const ticks = [];
+  const h = makeBattle({ stageId: 'act2autochess_m04', defs: { enemies: { enemy_dummy: dummy({ speed: 1 }) } },
+    enemies: [{ key: 'enemy_dummy', pos: [11, 6], route: wait([11, 6]) }, { key: 'enemy_2052_smgia', pos: [10, 6], route: wait([10, 6]) }], autoFinish: false, timeLimit: 30,
+    setup: (b) => b.on('hit', ({ source, target, dmg: d }) => { if (target.defId === 'enemy_dummy') ticks.push({ source, type: d.type, tags: [...d.tags], sourceless: d.sourceless, noSp: d.noSp }); }) });
+  h.step();
+  h.run(5);
+  const e = h.enemy('enemy_dummy'), vine = h.enemy('enemy_2052_smgia');
+  assert.deepEqual([terrainAt(h.b, 11, 6), terrainAt(h.b, 10, 6)], ['deepsea', 'deepsea']);
+  assert.equal(ticks.length, 5);
+  for (const t of ticks) {
+    assert.equal(t.source, null);
+    assert.equal(t.type, 'true');
+    assert.deepEqual(t.tags, ['dot', 'periodic', 'deepsea']);
+    assert.ok(t.sourceless && t.noSp);
+  }
+  approx(1e7 - e.hp, 5 * dmg, 1e-9);
+  assert.equal(vine.findBuff('ab:natureWeak'), null, '受到来自自然环境的伤害 does not fire');
+  approx(vine.s.maxHp - vine.hp, 5 * dmg, 1e-9, '40/s, not ×2');
+  checkInvariants(h.b);
+});
+
 test('活性源石 (act1 m04): units on it take damage/s and gain ATK/ASPD (allies and ground enemies)', REAL, () => {
   const bb = ds.getStage('act1autochess_m04').special.infection.bb;
   const g = guard({ stats: { atk: 1000, maxHp: 1e5 } });
@@ -671,6 +738,112 @@ test('活性源石 (act1 m04): units on it take damage/s and gain ATK/ASPD (alli
   approx(u.stats.taken, 2 * bb.damage, 1e-9, 'ally damage');
   approx(e.s.atk, 500 * (1 + bb.atk), 1e-9);
   assert.ok(e.stats.taken >= 2 * bb.damage - 1e-9);
+  checkInvariants(h.b);
+});
+
+// GitHub #33 item 6: the effect is timed (PRTS tile template "经过的敌军在{duration}s内…"), not tied to standing on the tile
+test('活性源石: an enemy keeps the effect after leaving the tile — damage/s, ATK and ASPD go on for `duration` s', REAL, () => {
+  const bb = ds.getStage('act1autochess_m04').special.infection.bb;
+  // a harmless walker crosses (11,6) going left, then waits on (11,4), off the tile
+  const route = { motion: 'WALK', start: [11, 8], end: [9, 2], checkpoints: [{ type: 'MOVE', pos: [11, 4] }, { type: 'WAIT', time: 99 }] };
+  const h = makeBattle({ stageId: 'act1autochess_m04', defs: { enemies: { enemy_walker: walker({ atk: 500 }) } }, enemies: [{ key: 'enemy_walker', route }], autoFinish: false, timeLimit: 120 });
+  h.step();
+  const e = h.enemy('enemy_walker');
+  const onTile = () => Math.round(e.y) === 11 && Math.round(e.x) === 6;
+  assert.ok(h.runUntil(onTile, 10), 'steps on (11,6)');
+  assert.ok(h.runUntil(() => !onTile(), 10), 'walks off');
+  assert.ok(e.findBuff('terrain:infection'), 'still carries the effect after leaving');
+  const hp0 = e.hp;
+  h.run(20);
+  assert.deepEqual([Math.round(e.y), Math.round(e.x)], [11, 4], 'waits off the tile');
+  const loss = hp0 - e.hp;
+  assert.ok(Math.abs(loss - 20 * bb.damage) <= bb.damage + 1e-6, `20 s after leaving: lost ${loss}, ≈ 20 × ${bb.damage}`);
+  approx(e.s.atk, 500 * (1 + bb.atk), 1e-9);
+  approx(e.s.aspd, 100 + bb.attack_speed, 1e-9);
+  const b = e.findBuff('terrain:infection');
+  assert.ok(Math.abs(b.timeLeft - (bb.duration - 20)) <= 3 * h.TICK, `${b.timeLeft} s left of ${bb.duration}`);
+  checkInvariants(h.b);
+});
+
+test('活性源石: one effect per unit — contact restarts its duration, it ends `duration` s after the last contact; the tiles never switch off', REAL, () => {
+  const stage = structuredClone(ds.getStage('act1autochess_m04'));
+  const bb = stage.special.infection.bb;
+  bb.duration = 10; // short, so that the end is inside the test
+  // the walker crosses (11,6) to (11,4), walks straight back over it to (11,8) and waits there
+  const route = { motion: 'WALK', start: [11, 8], end: [9, 2], checkpoints: [{ type: 'MOVE', pos: [11, 4] }, { type: 'MOVE', pos: [11, 8] }, { type: 'WAIT', time: 99 }] };
+  const h = makeBattle({ stage, defs: { enemies: { enemy_walker: walker({ atk: 500 }) } }, enemies: [{ key: 'enemy_walker', route }], autoFinish: false, timeLimit: 120 });
+  h.step();
+  const e = h.enemy('enemy_walker');
+  const onTile = () => Math.round(e.y) === 11 && Math.round(e.x) === 6;
+  const hp0 = e.hp;
+  let first = null, lastOn = null, end = null, contacts = 0, was = false, most = 0, atkMax = 0;
+  while (h.b.time < 40 && end == null) {
+    h.step();
+    const on = onTile();
+    if (on && !was) contacts++;
+    was = on;
+    const n = e.buffs.filter((x) => x.key === 'terrain:infection').length;
+    most = Math.max(most, n);
+    atkMax = Math.max(atkMax, e.s.atk);
+    if (on) { lastOn = h.b.time; first ??= h.b.time; }
+    if (first != null && n === 0) end = h.b.time;
+  }
+  assert.equal(contacts, 2, 'walked over the tile twice');
+  assert.equal(most, 1, 'never a second effect');
+  approx(atkMax, 500 * (1 + bb.atk), 1e-9, 'ATK + atk once');
+  assert.ok(end != null && end > first + bb.duration, `outlived its first ${bb.duration} s: the second contact restarted it (${first} → ${end})`);
+  assert.ok(Math.abs(end - (lastOn + bb.duration)) <= 2 * h.TICK, `ends ${bb.duration} s after the last contact (${lastOn} → ${end})`);
+  const loss = hp0 - e.hp;
+  assert.ok(Math.abs(loss - bb.damage * (end - first)) <= bb.damage + 1e-6, `${bb.damage}/s while it lasted: lost ${loss} in ${end - first} s`);
+  h.run(3);
+  assert.equal(e.hp, hp0 - loss, 'nothing after the end');
+  approx(e.s.atk, 500, 1e-9);
+  // an operator deployed on it is always in contact: it keeps draining past `duration` (no lifetime of the tiles; 3 ×
+  // `duration`, so that a shut-off at `duration` followed by the effect's own `duration` would still show)
+  const g = guard({ stats: { atk: 1000, maxHp: 1e5 } });
+  const h2 = makeBattle({ stage, defs: { chess: { test_guard: g } }, units: [{ chessId: 'test_guard', row: 11, col: 6 }], autoFinish: false, timeLimit: 120 });
+  h2.step();
+  h2.run(3 * bb.duration);
+  const u = h2.unit('test_guard');
+  approx(u.stats.taken, 3 * bb.duration * bb.damage, 1e-9, 'ally damage');
+  approx(u.s.atk, 1000 * (1 + bb.atk), 1e-9);
+  // moved off the tile (Battle.relocate, as 乌尔比安 S3 does), it keeps the effect for its time, then it ends
+  assert.ok(h2.b.relocate(u, 11, 7));
+  const taken0 = u.stats.taken;
+  h2.run(3);
+  assert.ok(u.findBuff('terrain:infection'), 'kept after the move');
+  approx(u.stats.taken - taken0, 3 * bb.damage, 1e-9, 'still draining');
+  h2.run(bb.duration);
+  assert.equal(u.findBuff('terrain:infection'), null, `gone ${bb.duration} s after the move`);
+  approx(u.s.atk, 1000, 1e-9);
+  checkInvariants(h.b);
+  checkInvariants(h2.b);
+});
+
+test('活性源石: a 重生 clears the lasting effect — a 深池逐火战士 that crossed the tile, knocked out off it, stands up from its ember after 1 + 10 s', REAL, () => {
+  const key = 'enemy_1288_duskls';
+  const delay = ds.getEnemy(key).talent['Revive[Trigger].interval'];
+  // it crosses (11,6) going left, then waits on (11,4), off the tile
+  const route = { motion: 'WALK', start: [11, 8], end: [9, 2], checkpoints: [{ type: 'MOVE', pos: [11, 4] }, { type: 'WAIT', time: 99 }] };
+  const h = makeBattle({ stageId: 'act1autochess_m04', enemies: [{ key, route }], autoFinish: false, timeLimit: 120 });
+  h.step();
+  const e = h.enemy(key);
+  const onTile = () => Math.round(e.y) === 11 && Math.round(e.x) === 6;
+  assert.ok(h.runUntil(onTile, 20), 'steps on (11,6)');
+  assert.ok(h.runUntil(() => Math.round(e.x) === 4, 20), 'waits on (11,4)');
+  assert.ok(e.findBuff('terrain:infection'), 'carries the effect off the tile');
+  const max = e.s.maxHp;
+  h.b.dealDamage(null, e, { amount: e.hp + 1e6, type: 'true', canDodge: false });
+  assert.ok(e.alive, 'knocked out into its ember');
+  assert.equal(e.findBuff('terrain:infection'), null, 'the 重生 cleared it');
+  h.run(HUSK_REBIRTH + delay - 0.5);
+  assert.ok(e.alive && e.s.maxHp < max, 'still the ember');
+  assert.equal(e.hp, e.s.maxHp, 'no tick took one of its hits');
+  h.run(1);
+  assert.ok(e.alive);
+  assert.equal(e.s.maxHp, max, `stood up ${HUSK_REBIRTH} + ${delay} s after the knock-out`);
+  assert.equal(e.hp, max);
+  assert.equal(e.findBuff('terrain:infection'), null);
   checkInvariants(h.b);
 });
 
@@ -758,7 +931,7 @@ test('every token variant: a spawn with that owner takes the owner-level stats (
   assert.ok(n >= 38, `variants checked: ${n}`);
 });
 
-test('elite numbers: 沙之碑 230 %/1.5 s, 香槟炸弹 170 %, 纸偶 its ATK × 2.7, “耀阳” 100 % + ×1.15 vs blocked, 医疗探机 ATK 114', REAL, () => {
+test('elite numbers: 沙之碑 230 %/1.5 s, 香槟炸弹 170 %, 纸偶 its ATK × 2.75 (full potential), “耀阳” 100 % + ×1.15 vs blocked, 医疗探机 ATK 114', REAL, () => {
   const burstOf = (ownerId, tokenId, r, c, ePos) => {
     const base = ownerId.replace(/_[ab]$/, '_a');
     const h = makeBattle({ defs: { enemies: { enemy_dummy: dummy() } }, kits: { [base]: genericNoSkill }, units: [{ chessId: ownerId, row: 12, col: 2 }], enemies: [{ key: 'enemy_dummy', pos: ePos }], autoFinish: false, timeLimit: 10 });
@@ -782,7 +955,7 @@ test('elite numbers: 沙之碑 230 %/1.5 s, 香槟炸弹 170 %, 纸偶 its ATK �
   {
     const { t, e } = burstOf('chess_char_2_11_b', TOKEN_IDS.paperDoll, 10, 6, [11, 7]);
     assert.equal(t.base.atk, 728);
-    approx(1e7 - e.hp, 728 * 2.7, 1e-9, '纸偶 elite');
+    approx(1e7 - e.hp, 728 * 2.75, 1e-9, '纸偶 elite (2.7 + the potential step of 风丸)');
   }
   {
     const { o, e } = burstOf('chess_char_6_17_b', TOKEN_IDS.radiantSword, 10, 6, [10, 7]);
@@ -898,7 +1071,7 @@ test('炎佑 details: plain spawnToken works (enemy-shaped record), burn gauge =
   assert.equal(y.motion, 'FLY');
   const e = h.enemy('enemy_dummy');
   assert.ok(h.runUntil(() => y.stats.attacks >= 1 && e.elem.burn > 0, 5));
-  // 元素脆弱 raises 元素伤害 only ("受到的元素伤害提升"), never the gauge fill (damage.js)
+  // 元素脆弱 raises 元素伤害 only ("受到的元素伤害提升"), never the gauge fill (attack/element.js)
   approx(e.elem.burn, 1000 * 0.2, 1e-6, 'gauge per hit');
   assert.ok(h.runUntil(() => h.hooksOf('elementBurst').length > 0, 20), 'burn burst');
   const burst = h.hooksOf('damaged').find((c) => c.type === 'elemental' && c.target === e);
@@ -926,7 +1099,7 @@ test('预备干员-医疗: stat talent 攻击提升 (+4 % ATK) on top of the dat
   approx(med.s.atk, tokDef(TOKEN_IDS.reserveMedic).stats.atk * (1.04 + 0.5), 1e-9, '治疗强化·β型 +50 %');
 });
 
-test('Touch talents: 攫升 +3 SP to the healed unit, 超脱 +5 SP when an operator in range is knocked out; extra heal = 30 % of the main heal', REAL, () => {
+test('Touch talents: 攫升 +3 SP to the healed unit, 超脱 +5 SP when an operator in range is knocked out; extra heal = 30 % of the main heal\'s base, ×heal_scale on its own low recipient', REAL, () => {
   const g = chessRec({ id: 'test_sp', stats: { maxHp: 10000, atk: 0, spRecovery: 0 }, skill: { spCost: 100, initSp: 0 } });
   const h = makeBattle({ stageId: 'act2autochess_m01', defs: { chess: { test_sp: g } }, units: [{ chessId: 'test_sp', row: 10, col: 3, uid: 1 }, { chessId: 'test_sp', row: 11, col: 3, uid: 2 }], autoFinish: false, timeLimit: 60,
     setup: (b) => b.on('heal', (c) => { if (c.source?.defId === TOKEN_IDS.touch) (b.mem ??= []).push({ t: c.target.id, amount: c.amount, ratio: c.target.hpRatio }); }, { priority: -500 }) });
@@ -941,14 +1114,39 @@ test('Touch talents: 攫升 +3 SP to the healed unit, 超脱 +5 SP when an opera
   h.b.dealDamage(null, b2, { amount: 1e6, type: 'true' });
   assert.equal(b2.alive, false);
   approx(touch.skill.sp - sp0, 5, 0.1, '超脱');
-  // skill: main heal (×1.5 at ≤ 50 %) + extra 30 % of it, not boosted again
+  // skill: main heal (×1.5 below 50 %) + an extra heal of 30 % of its base (ATK) on the lowest-ratio unit of the target and
+  // its neighbours — the target again, still below half after the main heal: ×1.5 on its own (PRTS 技能3 备注)
   h.b.mem = [];
   touch.skill.activate('test', { free: true });
-  a.hp = 4000;
+  a.hp = 2000;
   assert.ok(h.runUntil(() => h.b.mem.length >= 2, 5));
   const [main, extra] = h.b.mem;
+  assert.deepEqual([main.t, extra.t], [a.id, a.id]);
   approx(main.amount, touch.s.atk * 1.5, 1e-6, 'main heal boosted');
-  approx(extra.amount, main.amount * 0.3, 1e-6, 'extra = 30 % of the main heal');
+  assert.ok(extra.ratio < 0.5);
+  approx(extra.amount, touch.s.atk * 0.3 * 1.5, 1e-6, 'extra = 30 % of the base, boosted on its low recipient');
+  checkInvariants(h.b);
+});
+
+test('GitHub #260: the 外勤医疗 Touch casts 恳切福音 on an injured ally only inside the skill\'s 5-2 (ACTIVE_RANGE, as the 补位 Touch); a full-HP or unhealable one does not', REAL, () => {
+  // Touch stands on (10,2) facing right: her 3-3 reaches column 5, the skill's 5-2 column 7
+  const h = makeBattle({ stageId: 'act2autochess_m01', defs: { chess: { test_guard: guard({ stats: { maxHp: 10000, atk: 0 } }) } },
+    units: [{ chessId: 'test_guard', row: 10, col: 7 }], autoFinish: false, timeLimit: 60 });
+  h.step();
+  const touch = spawnMapChar(h.b, 'p1', TOKEN_IDS.touch);
+  assert.deepEqual([touch.tileR, touch.tileC], [10, 2]);
+  assert.equal(touch.skill.rule, 'ACTIVE_RANGE');
+  const ally = h.unit('test_guard');
+  touch.skill.gainSp(1000);
+  h.run(3);
+  assert.equal(touch.skill.activations, 0, 'every ally at full HP: no cast');
+  ally.hp = 4000;
+  const buff = h.b.addBuff(ally, { key: 'test:noHeal', flags: { noHeal: true } });
+  h.run(2);
+  assert.equal(touch.skill.activations, 0, 'an ally no heal can pick: no cast');
+  h.b.removeBuff(ally, buff);
+  assert.ok(h.runUntil(() => touch.skill.activations === 1, 2), 'the injured ally five tiles ahead (outside her 3-3) casts the skill');
+  assert.ok(h.runUntil(() => ally.hp > 4000, 5), 'and she heals it from the larger range');
   checkInvariants(h.b);
 });
 
@@ -1034,7 +1232,7 @@ test('tactical point: without a board piece the 援军 (狼群) stands on an ene
   checkInvariants(h.b);
 });
 
-test('狼群 (generic 伺夜): 伺夜\'s own attacks on pack-blocked enemies ignore 175 DEF and get the S3 bonus; the pack leaves with 伺夜', REAL, () => {
+test('狼群 (generic 伺夜): 伺夜\'s own attacks on pack-blocked enemies ignore 200 DEF (full potential) and get the S3 bonus; the pack leaves with 伺夜', REAL, () => {
   const kit = () => ({ generic: true, talents: [], skill: { kind: 'duration', duration: 60, trigger: 'SP_FULL', spCost: 1, initSp: 1 } });
   const own = [], bonus = [];
   // RES 100: the 弱点伤害 garrison keeps the attacks physical (arts would do 5 %)
@@ -1050,8 +1248,8 @@ test('狼群 (generic 伺夜): 伺夜\'s own attacks on pack-blocked enemies ign
   assert.ok(h.runUntil(() => own.some((x) => x.blocked) && bonus.some((x) => x.src === 'chess_char_3_19_a'), 30), 'owner hits a pack-blocked enemy');
   const hit = own.find((x) => x.blocked);
   assert.equal(hit.type, 'phys');
-  // tactician trait ×1.5 vs enemies its 援军 blocks; DEF 300 − 175
-  approx(hit.amount, vigil.s.atk * 1.5 - (300 - 175), 1e-6, 'DEF ignore on 伺夜\'s attack');
+  // tactician trait ×1.5 vs enemies its 援军 blocks; DEF 300 − 200
+  approx(hit.amount, vigil.s.atk * 1.5 - (300 - 200), 1e-6, 'DEF ignore on 伺夜\'s attack');
   approx(bonus.find((x) => x.src === 'chess_char_3_19_a').amount, vigil.s.atk * 0.2 * 0.05, 1e-6, 'S3 bonus: 20 % ATK arts vs RES 100 (5 % floor)');
   assert.ok(bonus.some((x) => x.src === TOKEN_IDS.wolfPack), 'the pack\'s bites carry the bonus too');
   // the 援军 leaves with its tactician (no respawn afterwards)

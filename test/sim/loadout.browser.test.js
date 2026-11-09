@@ -1,4 +1,3 @@
-import {appPage} from '../helpers/appPage.mjs';
 // test/sim/loadout.browser.test.js — operator loadouts (DESIGN §16) in the BROWSER sim: headless Chrome loads the
 // served /sim/ modules and /data/*.json through the client's own loader (public/js/battle/runner.js loadBrowserSim),
 // builds a BattleSpec whose units carry skillIndex / moduleId and must resolve the same defs and produce the same result
@@ -25,7 +24,7 @@ describe('operator loadouts in the browser sim', { skip }, () => {
   before(async () => {
     const puppeteer = (await import('puppeteer-core')).default;
     const { startServer } = await import('../../server/index.js');
-    srv = await startServer({ auth: false, port: 0, host: '127.0.0.1', quiet: true });
+    srv = await startServer({ port: 0, host: '127.0.0.1', quiet: true });
     browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--no-first-run'] });
   });
   after(async () => {
@@ -51,7 +50,7 @@ describe('operator loadouts in the browser sim', { skip }, () => {
     const nodeUnits = nb.allyUnits.map((u) => [u.uid, u.def.skill?.id ?? null, u.base.maxHp, u.base.atk]);
     const nodeHash = resultDigest(nb.runToEnd(4000)).hash;
 
-    const page = await appPage(await browser.newPage());
+    const page = await browser.newPage();
     const problems = [];
     page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));
     page.on('response', (r) => { if (r.status() >= 400 && !/favicon/.test(r.url())) problems.push(`HTTP ${r.status()} ${r.url()}`); });

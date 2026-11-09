@@ -36,6 +36,8 @@
 // largest owner group (client `_CalculateActionPredelayConsiderUid`, decoded).
 
 import { createRng, deriveSeed } from '../sim/rng.js';
+import { PLUGIN_ACTION_UNITS } from '../../shared/plugins/limits.js';
+import { gateOf } from '../../shared/constants.js';
 
 const ACLOON = 'enemy_9012_acloon';
 const DEFAULT_PLACEHOLDERS = Object.freeze({
@@ -43,6 +45,9 @@ const DEFAULT_PLACEHOLDERS = Object.freeze({
   NF: { cls: 'normal', fly: true }, EF: { cls: 'elite', fly: true }, SF: { cls: 'special', fly: true },
 });
 const MIN_ACTION_INTERVAL_RATIO = 0.05;
+/** The most units one wave action fields (templateSpawns' count clamp; replacedCount and bountyPlan stay within it) — the
+ * data-plugin check caps the replaced counts at the same number (shared/plugins/limits.js). */
+const MAX_ACTION_UNITS = PLUGIN_ACTION_UNITS;
 /** 联防 timing (client `_CalculateActionPredelayConsiderUid`): owner offset ACTION_INTERVAL_FOR_UID, unit step cap
  * MAX_ACTION_INTERVAL_FOR_UID. */
 const UNITE_OWNER_STEP = 0.5;
@@ -102,8 +107,10 @@ const beFactor = (gd, key) => {
  */
 export function replacedCount(gd, tplKey, n, newKey) {
   const g = gen(gd);
-  const min = Number.isInteger(g.minReplacedEnemyCount) ? g.minReplacedEnemyCount : 1;
-  const max = Number.isInteger(g.maxReplacedEnemyCount) ? g.maxReplacedEnemyCount : 5;
+  // (bounded like a template action's own count — templateSpawns' 1–50: a data plugin's 4e7 would be one action's units,
+  // and an array of them in bountyPlan; the official 1 / 5 are unchanged)
+  const min = Math.max(1, Math.min(MAX_ACTION_UNITS, Number.isInteger(g.minReplacedEnemyCount) ? g.minReplacedEnemyCount : 1));
+  const max = Math.max(1, Math.min(MAX_ACTION_UNITS, Number.isInteger(g.maxReplacedEnemyCount) ? g.maxReplacedEnemyCount : 5));
   const f = Math.fround;
   const origin = f(f(n * attrPower(gd, tplKey)) / beFactor(gd, tplKey));
   const unit = f(attrPower(gd, newKey) / beFactor(gd, newKey));
@@ -135,15 +142,16 @@ function entryList(gd) {
  * is allowed in the mode, plus a random attached normal / elite key (never filtered by the mode).
  * @returns {null | { round: number, type: string, key: string, normal: string|null, elite: string|null, fly: boolean, firstHalf: boolean }}
  */
-export function pickRoundEntry(gd, rng, type, round, {preferredFly=null}={}) {
+export function pickRoundEntry(gd, rng, type, round, {preferredFly=null, excludeKeys=null}={}) {
   const half = round <= firstHalfMax(gd);
   const ok = (e) => e.type === type && !!e.firstHalf === half && e.key !== ACLOON && !!gd.enemy(e.key) && !gd.inactiveEnemies.has(e.key);
   let cands = entryList(gd).filter(ok);
   if (!cands.length && type !== 'SPECIAL') return pickRoundEntry(gd, rng, 'SPECIAL', round,{preferredFly});
+  if(typeof preferredFly==='boolean'){const preferred=cands.filter(e=>(typeof e.fly==='boolean'?e.fly:isFlyKey(gd,e.key))===preferredFly);if(preferred.length)cands=preferred;}
   if (!cands.length) return null;
-  if(typeof preferredFly==='boolean'){
-    const preferred=cands.filter(e=>(typeof e.fly==='boolean'?e.fly:isFlyKey(gd,e.key))===preferredFly);
-    if(preferred.length)cands=preferred;
+  if (excludeKeys?.size) {
+    const fresh = cands.filter(e => !excludeKeys.has(e.key));
+    if (fresh.length) cands = fresh;
   }
   const idx = weightedPick(rng, cands.map((e, i) => [i, e.weight ?? 1]));
   const e = cands[Number(idx) || 0];
@@ -155,9 +163,9 @@ export function pickRoundEntry(gd, rng, type, round, {preferredFly=null}={}) {
 }
 
 /** Round type schedule: each chosen type × its slot count, filled with SPECIAL to maxLevelCnt, shuffled. */
-export function makeTypeSchedule(gd, rng, factions, maxOverride = null) {
+export function makeTypeSchedule(gd, rng, factions, maxOverride=null) {
   const g = gen(gd);
-  const max = intOr(maxOverride, intOr(g.maxLevelCnt, 15));
+  const max = Math.min(256, Math.max(0, intOr(maxOverride,intOr(g.maxLevelCnt, 15)))); // loop-cap: schedule length [ASSUMED] DESIGN §32.5
   const fill = typeof g.fillType === 'string' ? g.fillType : (typeof g.alwaysIncludedType === 'string' ? g.alwaysIncludedType : 'SPECIAL');
   const types = gd.factions.types && typeof gd.factions.types === 'object' ? gd.factions.types : {};
   const slots = [];
@@ -165,7 +173,7 @@ export function makeTypeSchedule(gd, rng, factions, maxOverride = null) {
     const n = intOr(types[t]?.count, 3);
     for (let i = 0; i < n && slots.length < max; i++) slots.push(t);
   }
-  while (slots.length < max) slots.push(fill);
+  while (slots.length < max) slots.push(fill); // loop-cap: schedule length
   rng.shuffle(slots);
   return slots;
 }
@@ -207,10 +215,15 @@ export function setupMatchWaves(gd, rng) {
   // the 15-round schedule and picks (own rng stream derived from the setup rng's state: the draws above and whatever
   // the caller draws next from `rng` are unchanged)
   const srng = scheduleRng(rng);
-  const extension = gd.mode.testRoundExtension;
-  const typeSlots = makeTypeSchedule(gd, srng, chosen, extension?.baselineMaxLevelCnt);
+  const extension=gd.mode.testRoundExtension;
+  const typeSlots = makeTypeSchedule(gd, srng, chosen,gd.isCyclops ? gd.lastRound : extension?.baselineMaxLevelCnt);
   const picks = [null];
-  for (let r = 1; r <= typeSlots.length; r++) picks.push(pickRoundEntry(gd, srng, typeSlots[r - 1], r));
+  for (let r = 1; r <= typeSlots.length; r++) {
+    // Cyclops extends past the official 15 slots. Keep seeded picks for every slot, including boss escorts;
+    // adjacent late rounds prefer another special entry when the selected faction has one available.
+    picks.push(pickRoundEntry(gd, srng, typeSlots[r - 1], r,
+      { excludeKeys: gd.isCyclops && r > 15 ? new Set([picks[r - 1]?.key]) : null }));
+  }
   if (extension) {
     const bossPick = picks[extension.baselineBossRound], hiddenPick = picks[extension.baselineHiddenRound];
     const bossType = typeSlots[extension.baselineBossRound - 1], hiddenType = typeSlots[extension.baselineHiddenRound - 1];
@@ -257,7 +270,7 @@ export function roundPick(gd, rng, factionsOrSetup, round) {
   const factions = Array.isArray(src) ? src : (src && Array.isArray(src.factions) ? src.factions : []);
   const g = gen(gd);
   const types = gd.factions.types && typeof gd.factions.types === 'object' ? gd.factions.types : {};
-  const max = intOr(gd.mode.testRoundExtension?.baselineMaxLevelCnt, intOr(g.maxLevelCnt, 15));
+  const max = intOr(gd.mode.testRoundExtension?.baselineMaxLevelCnt,intOr(g.maxLevelCnt, 15));
   const pairs = factions.map((t) => [t, intOr(types[t]?.count, 3)]);
   const used = pairs.reduce((s, [, w]) => s + w, 0);
   pairs.push([typeof g.fillType === 'string' ? g.fillType : 'SPECIAL', Math.max(1, max - used)]);
@@ -269,6 +282,13 @@ export function scaleFor(gd, r) {
   return gd.enemyScale(r);
 }
 
+/** The spawn mods of a round's scale for a non-leader enemy: HP / ATK / speed, plus `supplyHpMul` when the round has one. */
+export function roundMods(scale) {
+  const m = { hpMul: scale.hpMul, atkMul: scale.atkMul, speedMul: scale.speedMul };
+  if (scale.supplyHpMul != null) m.supplyHpMul = scale.supplyHpMul;
+  return m;
+}
+
 /** Slot class of an enemy that has no placeholder slot (literal template keys, bounty adds). */
 export function classOf(gd, enemyKey) {
   const e = gd.enemy(enemyKey);
@@ -278,28 +298,8 @@ export function classOf(gd, enemyKey) {
   return elite ? 'E' : 'N';
 }
 
-/** Preview pen upper zone anchor row ((18,7); the lower anchor is (15,7)) and the client's row offsets. */
-const PEN_UPPER_ROW = 18;
-const PREVIEW_ROW_OFFSET = 6;
-const PREVIEW_ROW_OFFSET_LEADER = 13;
-
-/**
- * 'upper' | 'lower' preview zone of a route start (client `AutoChessEnemyPreviewManager`, research 08 §4.2): target row =
- * start row + 6 (leader rounds: + 13); the zone is the Manhattan-nearest anchor among those with anchor row ≤ target
- * row — (18,7) upper, (15,7) lower — so only a target row ≥ 18 reaches the upper zone: normal fields row 12 (upper
- * gate (12,10); rows 9–11 lower), boss fields row 5 (rows 2–4 lower: the leaders at (3,x)/(4,x) and the (2,10) gate).
- * A target below row 15 has no zone (the client picks a random pen tile) and is reported 'lower'.
- * @param {number[]|null} start [row, col]
- * @param {boolean} [leader] leader / hidden round (default: a boss-field row, ≤ 8)
- */
-export function gateOf(start, leader) {
-  const r = Array.isArray(start) ? start[0] : null;
-  if (!Number.isFinite(r)) return 'lower';
-  const lead = typeof leader === 'boolean' ? leader : r <= 8;
-  const target = r + (lead ? PREVIEW_ROW_OFFSET_LEADER : PREVIEW_ROW_OFFSET);
-  // both anchors share col 7, so with target ≥ 18 the upper one is always the nearer; below it only (15,7) qualifies
-  return target >= PEN_UPPER_ROW ? 'upper' : 'lower';
-}
+/** 'upper' | 'lower' preview zone of a route start: shared/constants.js gateOf (鸭爵's lane rule reads it too, GitHub #839). */
+export { gateOf };
 
 const isLeaderTemplate = (tpl) => !!tpl && (tpl.kind === 'boss' || tpl.kind === 'hidden');
 
@@ -362,8 +362,9 @@ function templateSpawns(gd, tpl, round, pick) {
       interval: count > 1 ? step : 0,
       // the round multipliers are ENEMY effects on every enemy but 炎佑 (aceffect_enemy_1–5 `enemy_attribute_mul`,
       // enemy_exclude = enemy_9012_acloon): leader parts take them all; the leader takes ATK / speed but not HP — its HP
-      // is the server pool, "领袖单位于服务器的生命值加成不受上述加成影响" (PRTS 下半)
-      mods: isBoss ? { atkMul: scale.atkMul, speedMul: scale.speedMul, slot } : { hpMul: isPart?(gd.roundCfg(round)?.extensionBossPartHp??scale.hpMul):scale.hpMul, atkMul: scale.atkMul, speedMul: scale.speedMul, slot },
+      // is the server pool, "领袖单位于服务器的生命值加成不受上述加成影响" (PRTS 下半). `supplyHpMul` (roundMods) rides along for
+      // the 器物 hit-count units, which 补给线 / 补给线II leave out (archetypes.js `times`; also a 频次 enemy's death spawn)
+      mods: isBoss ? { atkMul: scale.atkMul, speedMul: scale.speedMul, slot } : { ...roundMods(isPart && gd.cyclopsBalance ? gd.bossPartScale(round) : scale), ...(isPart&&gd.roundCfg(round)?.extensionBossPartHp!=null?{hpMul:gd.roundCfg(round).extensionBossPartHp}:{}), slot },
       actionIndex: i,
       preview: previewInfo(gd, key, routes[routeIndex], isBoss, leader),
     };
@@ -535,7 +536,7 @@ function bountyPlan(gd, round, wave, bounties, playerId, side) {
     const act = host ? acts.find((a) => a.index === host.index) : null;
     // the host's own units: only a server-sent action has any (a leader / random-group / invalid host spawns the
     // bounty list alone over its window — client _InsertSpActionToNormal finds no normal list for it)
-    const own = act && act.valid && act.server !== false ? act.count : 0;
+    const own = act && act.valid && act.server !== false ? Math.min(MAX_ACTION_UNITS, act.count) : 0;
     const sp = [];
     for (const it of items) for (let k = 0; k < it.count; k++) sp.push(it);
     // _InsertSpActionToNormal: insert the bounty units among the action's own units (list.Insert(FloorToInt(...)))
@@ -563,7 +564,7 @@ function bountyPlan(gd, round, wave, bounties, playerId, side) {
         routeIndex,
         count: run.len,
         interval: run.len > 1 ? step : 0,
-        mods: { hpMul: scale.hpMul, atkMul: scale.atkMul, speedMul: scale.speedMul, slot: classOf(gd, c.enemyKey), bountyId: b.id },
+        mods: { ...roundMods(scale), slot: classOf(gd, c.enemyKey), bountyId: b.id },
         tag: 'bounty',
         ownerPlayerId: playerId,
         preview: previewInfo(gd, c.enemyKey, routes[routeIndex], false, leader),
@@ -597,9 +598,11 @@ export function withBounties(gd, round, wave, bounties, playerId, { side = null 
 
 /**
  * nextEnemies preview (m.private.nextEnemies): one entry per spawn action (research 08 §4.2 input), in spawn order:
- * `{ enemyKey, count, gate: 'upper'|'lower', t, fly, elite, boss, source: 'wave'|'bounty', tag }` — `tag` 'boss' /
+ * `{ enemyKey, count, gate: 'upper'|'lower', t, fly, elite, boss, source: 'wave'|'bounty', tag, start? }` — `tag` 'boss' /
  * 'bounty' / null kept for the drawer's grouping; Σ count = the enemies of the round (HUD). Boss parts are omitted.
- * The client places the models in the gate's pen zone (≤ 50 shown, elites and bosses always).
+ * The client places the models in the gate's pen zone (≤ 50 shown, elites and bosses always) — except a leader: its
+ * entry carries its spawn tile `start` ([row, col] on the boss field) and the Final Assault / Hidden Core prep shows it
+ * standing there (render/app.js, community report #12; display only).
  */
 export function previewOf(spawns) {
   const out = [];
@@ -618,6 +621,7 @@ export function previewOf(spawns) {
       boss: tag === 'boss',
       source: tag === 'bounty' ? 'bounty' : 'wave',
       tag,
+      ...(tag === 'boss' && Array.isArray(pv.start) && pv.start.length >= 2 && pv.start.every(Number.isFinite) ? { start: [pv.start[0], pv.start[1]] } : {}),
       _seq: seq++,
     });
   }

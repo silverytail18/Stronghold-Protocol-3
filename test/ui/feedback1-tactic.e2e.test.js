@@ -1,4 +1,3 @@
-import {appPage} from '../helpers/appPage.mjs';
 // The 战术决策 overlay with the same card twice, in headless Chrome (puppeteer-core + system Chrome) through the mock
 // harness (public/dev/game-mock.html ?phase=SP_DRAFT&variant=tactic: the official 战术决策 of match 7 R11 — 补给 in
 // slots 1 and 2; the user: "战术决策也按官方改成可以重复吧"). Opt-in: SP_E2E=1.
@@ -28,7 +27,7 @@ describe('战术决策: the same card twice (mock harness, headless Chrome)', { 
   before(async () => {
     const { startServer } = await import('../../server/index.js');
     const puppeteer = (await import('puppeteer-core')).default;
-    srv = await startServer({ auth: false, port: 0, host: '127.0.0.1', quiet: true });
+    srv = await startServer({ port: 0, host: '127.0.0.1', quiet: true });
     base = `http://127.0.0.1:${srv.port}`;
     browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--no-sandbox'] });
     mkdirSync(OUT, { recursive: true });
@@ -47,7 +46,7 @@ describe('战术决策: the same card twice (mock harness, headless Chrome)', { 
 
   for (const [name, w, h, touch] of [['756x366', 756, 366, true], ['1920x1080', 1920, 1080, false]]) {
     test(`${name}: two 补给 are two cards; the second stays pickable after the first is taken, and picking it sends its own index`, { timeout: 120000 }, async () => {
-      const page = await appPage(await browser.newPage());
+      const page = await browser.newPage();
       await page.setViewport({ width: w, height: h, deviceScaleFactor: 1, isMobile: touch, hasTouch: touch });
       const problems = [];
       page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));

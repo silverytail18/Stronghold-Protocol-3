@@ -3,6 +3,7 @@
 // One app-wide store holds everything the UI renders from:
 //   connection  – socket status + latency (fed by net.js via main.js)
 //   me          – { playerId, name, token } from `welcome`
+//   content     – `welcome.content`: the server's content identity { vanilla: <cs> } (DESIGN §32), or null
 //   session     – { entered } (the player pressed 开始 on the title screen in this tab)
 //   room        – last `room.state` payload (without `t`) or null
 //   match       – { public, private, field, result } from the `m.*` pushes; `battle` = the local battle runner's
@@ -14,6 +15,10 @@
 //   ticker      – recent `m.ticker` lines, emotes – recent `m.emote` events
 //   clock       – { offset, rtt } server clock correction: serverNow ≈ Date.now() + offset
 //   ui          – small bits of local UI state shared between screens
+//   versions    – welcome.versions (the official versions the server enables, versions.js sanitizeVersions) or null: the
+//                 lobby's version switch is off; lobbyVersion – this browser's choice (`sp.pref.lobby.version`, an id);
+//                 replayVersion – the version of the stored match
+//                 统计数据 replays while it is open (screens/stats.js; null otherwise) — versions.js
 //
 // The store is framework-agnostic (get/set/subscribe); `useStore(selector)` binds it to Preact.
 // Updates are immutable at the top level: `set` shallow-merges a patch object, `patch(key, obj)`
@@ -21,6 +26,7 @@
 
 import { useLayoutEffect, useReducer, useRef } from '../vendor/hooks.module.js';
 import { PHASE } from '../../shared/constants.js';
+import { t } from '../../shared/i18n.js';
 
 /**
  * Create an observable store.
@@ -76,16 +82,29 @@ export const emptyMatch = () => ({ public: null, private: null, field: null, res
 export const initialState = Object.freeze({
   connection: { status: 'idle', ping: null, attempt: 0, retryAt: 0, lastError: null, everOnline: false },
   me: { playerId: null, name: '', token: null },
+  content: null,
+  // how many unofficial plugins the server has (DESIGN §32 P1a: /healthz or welcome `content.plugins`; content.js)
+  installedPlugins: 0,
+  // A language-only installation may have announcements without an unofficial plugin count.
+  installedNotices: false,
   session: { entered: false },
   room: null,
-  ranked: null,
-  rankedResult: null,
+  // welcome.testMode (DESIGN §34.8). The server omits the key when the switch is off; the client cannot set it.
+  testMode: false,
   match: emptyMatch(),
   ticker: [],
   emotes: [],
   chat: [],
   clock: { offset: 0, rtt: null, synced: false },
-  ui: { pendingJoin: null, restoring: false },
+  ui: { pendingJoin: null, restoring: false, buildStale: false },
+  // official versions (DESIGN §35.23, versions.js): welcome.versions (null: the switch is off), this browser's lobby choice
+  // (the pref as stored — versions.js lobbyVersion checks it against the list) and the version of the stored match
+  // 统计数据 replays (null when none: the lobby preference is never changed to show one). A match's version is its frames'
+  // (versions.js matchFrameVersion; absent = 第二期下半), never remembered from the last room.
+  versions: null,
+  productAccount: null,
+  lobbyVersion: (() => { const v = loadPref('lobby.version', null); return typeof v === 'string' && v.length <= 40 ? v : null; })(),
+  replayVersion: null,
 });
 
 /** The app-wide store singleton. */
@@ -107,6 +126,17 @@ export function selectRoute(s) {
 }
 
 /**
+ * Whether the player holds one of the room's spectator seats (room.state `spectators`; community report #26, a remake
+ * feature): it is no player of the room or its match, watches like an eliminated player and may not act.
+ * @param {any} room room.state payload
+ * @param {string|null|undefined} playerId
+ * @returns {boolean}
+ */
+export function isSpectating(room, playerId) {
+  return playerId != null && Array.isArray(room?.spectators) && room.spectators.some((s) => s && s.playerId === playerId);
+}
+
+/**
  * The notice after a `welcome` that starts a brand-new server session (the server restarted, or this session expired
  * on it: a new playerId) while a room or a match was on screen — everything shown is gone. Null when nothing is lost
  * (the first welcome, a resumed session, only the title / lobby on screen).
@@ -117,8 +147,8 @@ export function selectRoute(s) {
 export function sessionResetNotice(prev, playerId) {
   const prevId = prev?.me?.playerId;
   if (prevId == null || prevId === playerId) return null;
-  if (prev?.match?.public || prev?.room?.inMatch) return '服务器会话已重置，上一局模拟已结束';
-  if (prev?.room) return '服务器会话已重置，已返回大厅';
+  if (prev?.match?.public || prev?.room?.inMatch) return t('服务器会话已重置，上一局模拟已结束');
+  if (prev?.room) return t('服务器会话已重置，已返回大厅');
   return null;
 }
 

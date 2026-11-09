@@ -12,14 +12,19 @@ import { useEffect, useRef, useState } from '../../vendor/hooks.module.js';
 import { createFallbackView } from './fallbackField.js';
 import { data } from '../data.js';
 import { audio } from '../audio.js';
+import { store } from '../store.js';
 import { settingsStore } from './settings.js';
 
 const LOAD_TIMEOUT_MS = 12000;
+// [ASSUMED] Two automatic retries; keep the existing two event retries available for a later network/tab recovery.
+const RECOVERY_DELAYS_MS = [2000, 8000];
+const EVENT_RETRY_LIMIT = 2;
 const METHODS = ['setStage', 'setCamera', 'setPrep', 'enterBattle', 'pushSnapshot', 'pushEvents', 'highlightTiles', 'on', 'resize', 'destroy'];
 // direction-step hooks (ui/facingWheel.js): optional — the wheel falls back to the engine's dev hooks when absent;
 // setPen (enemy preview pen list), prepField ({ kind, side, mirror } of the Final Assault prep), stripesUnder (the view
-// stripes range previews under the units itself) — render/app.js; the DOM fallback lacks them (→ null)
-const OPTIONAL = ['pieceScreenRect', 'setSettings', 'off', 'tileScreen', 'holdPiece', 'setPieceDir', 'setPen', 'prepField', 'stripesUnder'];
+// stripes range previews under the units itself), replayDeploys (the round start's Start-clip replay, PR #416) —
+// render/app.js; the DOM fallback lacks them (→ null)
+const OPTIONAL = ['finishBattle', 'pieceScreenRect', 'pieceAtClientPoint', 'setSettings', 'setMe', 'setSkins', 'off', 'tileScreen', 'holdPiece', 'setPieceDir', 'setPen', 'prepField', 'stripesUnder', 'replayDeploys'];
 
 /**
  * Camera padding (px) that keeps the field clear of the DOM HUD (top bar + bond strip, team panel, shop bar /
@@ -41,8 +46,9 @@ export function hudPadding(kind, size) {
 
 /**
  * HUD geometry (rem) the prep cameras keep clear (they mirror the CSS; test/ui/playtest5-ui.test.js checks the rules):
- * the bond strip's bottom edge (css/screens/game.css .gm__bonds top 1.36rem + a .bslot: disc .52rem + name ≈
- * 2.15rem measured) and the shop bar's top edge above the viewport's bottom (css/screens/game-shop.css .shopbar
+ * the bond scroller's bottom edge (css/screens/game.css .gm__bonds top 1.36rem + a .bslot's disc and name ≈
+ * .8rem, or its 44 px arrow height, whichever is taller; negative margins offset the clip padding) and the shop bar's top edge
+ * above the viewport's bottom (css/screens/game-shop.css .shopbar
  * bottom .2rem + .shopbar__row padding .1rem ×2 + card height 2.24rem, plus its 2 px + 1 px borders). The shop bar
  * sits on the viewport's bottom edge even on a notched phone (css/devices.css, DESIGN §18.1).
  * The folded shop (public issue #5): the tab's top edge (.shopbar-tab bottom .2rem + padding .08rem ×2 + its .44rem
@@ -52,7 +58,8 @@ export function hudPadding(kind, size) {
  * css/devices.css).
  */
 export const HUD_REM = Object.freeze({
-  bondStripBottom: 2.16, shopBarTop: 2.64, shopBarBorderPx: 3, shopTabTop: 0.8, shopTabBorderPx: 3, cornerTop: 0.8,
+  bondStripTop: 1.36, bondStripBottom: 2.16, bondArrowPx: 44,
+  shopBarTop: 2.64, shopBarBorderPx: 3, shopTabTop: 0.8, shopTabBorderPx: 3, cornerTop: 0.8,
 });
 
 /**
@@ -74,32 +81,45 @@ export const HUD_REM = Object.freeze({
  * stays armed — less than under the unchanged official camera at 1920×1080 (13 px above the bar, ≈ 11 px over the pads).
  * @param {string} kind
  * @param {{ width: number, height: number }} size
- * @param {{ shop?: boolean }} [opts] `shop: false` = the folded shop's band
+ * @param {{ shop?: boolean|'partial' }} [opts] `shop: false` = the folded shop's band
  * @returns {{ top: number, bottom: number }|null}
  */
 export function hudBands(kind, size, opts) {
   if (kind !== 'prep' && kind !== 'bossPrep') return null;
   const folded = !!opts && opts.shop === false;
+  const partial = opts?.shop === 'partial';
   const h = size?.height || 1080;
   let rem = 100;
   let safeTop = 0;
   let safeBottom = 0;
   let corner = 0;
+  let bondsBottom = 0;
   try {
     rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 100;
+    // 异形屏适配 (ui/screenFit.js): the board's host may not start at the viewport's top — the HUD rects are measured from it
+    const oy = document.querySelector('.gm__field')?.getBoundingClientRect()?.top || 0;
     // the HUD layer starts below the top safe-area inset and ends above the bottom one (css/devices.css .gm__hud)
     const hud = document.querySelector('.gm__hud')?.getBoundingClientRect();
-    safeTop = Math.max(0, hud?.top || 0);
-    if (folded) {
-      if (hud && hud.bottom > 0) safeBottom = Math.max(0, h - hud.bottom);
-      corner = cornerBand(h);
+    safeTop = Math.max(0, (hud?.top || 0) - oy);
+    // #678 adds 44 px arrows; a native scrollbar can make the strip taller still.
+    // Keep the same minimum band before mount and while collapsed, so toggling cannot shrink it.
+    const bonds = document.querySelector('.gm__bonds')?.getBoundingClientRect();
+    if (bonds?.height > 0) bondsBottom = Math.max(0, bonds.bottom - oy);
+    if (folded || partial) {
+      if (hud && hud.bottom - oy > 0) safeBottom = Math.max(0, h - (hud.bottom - oy));
+      corner = cornerBand(h, oy);
     }
   } catch { /* ignore */ }
   const bottom = folded
     ? Math.max(safeBottom + rem * HUD_REM.shopTabTop + HUD_REM.shopTabBorderPx, corner || safeBottom + rem * HUD_REM.cornerTop)
-    : rem * HUD_REM.shopBarTop + HUD_REM.shopBarBorderPx;
+    : partial
+      // [ASSUMED] #692: CSS scales the whole bar to 70% around its bottom-right anchor (.2rem above the bottom).
+      ? Math.max(safeBottom + rem * 0.2 + (rem * (HUD_REM.shopBarTop - 0.2) + HUD_REM.shopBarBorderPx) * 0.7,
+        corner || safeBottom + rem * HUD_REM.cornerTop)
+      : rem * HUD_REM.shopBarTop + HUD_REM.shopBarBorderPx;
   return {
-    top: Math.min(h * 0.4, safeTop + rem * HUD_REM.bondStripBottom),
+    top: Math.min(h * 0.4, Math.max(bondsBottom, safeTop + Math.max(rem * HUD_REM.bondStripBottom,
+      rem * HUD_REM.bondStripTop + HUD_REM.bondArrowPx))),
     bottom: Math.min(h * 0.4, bottom),
   };
 }
@@ -110,8 +130,9 @@ export function hudBands(kind, size, opts) {
  * of at least --tap-min (44 px) centred on it (css/devices.css touch targets), 5 px above a 34 px phone button — a bench
  * pad edge there is not pressable.
  * @param {number} h
+ * @param {number} [oy] the board host's top in client px (异形屏适配 moves it down)
  */
-function cornerBand(h) {
+function cornerBand(h, oy = 0) {
   const btns = document.querySelectorAll('.gm__corner .gm__gear, .gm__corner .ewheel__btn');
   if (!btns || !btns.length) return 0;
   const root = document.documentElement;
@@ -121,7 +142,7 @@ function cornerBand(h) {
     const r = b.getBoundingClientRect();
     if (r && r.height > 0) top = Math.min(top, r.top + r.height / 2 - Math.max(r.height, tap) / 2);
   }
-  return top < Infinity ? Math.max(0, h - top) : 0;
+  return top < Infinity ? Math.max(0, h - (top - oy)) : 0;
 }
 
 function renderPref() {
@@ -132,8 +153,32 @@ function renderPref() {
   return globalThis.__SP_RENDER__ === 'fallback' ? 'fallback' : 'auto';
 }
 
-function withTimeout(p, ms, what) {
-  return Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error(`${what} timed out`)), ms))]);
+function abortError(signal) {
+  return signal?.reason ?? new DOMException('Field view initialization cancelled', 'AbortError');
+}
+
+function checkActive(signal) {
+  if (signal?.aborted) throw abortError(signal);
+}
+
+function withTimeout(p, ms, what, signal) {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    let timer;
+    const finish = (done, value) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      signal?.removeEventListener('abort', onAbort);
+      done(value);
+    };
+    const onAbort = () => finish(reject, abortError(signal));
+    signal?.addEventListener('abort', onAbort, { once: true });
+    timer = setTimeout(() => finish(reject, new DOMException(`${what} timed out`, 'TimeoutError')), ms);
+    // Keep a rejection handler attached even when cancellation wins before this promise settles.
+    Promise.resolve(p).then((value) => finish(resolve, value), (err) => finish(reject, err));
+    if (signal?.aborted) onAbort();
+  });
 }
 
 /**
@@ -167,14 +212,16 @@ export function guardView(view, kind) {
  * screen waits for them, gameComponents GAME_FILES) to the asset store, now or when they land: it then never downloads
  * the manifest a second time — after a page reload (a phone browser discarding a background tab, Chrome's Memory Saver)
  * that second download was the one createFieldView waited ≤ 4 s for, and a slow or failed one left every operator the
- * image-less placeholder (public issue #8 item 5). Without a copy the store fetches and retries by itself.
+ * image-less placeholder (public issue #8 item 5). Without a copy the store fetches and retries by itself. The copy as
+ * downloaded (data.getRaw): the store lays the cosmetic plugins over it itself (assets.js `cosmetics`), data.js's view
+ * of `assets` already has them.
  * @param {{ seed?: (m: any) => boolean, seedLocal?: (m: any) => boolean }} store public/js/assets.js store
  */
 export function seedAssets(store) {
   if (!store) return;
   const give = (name, fn) => {
     if (typeof fn !== 'function') return;
-    const now = data.get(name);
+    const now = data.getRaw(name);
     if (now) { fn(now); return; }
     // still loading (or failed): adopt it if it lands; a later success of the store's own fetch makes this a no-op
     Promise.resolve(data.load(name)).then((m) => { if (m) fn(m); }, () => {});
@@ -186,35 +233,58 @@ export function seedAssets(store) {
 /**
  * Create a field view in `host`: the render engine when available, else the DOM fallback.
  * @param {HTMLElement} host
+ * @param {{ signal?: AbortSignal }} [options] Cancels a pending mount without creating a fallback.
  * @returns {Promise<ReturnType<typeof guardView>>}
  */
-export async function mountFieldView(host) {
+export async function mountFieldView(host, { signal } = {}) {
+  checkActive(signal);
   const pref = renderPref();
+  let fallbackReason = 'explicit';
   const opts = { data, assets: data.get('assets'), audio, settings: settingsStore.get(), padding: hudPadding, hud: hudBands };
   if (pref !== 'fallback') {
+    const controller = new AbortController();
+    const onAbort = () => controller.abort(abortError(signal));
+    signal?.addEventListener('abort', onAbort, { once: true });
+    if (signal?.aborted) onAbort();
+    let engineView = null;
+    const dispose = (view) => { try { view?.destroy?.(); } catch { /* ignore */ } };
     try {
+      checkActive(controller.signal);
       // the shared asset store (public/js/assets.js) keeps its Spine cache across remounts (next match, reconnect)
-      const am = await withTimeout(import('../assets.js'), LOAD_TIMEOUT_MS, 'asset store import').catch(() => null);
+      const am = await withTimeout(import('../assets.js'), LOAD_TIMEOUT_MS, 'asset store import', controller.signal).catch(() => {
+        checkActive(controller.signal);
+        return null;
+      });
+      checkActive(controller.signal);
       if (am?.assets && typeof am.assets.ready === 'function') {
         opts.assets = am.assets;
         seedAssets(am.assets);
       }
-      const mod = await withTimeout(import('../render/app.js'), LOAD_TIMEOUT_MS, 'render engine import');
+      const mod = await withTimeout(import('../render/app.js'), LOAD_TIMEOUT_MS, 'render engine import', controller.signal);
+      checkActive(controller.signal);
       if (typeof mod?.createFieldView !== 'function') throw new Error('createFieldView missing');
-      const view = await withTimeout(Promise.resolve(mod.createFieldView(host, opts)), LOAD_TIMEOUT_MS, 'createFieldView');
+      // A factory that ignores cancellation still belongs to this attempt when it eventually returns.
+      const pending = Promise.resolve(mod.createFieldView(host, { ...opts, signal: controller.signal })).then((view) => {
+        if (controller.signal.aborted) dispose(view); else engineView = view;
+        return view;
+      });
+      const view = await withTimeout(pending, LOAD_TIMEOUT_MS, 'createFieldView', controller.signal);
+      checkActive(controller.signal);
       const missing = METHODS.filter((k) => typeof view?.[k] !== 'function');
-      if (missing.length) {
-        try { view?.destroy?.(); } catch { /* ignore */ }
-        throw new Error(`view lacks ${missing.join(', ')}`);
-      }
+      if (missing.length) throw new Error(`view lacks ${missing.join(', ')}`);
       return guardView(view, 'engine');
     } catch (err) {
+      fallbackReason = err?.name === 'TimeoutError' ? 'timeout' : 'error';
+      controller.abort();
+      dispose(engineView);
+      checkActive(signal);
       console.warn('[field] render engine unavailable, using the simplified view:', err?.message || err);
-      // anything the engine left behind in the host goes
-      try { while (host.firstChild) host.removeChild(host.firstChild); } catch { /* ignore */ }
+    } finally {
+      signal?.removeEventListener('abort', onAbort);
     }
   }
-  return guardView(createFallbackView(host, { ...opts, assets: data.get('assets') }), 'fallback');
+  checkActive(signal);
+  return Object.assign(guardView(createFallbackView(host, { ...opts, assets: data.get('assets') }), 'fallback'), { fallbackReason });
 }
 
 /**
@@ -223,29 +293,67 @@ export async function mountFieldView(host) {
  */
 export function useFieldView(hostRef) {
   const [state, setState] = useState({ view: null, kind: 'loading' });
+  const [attempt, setAttempt] = useState(0);
+  const retries = useRef(0);
+  const automaticRetries = useRef(0);
   const viewRef = useRef(null);
   useEffect(() => {
-    let dead = false;
+    let dead = false, retrying = false;
+    let retryTimer = null;
     const host = hostRef.current;
     if (!host) return undefined;
-    mountFieldView(host).then((view) => {
+    setState({ view: null, kind: 'loading' });
+    const controller = new AbortController();
+    const retry = (automatic) => {
+      const budget = automatic ? automaticRetries : retries;
+      const limit = automatic ? RECOVERY_DELAYS_MS.length : EVENT_RETRY_LIMIT;
+      if (dead || retrying || viewRef.current?.kind !== 'fallback' || renderPref() === 'fallback'
+        || document.visibilityState !== 'visible' || globalThis.navigator?.onLine === false || budget.current >= limit) return;
+      retrying = true; budget.current++; setAttempt((n) => n + 1);
+    };
+    const onRetry = () => retry(false);
+    mountFieldView(host, { signal: controller.signal }).then((view) => {
       if (dead) { view.destroy(); return; }
       viewRef.current = view;
+      if (view.kind === 'engine') { retries.current = 0; automaticRetries.current = 0; }
+      // Preserve the upstream skin/identity initialization before the first board arrives.
+      view.setMe?.(store.get().me?.playerId || null);
+      view.setSkins?.(store.get().match?.public?.players);
       globalThis.__SP_VIEW__ = view; // dev / E2E introspection (view.raw.stats?.())
       setState({ view, kind: view.kind });
-    }, (err) => console.error('[field] mount failed', err));
+      // A page reopened directly into a match has no pre-game time to warm its renderer. The shared imports/Pixi
+      // download can finish after the first 12 s timeout: recover without requiring a tab switch or window restore.
+      if (view.kind === 'fallback' && view.fallbackReason === 'timeout' && renderPref() !== 'fallback'
+        && automaticRetries.current < RECOVERY_DELAYS_MS.length) {
+        retryTimer = setTimeout(() => retry(true), RECOVERY_DELAYS_MS[automaticRetries.current]);
+      }
+    }, (err) => { if (!dead && !controller.signal.aborted) console.error('[field] mount failed', err); });
     const unsub = settingsStore.subscribe((s) => viewRef.current?.setSettings?.(s));
+    // room.skins is accepted in every phase: update the current field without restarting its battle runner.
+    const unsubSkins = store.subscribe((s, prev) => {
+      if (s.me?.playerId !== prev.me?.playerId) viewRef.current?.setMe?.(s.me?.playerId || null);
+      if (s.match?.public?.players !== prev.match?.public?.players) viewRef.current?.setSkins?.(s.match?.public?.players);
+    });
     const onResize = () => viewRef.current?.resize();
+    // Events can retry sooner than the timer, but never race it into duplicate mounts. Automatic failures must not
+    // consume the two existing user-event retries before a long outage ends or the player returns to the tab.
     window.addEventListener('resize', onResize);
+    window.addEventListener('online', onRetry);
+    document.addEventListener('visibilitychange', onRetry);
     return () => {
       dead = true;
+      if (retryTimer !== null) clearTimeout(retryTimer);
+      controller.abort();
       unsub();
+      unsubSkins();
       window.removeEventListener('resize', onResize);
+      window.removeEventListener('online', onRetry);
+      document.removeEventListener('visibilitychange', onRetry);
       // the dev hook must not keep the destroyed view — and through its host the whole detached match screen — alive
       if (viewRef.current && globalThis.__SP_VIEW__ === viewRef.current) globalThis.__SP_VIEW__ = null;
       viewRef.current?.destroy();
       viewRef.current = null;
     };
-  }, []);
+  }, [attempt]);
   return state;
 }

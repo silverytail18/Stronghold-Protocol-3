@@ -1,0 +1,105 @@
+{
+  "source": "upstream extractor + read-only installed client",
+  "tableSHA256": "ef0dfc4fbe0824349b8de5043a1e6ead1a69b072cff66c734ea0f6ae2a4895a4",
+  "client": "26-10-20-11-10-38-04170990",
+  "counts": {
+    "models": 326,
+    "skins": 349,
+    "tokenModels": 0,
+    "pictures": 698
+  },
+  "missing": [
+    {
+      "kind": "model",
+      "id": "char_1037_amiya3@sale#13"
+    },
+    {
+      "kind": "model",
+      "id": "char_1001_amiya2@sale#16"
+    },
+    {
+      "kind": "model",
+      "id": "char_1001_amiya2@casc#1"
+    },
+    {
+      "kind": "model",
+      "id": "char_1033_swire2@ambienceSynesthesia#4"
+    },
+    {
+      "kind": "model",
+      "id": "char_1046_sbell2@ambienceSynesthesia#8"
+    },
+    {
+      "kind": "model",
+      "id": "char_172_svrash@ambienceSynesthesia#4"
+    },
+    {
+      "kind": "model",
+      "id": "char_202_demkni@ambienceSynesthesia#7"
+    },
+    {
+      "kind": "model",
+      "id": "char_213_mostma@ambienceSynesthesia#6"
+    },
+    {
+      "kind": "model",
+      "id": "char_249_mlyss@ambienceSynesthesia#6"
+    },
+    {
+      "kind": "model",
+      "id": "char_311_mudrok@ambienceSynesthesia#2"
+    },
+    {
+      "kind": "model",
+      "id": "char_350_surtr@ambienceSynesthesia#6"
+    },
+    {
+      "kind": "model",
+      "id": "char_4009_irene@ambienceSynesthesia#3"
+    },
+    {
+      "kind": "model",
+      "id": "char_4027_heyak@ambienceSynesthesia#4"
+    },
+    {
+      "kind": "model",
+      "id": "char_4042_lumen@ambienceSynesthesia#3"
+    },
+    {
+      "kind": "model",
+      "id": "char_4072_ironmn@ambienceSynesthesia#5"
+    },
+    {
+      "kind": "model",
+      "id": "char_4080_lin@littlePony#1"
+    },
+    {
+      "kind": "model",
+      "id": "char_4087_ines@ambienceSynesthesia#5"
+    },
+    {
+      "kind": "model",
+      "id": "char_4133_logos@ambienceSynesthesia#6"
+    },
+    {
+      "kind": "model",
+      "id": "char_4138_narant@littlePony#1"
+    },
+    {
+      "kind": "model",
+      "id": "char_4146_nymph@ambienceSynesthesia#6"
+    },
+    {
+      "kind": "model",
+      "id": "char_4193_lemuen@ambienceSynesthesia#7"
+    },
+    {
+      "kind": "model",
+      "id": "char_423_blemsh@littlePony#1"
+    },
+    {
+      "kind": "model",
+      "id": "char_450_necras@ambienceSynesthesia#7"
+    }
+  ]
+}

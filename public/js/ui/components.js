@@ -2,7 +2,7 @@
 //
 // Exports: html (bound htm), Icon, Button, Panel, MicroLabel, Chevrons, HexBadge, TierChip,
 // BondDisc, SevenSeg, Countdown, Modal, confirmDialog/alertDialog + DialogHost, Tooltip +
-// TooltipLayer, ProgressBar, Tabs, Spinner, AvatarFrame, PhaseBanner, PingPill, DifficultyTag,
+// TooltipLayer, ProgressBar, Tabs, Spinner, AvatarFrame, PhaseBanner, ResultDialog, PingPill, DifficultyTag,
 // DifficultyIcon, TextField, UiHosts (mount once: dialogs + tooltips), useTicker, secondsLeft/hasDeadline,
 // roman(), doctorNo().
 //
@@ -15,6 +15,7 @@ import { h, Fragment } from '../../vendor/preact.module.js';
 import { useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from '../../vendor/hooks.module.js';
 import htm from '../../vendor/htm.module.js';
 import { DIFFICULTY_NAMES, DIFFICULTY_COLORS } from '../../../shared/constants.js';
+import { t } from '../../../shared/i18n.js';
 import { serverNow } from '../store.js';
 import { data, useData, localAsset } from '../data.js';
 import { uiUrl } from './assetUrls.js';
@@ -54,6 +55,8 @@ export const ICONS = {
   users: { d: 'M9 4a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zM2 20a7 6.5 0 0 1 14 0zM16.5 5a3 3 0 1 1 0 6 3 3 0 0 1 0-6zm.9 8.1A6.5 6 0 0 1 22.5 20H18a8.6 8 0 0 0-2.4-6.1 6 6 0 0 1 1.8-.8z' },
   rook: { d: 'M5 3h3v2h2V3h4v2h2V3h3v5l-2 2v7l2 2v2H5v-2l2-2v-7L5 8z' },
   signal: { d: 'M2 17h3v4H2zm6-4h3v8H8zm6-4h3v12h-3zm6-4h3v16h-3z' },
+  // 统计 (the stats page's entry): three columns on a baseline — apart from `signal`, the ping bars
+  chart: { d: 'M4 12h4v7H4zm6-6h4v13h-4zm6 3h4v10h-4zM3 20h18v2H3z' },
   refresh: { d: 'M12 4a8 8 0 0 1 7.4 5H17v2h6V5h-2v2.3A10 10 0 0 0 2 12h2a8 8 0 0 1 8-8zm0 16a8 8 0 0 1-7.4-5H7v-2H1v6h2v-2.3A10 10 0 0 0 22 12h-2a8 8 0 0 1-8 8z' },
   snow: { d: 'M11 2h2v4.2l2.3-2.3 1.4 1.4-3.7 3.7v2h2l3.7-3.7 1.4 1.4-2.3 2.3H22v2h-4.2l2.3 2.3-1.4 1.4-3.7-3.7h-2v2l3.7 3.7-1.4 1.4-2.3-2.3V22h-2v-4.2l-2.3 2.3-1.4-1.4 3.7-3.7v-2H9l-3.7 3.7-1.4-1.4L6.2 13H2v-2h4.2L3.9 8.7l1.4-1.4L9 11h2V9L7.3 5.3l1.4-1.4L11 6.2z' },
   chevronRight: { d: 'M8.6 5 7.2 6.4 12.8 12l-5.6 5.6L8.6 19l7-7z' },
@@ -66,14 +69,22 @@ export const ICONS = {
   info: { d: 'M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm-1 8v7h2v-7zm0-3v2h2V7z', eo: true },
   warn: { d: 'M12 2 1 21h22zm-1 7v6h2V9zm0 7.5v2h2v-2z', eo: true },
   play: { d: 'M7 4v16l13-8z' },
+  mic: { d: 'M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V21H8v2h8v-2h-3v-3.1A7 7 0 0 0 19 11z' },
   edit: { d: 'M3 17.2V21h3.8l11-11-3.8-3.8zM20.7 7.1a1 1 0 0 0 0-1.4l-2.4-2.4a1 1 0 0 0-1.4 0l-1.8 1.8 3.8 3.8z' },
   sword: { d: 'M20 3h1v4L10.4 17.6l1.4 1.4-1.4 1.4-2.1-2.1-3.5 3.5-1.4-1.4 3.5-3.5L4.8 14.8l1.4-1.4 1.4 1.4L18 4z' },
   shield: { d: 'M12 2 4 5v6c0 5 3.4 9.3 8 11 4.6-1.7 8-6 8-11V5z' },
   wifiOff: { d: 'M2 17h3v4H2zm6-4h3v8H8zm6-4h3v12h-3zm6-4h3v16h-3zM2.4 1 23 21.6 21.6 23 1 2.4z' },
   expand: { d: 'M3 3h7v2H5v5H3zm11 0h7v7h-2V5h-5zM3 14h2v5h5v2H3zm16 0h2v7h-7v-2h5z' },
   collapse: { d: 'M8 3h2v7H3V8h5zm6 0h2v5h5v2h-7zM3 14h7v7H8v-5H3zm11 0h7v2h-5v5h-2z' },
+  // 添加到桌面 (add to home screen): a house outline with a + inside
+  homePlus: { d: 'M12 2 22 10.5V21H2V10.5zm0 2.6-8 6.8V19h16v-7.6zM11 10h2v2.5h2.5v2H13V17h-2v-2.5H8.5v-2H11z', eo: true },
   rotate: { d: 'M7 2h8a2 2 0 0 1 2 2v7h-2V4H7v16h4v2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm8 12h5a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2zm0 2v4h5v-4z', eo: true },
   book: { d: 'M2 4h7.5A3.5 3.5 0 0 1 12 5.1 3.5 3.5 0 0 1 14.5 4H22v16h-7.5a1.5 1.5 0 0 0-1.5 1.5h-2A1.5 1.5 0 0 0 9.5 20H2zm2 2v12h5.5c.5 0 1 .1 1.5.3V7.5A1.5 1.5 0 0 0 9.5 6zm10.5 0A1.5 1.5 0 0 0 13 7.5v10.8c.5-.2 1-.3 1.5-.3H20V6z', eo: true },
+  // 观战 (spectator seats; the same eye as gameComponents.js GIcon 'eye')
+  eye: { d: 'M12 5c5 0 9 4.5 10 7-1 2.5-5 7-10 7S3 14.5 2 12c1-2.5 5-7 10-7zm0 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4z', eo: true },
+  // 大厅背景与音乐 (ui/lobbyMedia.js): a framed picture (ridges and a sun) and a beamed pair of notes
+  image: { d: 'M3 4h18v16H3zM5 6v9.6l4-4.6 3.5 4 2.5-3 4 4.4V6zM16 7.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z', eo: true },
+  music: { d: 'M18 3h2v13h-2zM8 5.4h2V18H8zM8 5.4 20 3v3L8 8.4zM14 16a3 3 0 1 1 6 0 3 3 0 1 1-6 0zM4 18a3 3 0 1 1 6 0 3 3 0 1 1-6 0z' },
 };
 
 /**
@@ -190,12 +201,12 @@ export function tierChipUrl(t) {
  * @param {{ tier: number, golden?: boolean, size?: 'sm'|'md'|'lg', class?: string }} props
  */
 export function TierChip({ tier, golden = false, size = 'md', class: cls }) {
-  const t = Math.max(1, Math.min(6, Number(tier) | 0 || 1));
-  const src = tierChipUrl(t);
+  const n = Math.max(1, Math.min(6, Number(tier) | 0 || 1));
+  const src = tierChipUrl(n);
   const [bad, setBad] = useState(null);
   const img = !!src && bad !== src;
-  return html`<span class=${cx('tier', `tier--${t}`, `tier--${size}`, golden && 'tier--golden', img && 'tier--img', cls)} aria-label=${`${t}阶`}>
-    ${img ? html`<img src=${src} alt="" draggable=${false} onError=${() => setBad(src)} />` : roman(t)}
+  return html`<span class=${cx('tier', `tier--${n}`, `tier--${size}`, golden && 'tier--golden', img && 'tier--img', cls)} aria-label=${t('{tier}阶', { tier: n })}>
+    ${img ? html`<img src=${src} alt="" draggable=${false} onError=${() => setBad(src)} />` : roman(n)}
   </span>`;
 }
 
@@ -236,7 +247,7 @@ export function BondDisc({
           : html`<span class="bond__glyph">${glyph}</span>`}
       </span>
       ${stack != null ? html`<span class="bond__count">${stack}</span>` : null}
-      ${disabled ? html`<span class="bond__ban" aria-label="禁用"><${Icon} name="close" /></span>` : null}
+      ${disabled ? html`<span class="bond__ban" aria-label=${t('禁用')}><${Icon} name="close" /></span>` : null}
     </span>
     ${showName && name ? html`<span class="bond__name">${name}</span>` : null}
   <//>`;
@@ -369,7 +380,7 @@ export function Countdown({ deadline, seconds, total, warnAt = 10, label = 'COUN
 
   // untimed phase: no timer on screen (hooks above run unconditionally, so the component may toggle freely)
   if (remain == null) return null;
-  return html`<div class=${cx('countdown', `countdown--${size}`, warn && 'is-warn', cls)} role="timer" aria-label=${remain == null ? '无倒计时' : `剩余${remain}秒`}>
+  return html`<div class=${cx('countdown', `countdown--${size}`, warn && 'is-warn', cls)} role="timer" aria-label=${remain == null ? t('无倒计时') : t('剩余{remain}秒', { remain })}>
     <div class="countdown__main">
       <${SevenSeg} text=${text} tone=${warn ? 'orange' : 'mint'} flicker=${warn && remain > 0} />
       ${label ? html`<span class="countdown__label">${label}</span>` : null}
@@ -382,44 +393,67 @@ export function Countdown({ deadline, seconds, total, warnAt = 10, label = 'COUN
 
 // ---- Modal & dialogs ---------------------------------------------------------------------------
 
-const modalStack = []; // open modals, topmost last: only the topmost reacts to Escape
+const modalStack = []; // open modals, topmost last: only the topmost handles keyboard focus / Escape
 
 /**
  * Modal dialog (declarative). Esc / backdrop click call onClose.
  * @param {{ open: boolean, title?: any, micro?: string, tone?: string, onClose?: Function, actions?: any,
- *   width?: string, closeOnBackdrop?: boolean, class?: string, children?: any }} props
+ *   width?: string, closeOnBackdrop?: boolean, class?: string, veilClass?: string, children?: any }} props
+ * `veilClass` styles the backdrop itself (e.g. a dialog that dims the field without blurring it).
  */
-export function Modal({ open, title, micro, tone = 'mint', onClose, actions, width, closeOnBackdrop = true, class: cls, children }) {
+export function Modal({ open, title, micro, tone = 'mint', onClose, actions, width, closeOnBackdrop = true, class: cls, veilClass, children }) {
   const boxRef = useRef(null);
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!open) return undefined;
     const token = {};
     modalStack.push(token);
     const prevFocus = typeof document !== 'undefined' ? document.activeElement : null;
+    const box = boxRef.current;
+    // The independent guide can open above SettingsModal (its z-index is higher than --z-modal).
+    const topmost = () => modalStack[modalStack.length - 1] === token && !document.querySelector('.guide');
+    const available = (el) => !el.matches(':disabled') && !el.closest('[inert]') && el.getClientRects().length > 0
+      && getComputedStyle(el).visibility !== 'hidden';
+    const tabbable = () => [...box.querySelectorAll('button, [href], input, select, textarea, [tabindex], summary')]
+      .filter((el) => el.tabIndex >= 0 && available(el));
+    const focusFirst = () => (tabbable()[0] || box).focus();
     const onKey = (e) => {
-      if (e.key !== 'Escape' || modalStack[modalStack.length - 1] !== token || !closeRef.current) return;
-      e.stopPropagation();
-      closeRef.current();
+      if (!topmost()) return;
+      if (e.key === 'Escape' && closeRef.current) {
+        e.stopPropagation();
+        closeRef.current();
+      } else if (e.key === 'Tab') {
+        const els = tabbable();
+        const first = els[0] || box, last = els[els.length - 1] || box;
+        if (!els.includes(document.activeElement) || document.activeElement === (e.shiftKey ? first : last)) {
+          e.preventDefault();
+          (e.shiftKey ? last : first).focus();
+        }
+      }
+    };
+    const onFocus = (e) => {
+      if (topmost() && !box.contains(e.target)) focusFirst();
     };
     window.addEventListener('keydown', onKey);
-    const t = setTimeout(() => {
-      const el = boxRef.current?.querySelector('[data-autofocus]') || boxRef.current?.querySelector('button, input');
-      el?.focus?.();
-    }, 30);
+    window.addEventListener('focusin', onFocus);
+    const autofocus = box.querySelector('[data-autofocus]');
+    if (topmost()) {
+      if (autofocus && available(autofocus)) autofocus.focus();
+      else focusFirst();
+    }
     return () => {
       window.removeEventListener('keydown', onKey);
-      clearTimeout(t);
+      window.removeEventListener('focusin', onFocus);
       const i = modalStack.indexOf(token);
       if (i >= 0) modalStack.splice(i, 1);
       prevFocus?.focus?.();
     };
   }, [open]);
   if (!open) return null;
-  return html`<div class="modal" role="presentation"
+  return html`<div class=${cx('modal', veilClass)} role="presentation"
       onMouseDown=${(e) => { if (closeOnBackdrop && e.target === e.currentTarget && onClose) onClose(); }}>
-    <div ref=${boxRef} class=${cx('modal__box', 'brackets', `modal__box--${tone}`, cls)} role="dialog" aria-modal="true"
+    <div ref=${boxRef} class=${cx('modal__box', 'brackets', `modal__box--${tone}`, cls)} role="dialog" aria-modal="true" tabindex="-1"
          style=${width ? `width:${width}` : undefined}>
       <div class="modal__stripe" aria-hidden="true"></div>
       ${title || micro ? html`<header class="modal__head">
@@ -485,7 +519,7 @@ export function DialogHost() {
   }, []);
   const d = dialogs[0];
   if (!d) return null;
-  const { title = '确认', text, okText = '确认', cancelText = '取消', tone, danger, micro = 'CONFIRMATION' } = d.opts;
+  const { title = t('确认'), text, okText = t('确认'), cancelText = t('取消'), tone, danger, micro = 'CONFIRMATION' } = d.opts;
   const isConfirm = d.kind === 'confirm';
   // Enter confirms unless a specific button has focus (then the native click decides).
   const onKey = (e) => {
@@ -504,34 +538,115 @@ export function DialogHost() {
 
 // ---- Tooltip -----------------------------------------------------------------------------------
 
-let tipState = null; // { id, content, rect, placement }
+let tipState = null; // { id, content, aside, rect, placement, tipClass, bounds, avoid }
 let tipSeq = 0;
 const tipListeners = new Set();
 const setTip = (s) => { tipState = s; for (const fn of [...tipListeners]) fn(); };
 
+/** @typedef {{ left: number, top: number, right: number, bottom: number, width: number, height: number }} TipRect */
+
+/**
+ * Where the tooltip box goes (TooltipLayer; pure). Without `bounds` / `avoid` (every tooltip but the 特训敌人's): the
+ * `placement` side of the anchor, flipped when it leaves the viewport, centred on the anchor and clamped into the
+ * viewport (8 px margin) — the rule as it always was. With them (ui/matchEnemies.js): the area is the viewport narrowed
+ * to `bounds` (a dialog's box) wherever the box still fits in it; a side is taken only when the box fits there, and only
+ * when it covers none of `avoid` (the leader block's text) — else it slides sideways past what it covers while still
+ * over the anchor, else the other side is tried; then the same in the whole viewport (out of the dialog rather than
+ * over the leader); when no side is clean, the side that fits (or the roomier one) covering the least of `avoid`.
+ * @param {TipRect} r the anchor's box
+ * @param {{ width: number, height: number }} b the tooltip box's size
+ * @param {{ placement?: 'top'|'bottom', vw: number, vh: number, m?: number, bounds?: TipRect|null, avoid?: TipRect[] }} o
+ * @returns {{ top: number, left: number, place: 'top'|'bottom' }}
+ */
+export function placeTooltip(r, b, { placement = 'top', vw, vh, m = 8, bounds = null, avoid = [] }) {
+  if (!bounds && !avoid.length) {
+    let place = placement;
+    let top = place === 'bottom' ? r.bottom + m : r.top - b.height - m;
+    if (place === 'top' && top < m) { place = 'bottom'; top = r.bottom + m; }
+    if (place === 'bottom' && top + b.height > vh - m) { place = 'top'; top = Math.max(m, r.top - b.height - m); }
+    let left = r.left + r.width / 2 - b.width / 2;
+    left = Math.max(m, Math.min(vw - b.width - m, left));
+    top = Math.max(m, Math.min(vh - b.height - m, top));
+    return { top: Math.round(top), left: Math.round(left), place };
+  }
+  const screen = { left: m, top: m, right: vw - m, bottom: vh - m };
+  const area = { ...screen };
+  if (bounds) {
+    const l = Math.max(area.left, bounds.left + m), rr = Math.min(area.right, bounds.right - m);
+    if (rr - l >= b.width) { area.left = l; area.right = rr; }
+    const tp = Math.max(area.top, bounds.top + m), bt = Math.min(area.bottom, bounds.bottom - m);
+    if (bt - tp >= b.height) { area.top = tp; area.bottom = bt; }
+  }
+  const hits = (x, y) => avoid.filter((a) => x < a.right && x + b.width > a.left && y < a.bottom && y + b.height > a.top);
+  const covered = (x, y) => avoid.reduce((sum, a) => sum
+    + Math.max(0, Math.min(x + b.width, a.right) - Math.max(x, a.left)) * Math.max(0, Math.min(y + b.height, a.bottom) - Math.max(y, a.top)), 0);
+  const out = (top, left, place) => ({ top: Math.round(top), left: Math.round(left), place });
+  const yOf = (place) => (place === 'top' ? r.top - b.height - m : r.bottom + m);
+  const fitsIn = (A, place) => yOf(place) >= A.top - 0.5 && yOf(place) + b.height <= A.bottom + 0.5;
+  const centreIn = (A) => Math.max(A.left, Math.min(A.right - b.width, r.left + r.width / 2 - b.width / 2));
+  const sides = placement === 'bottom' ? ['bottom', 'top'] : ['top', 'bottom'];
+  const clean = (A) => {
+    for (const place of sides) {
+      if (!fitsIn(A, place)) continue;
+      const top = yOf(place);
+      const x0 = centreIn(A);
+      const hit = hits(x0, top);
+      if (!hit.length) return out(top, x0, place);
+      // past the right edge of what it covers, or before its left edge — still over the anchor
+      for (const x of [Math.max(...hit.map((a) => a.right)) + m, Math.min(...hit.map((a) => a.left)) - m - b.width]) {
+        if (x < A.left || x + b.width > A.right || x >= r.right || x + b.width <= r.left) continue;
+        if (!hits(x, top).length) return out(top, x, place);
+      }
+    }
+    return null;
+  };
+  const found = clean(area) || (bounds ? clean(screen) : null);
+  if (found) return found;
+  const open = sides.filter((place) => fitsIn(area, place));
+  const tries = open.length ? open : [r.top - area.top >= area.bottom - r.bottom ? 'top' : 'bottom'];
+  const x0 = centreIn(area);
+  const best = tries.map((place) => ({ place, top: Math.max(area.top, Math.min(area.bottom - b.height, yOf(place))) }))
+    .reduce((a, c) => (covered(x0, c.top) < covered(x0, a.top) ? c : a));
+  return out(best.top, x0, best.place);
+}
+
 /**
  * Hover/focus tooltip around its children. Content renders in <TooltipLayer/> (fixed, viewport-clamped).
- * @param {{ text: any, placement?: 'top'|'bottom', delay?: number, block?: boolean, class?: string, children?: any }} props
+ * `aside`: a second section in the same clamped, scrollable box; stacked on narrow screens. `tipClass`: a class on the
+ * tooltip box itself (`class` goes on the anchor around the children). Where it points (placeTooltip): by default the
+ * whole anchor; `anchor` — a selector of the element inside it the box points at instead (a row's icon); `within` — a
+ * selector of an ancestor whose box bounds it too (a dialog); `avoid(anchorEl)` — the elements it must not cover.
+ * @param {{ text: any, aside?: any, placement?: 'top'|'bottom', delay?: number, block?: boolean, tap?: boolean, id?: string, class?: string, tipClass?: string,
+ *   anchor?: string, within?: string, avoid?: (el: Element) => Iterable<Element>, children?: any }} props
  */
 const TOUCH_TIP_MS = 450;
 
-export function Tooltip({ text, placement = 'top', delay = 120, block = false, class: cls, children }) {
+export function Tooltip({ text, aside = null, placement = 'top', delay = 120, block = false, tap = false, id, class: cls, tipClass = null,
+  anchor = null, within = null, avoid = null, children }) {
   const ref = useRef(null);
   const idRef = useRef(0);
   const timer = useRef(null);
   const textRef = useRef(text);
+  const asideRef = useRef(aside);
   const pressed = useRef(false); // pointer pressed inside: the focus that follows is not a keyboard focus
   textRef.current = text;
+  asideRef.current = aside;
   if (!idRef.current) idRef.current = ++tipSeq;
-  const show = () => {
+  const show = (wait = delay) => {
     clearTimeout(timer.current);
     if (textRef.current == null || textRef.current === '') return;
     timer.current = setTimeout(() => {
       const el = ref.current;
       const content = textRef.current; // the text of the render current when the delay ends (a click may change it)
       if (!el || !el.isConnected || content == null || content === '') return;
-      setTip({ id: idRef.current, content, rect: el.getBoundingClientRect(), placement });
-    }, delay);
+      const at = (anchor && el.querySelector(anchor)) || el;
+      const box = within ? el.closest(within) : null;
+      let keepOff;
+      try { keepOff = avoid ? [...avoid(el)].map((x) => x.getBoundingClientRect()).filter((x) => x.width > 0 && x.height > 0) : []; } catch { keepOff = []; }
+      setTip({ id: idRef.current, tipId: id, tap, anchor: el, content, aside: asideRef.current, rect: at.getBoundingClientRect(), placement, tipClass,
+        bounds: box ? box.getBoundingClientRect() : null, avoid: keepOff,
+        hold: () => clearTimeout(timer.current), hide });
+    }, wait);
   };
   const hide = () => {
     clearTimeout(timer.current);
@@ -539,12 +654,17 @@ export function Tooltip({ text, placement = 'top', delay = 120, block = false, c
   };
   // A click hides the tooltip until the pointer leaves: the focus it gives the button must not bring it back
   // (with the text of the click's closure) over whatever the click opened. Keyboard focus still shows it.
-  // Touch: a tap never shows it (the compatibility mouseenter that follows a tap is ignored); a long press
-  // (≥ 450 ms) does, and it goes away shortly after the finger lifts.
+  // Default touch behaviour: a tap never shows it (compatibility mouseenter is ignored); a long press
+  // (≥ 450 ms) does. Ordinary tips expire after release; compound lists stay open for scrolling until dismissed.
   const touchAt = useRef(0);
   const longTimer = useRef(null);
   const onPointerDown = (e) => {
     pressed.current = true;
+    if (tap) {
+      clearTimeout(timer.current);
+      if (e.pointerType !== 'mouse') touchAt.current = Date.now();
+      return;
+    }
     hide();
     clearTimeout(longTimer.current);
     if (e && e.pointerType && e.pointerType !== 'mouse') {
@@ -553,24 +673,37 @@ export function Tooltip({ text, placement = 'top', delay = 120, block = false, c
     }
   };
   const onPointerEnd = (e) => {
+    if (tap) { pressed.current = false; return; }
     if (!e || e.pointerType === 'mouse') return;
     touchAt.current = Date.now();
     clearTimeout(longTimer.current);
-    if (tipState?.id === idRef.current) { clearTimeout(timer.current); timer.current = setTimeout(hide, 1600); }
+    if (tipState?.id === idRef.current && !asideRef.current) { clearTimeout(timer.current); timer.current = setTimeout(hide, 1600); }
   };
   const onMouseEnter = () => { if (Date.now() - touchAt.current > 900) show(); };
   const onFocusIn = () => { if (!pressed.current && Date.now() - touchAt.current > 900) show(); };
-  const onLeave = () => { pressed.current = false; if (Date.now() - touchAt.current > 900) hide(); };
+  const onClick = tap ? (e) => {
+    e.stopPropagation();
+    pressed.current = false;
+    if (tipState?.id === idRef.current) hide();
+    else show(0);
+  } : undefined;
+  const onLeave = () => {
+    pressed.current = false;
+    if (Date.now() - touchAt.current > 900) {
+      if (asideRef.current) { clearTimeout(timer.current); timer.current = setTimeout(hide, 250); }
+      else hide();
+    }
+  };
   useEffect(() => () => { clearTimeout(longTimer.current); hide(); }, []);
   // Keep the visible tooltip's content fresh when `text` changes (and hide it when text goes away).
   useEffect(() => {
     if (tipState?.id !== idRef.current) return;
     if (text == null || text === '') setTip(null);
-    else setTip({ ...tipState, content: text });
-  }, [text]);
+    else setTip({ ...tipState, content: text, aside: asideRef.current });
+  }, [text, aside]);
   return html`<span ref=${ref} class=${cx('tt-anchor', block && 'tt-anchor--block', cls)}
       onMouseEnter=${onMouseEnter} onMouseLeave=${onLeave} onFocusIn=${onFocusIn} onFocusOut=${onLeave} onPointerDown=${onPointerDown}
-      onPointerUp=${onPointerEnd} onPointerCancel=${onPointerEnd} onContextMenu=${(e) => { if (Date.now() - touchAt.current < 900) e.preventDefault(); }}>
+      onPointerUp=${onPointerEnd} onPointerCancel=${onPointerEnd} onClick=${onClick} onContextMenu=${(e) => { if (Date.now() - touchAt.current < 900) e.preventDefault(); }}>
     ${children}
   </span>`;
 }
@@ -582,29 +715,39 @@ export function TooltipLayer() {
   const [pos, setPos] = useState(null);
   useEffect(() => {
     tipListeners.add(force);
-    return () => tipListeners.delete(force);
+    const outside = (e) => {
+      if ((tipState?.aside || tipState?.tap) && !e.target?.closest?.('.tooltip')
+          && !(tipState.tap && tipState.anchor.contains(e.target))) tipState.hide?.();
+    };
+    const escape = (e) => {
+      if (e.key !== 'Escape') return;
+      if (tipState?.tap) { e.preventDefault(); e.stopPropagation(); }
+      tipState?.hide?.();
+    };
+    document.addEventListener('pointerdown', outside);
+    document.addEventListener('keydown', escape);
+    window.addEventListener('resize', force);
+    return () => { tipListeners.delete(force); document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', escape); window.removeEventListener('resize', force); };
   }, []);
   useLayoutEffect(() => {
     const el = boxRef.current;
     if (!tipState || !el) { if (pos) setPos(null); return; }
-    const r = tipState.rect;
     const b = el.getBoundingClientRect();
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const m = 8;
-    let place = tipState.placement;
-    let top = place === 'bottom' ? r.bottom + m : r.top - b.height - m;
-    if (place === 'top' && top < m) { place = 'bottom'; top = r.bottom + m; }
-    if (place === 'bottom' && top + b.height > vh - m) { place = 'top'; top = Math.max(m, r.top - b.height - m); }
-    let left = r.left + r.width / 2 - b.width / 2;
-    left = Math.max(m, Math.min(vw - b.width - m, left));
-    const next = { top: Math.round(top), left: Math.round(left), place, id: tipState.id };
+    const next = { ...placeTooltip(tipState.rect, b, { placement: tipState.placement, vw: window.innerWidth, vh: window.innerHeight,
+      bounds: tipState.bounds, avoid: tipState.avoid || [] }), id: tipState.id };
     if (!pos || pos.top !== next.top || pos.left !== next.left || pos.id !== next.id || pos.place !== next.place) setPos(next);
   });
   if (!tipState) return null;
   const ready = pos && pos.id === tipState.id;
-  return html`<div ref=${boxRef} class=${cx('tooltip', ready && 'is-shown', ready && `tooltip--${pos.place}`)} role="tooltip"
-    style=${ready ? `top:${pos.top}px;left:${pos.left}px` : 'top:-9999px;left:-9999px'}>${tipState.content}</div>`;
+  const hasAside = tipState.aside != null && tipState.aside !== '';
+  const off = 'top:-9999px;left:-9999px';
+  return html`<div ref=${boxRef} id=${tipState.tipId} class=${cx('tooltip', tipState.tipClass, hasAside && 'tooltip--compound', ready && 'is-shown', ready && `tooltip--${pos.place}`)} role="tooltip"
+    tabIndex=${hasAside ? 0 : undefined} onMouseEnter=${() => tipState?.hold?.()} onMouseLeave=${() => tipState?.hide?.()}
+    onFocusIn=${() => tipState?.hold?.()} onPointerDown=${() => tipState?.hold?.()}
+    onFocusOut=${(e) => { if (!e.currentTarget.contains(e.relatedTarget)) tipState?.hide?.(); }}
+    style=${ready ? `top:${pos.top}px;left:${pos.left}px` : off}>
+    ${hasAside ? html`<div class="tooltip__main">${tipState.content}</div><div class="tooltip--aside">${tipState.aside}</div>` : tipState.content}
+  </div>`;
 }
 
 // ---- ProgressBar, Tabs, Spinner ----------------------------------------------------------------
@@ -666,7 +809,7 @@ export function Spinner({ size = 'md', label, tone = 'mint', class: cls }) {
       <polygon class="spinner__track" points="25,3 44,14 44,36 25,47 6,36 6,14" />
       <polygon class="spinner__arc" points="25,3 44,14 44,36 25,47 6,36 6,14" />
     </svg>
-    ${label ? html`<span class="spinner__label">${label}</span>` : html`<span class="sr-only">加载中</span>`}
+    ${label ? html`<span class="spinner__label">${label}</span>` : html`<span class="sr-only">${t('加载中')}</span>`}
   </span>`;
 }
 
@@ -676,23 +819,25 @@ const SEAT_HUES = [162, 196, 38, 280];
 /**
  * Square avatar frame with bracket corners. Falls back to a glyph (first letter / robot).
  * @param {{ name?: string, src?: string, size?: 'sm'|'md'|'lg'|'xl', seat?: number, host?: boolean, bot?: boolean,
- *   self?: boolean, ready?: boolean, offline?: boolean, dead?: boolean, empty?: boolean, class?: string }} props
+ *   self?: boolean, ready?: boolean, offline?: boolean, dead?: boolean, empty?: boolean,
+ *   frame?: 'mint'|'gold'|'silver'|'rose', namecard?: string, class?: string }} props
  */
-export function AvatarFrame({ name = '', src, size = 'md', seat = 0, host, bot, self, ready, offline, dead, empty, class: cls }) {
+export function AvatarFrame({ name = '', src, size = 'md', seat = 0, host, bot, self, ready, offline, dead, empty, frame, namecard, class: cls }) {
   const [badSrc, setBadSrc] = useState(null);
   const imgOk = !!src && badSrc !== src;
   const hue = SEAT_HUES[((seat | 0) % 4 + 4) % 4];
   const glyph = [...(name || '').trim()][0] || '?';
   return html`<div class=${cx('avatar', `avatar--${size}`, 'brackets', host && 'is-host', bot && 'is-bot', self && 'is-self',
-      ready && 'is-ready', offline && 'is-offline', dead && 'is-dead', empty && 'is-empty', cls)} style=${`--seat-hue:${hue}`}>
+      ready && 'is-ready', offline && 'is-offline', dead && 'is-dead', empty && 'is-empty', frame && `avatar--frame-${frame}`,
+      namecard && `avatar--namecard-${namecard}`, cls)} style=${`--seat-hue:${hue}`}>
     <div class="avatar__img">
       ${empty ? html`<${Icon} name="plus" class="avatar__empty" />`
         : imgOk ? html`<img src=${src} alt="" draggable=${false} onError=${() => setBadSrc(src)} />`
         : bot ? html`<${Icon} name="robot" class="avatar__bot" />`
         : html`<span class="avatar__glyph">${glyph}</span>`}
     </div>
-    ${host ? html`<span class="avatar__badge avatar__badge--host" title="创建者"><${Icon} name="crown" /></span>` : null}
-    ${self ? html`<span class="avatar__badge avatar__badge--self" title="你"><${Icon} name="user" /></span>` : null}
+    ${host ? html`<span class="avatar__badge avatar__badge--host" title=${t('创建者')}><${Icon} name="crown" /></span>` : null}
+    ${self ? html`<span class="avatar__badge avatar__badge--self" title=${t('你')}><${Icon} name="user" /></span>` : null}
     ${bot && !empty ? html`<span class="avatar__tag">AI</span>` : null}
   </div>`;
 }
@@ -728,6 +873,39 @@ export function PhaseBanner({ title, sub, micro, tone = 'mint', mode = 'inline',
   </div>`;
 }
 
+/**
+ * The round's result box (the official round result dialog, shown at settlement; GitHub #235, PR #112 by @Convey123):
+ * a centred framed plate — tone-coloured frame and corner ticks, chevrons either side of the title — that opens, holds
+ * `duration` ms and closes by itself. Purely presentational: ui/gameLogic/phases.js (roundResultBox / uniteResultBox /
+ * battleResultBox) picks the words, screens/game.js the moment (SETTLE). `pointer-events: none`: it never takes a click.
+ * @param {{ title: any, sub?: any, micro?: string, tone?: 'mint'|'orange'|'red', duration?: number, onDone?: Function }} props
+ *   duration (ms) > 0 auto-hides then calls onDone. Re-key to replay.
+ */
+export function ResultDialog({ title, sub, micro, tone = 'mint', duration = 2800, onDone }) {
+  const [leaving, setLeaving] = useState(false);
+  const [gone, setGone] = useState(false);
+  useEffect(() => {
+    if (!(duration > 0)) return undefined;
+    const t1 = setTimeout(() => setLeaving(true), duration);
+    const t2 = setTimeout(() => { setGone(true); onDone?.(); }, duration + 300);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [duration]);
+  if (gone) return null;
+  return html`<div class=${cx('rdialog', `rdialog--${tone}`, leaving && 'is-leaving')} role="status" aria-live="polite">
+    <div class="rdialog__box">
+      <span class="rdialog__tick rdialog__tick--tl"></span><span class="rdialog__tick rdialog__tick--tr"></span>
+      <span class="rdialog__tick rdialog__tick--bl"></span><span class="rdialog__tick rdialog__tick--br"></span>
+      ${micro ? html`<span class="rdialog__micro">${micro}</span>` : null}
+      <div class="rdialog__row">
+        <${Chevrons} count=${3} tone=${tone} class="rdialog__chev" />
+        <span class="rdialog__title">${title}</span>
+        <${Chevrons} count=${3} tone=${tone} dir="left" class="rdialog__chev" />
+      </div>
+      ${sub ? html`<span class="rdialog__sub">${sub}</span>` : null}
+    </div>
+  </div>`;
+}
+
 // ---- domain helpers ----------------------------------------------------------------------------
 
 /**
@@ -751,7 +929,7 @@ export function doctorNo(id) {
 export function PingPill({ ms, online = true, class: cls }) {
   const ok = online && Number.isFinite(ms);
   const tier = !ok ? 'off' : ms < 60 ? 'low' : ms < 200 ? 'medium' : 'high';
-  return html`<span class=${cx('ping', `ping--${tier}`, cls)} title=${ok ? `当前延迟 ${ms}ms` : '未连接'}>
+  return html`<span class=${cx('ping', `ping--${tier}`, cls)} title=${ok ? t('当前延迟 {ms}ms', { ms }) : t('未连接')}>
     <${Icon} name=${ok ? 'signal' : 'wifiOff'} class="ping__icon" />
     <span class="ping__value">${ok ? Math.min(9999, Math.round(ms)) : '--'}</span><span class="ping__unit">ms</span>
   </span>`;
@@ -779,7 +957,7 @@ export function DifficultyIcon({ difficulty, class: cls }) {
  * @param {{ difficulty: string, size?: 'sm'|'md'|'lg', class?: string, code?: string }} props
  */
 export function DifficultyTag({ difficulty, size = 'md', class: cls, code }) {
-  const name = DIFFICULTY_NAMES[difficulty] || difficulty || '—';
+  const name = DIFFICULTY_NAMES[difficulty] ? t(DIFFICULTY_NAMES[difficulty]) : difficulty || '—';
   const color = DIFFICULTY_COLORS[difficulty] || 'var(--text-lo)';
   return html`<span class=${cx('dtag', `dtag--${size}`, cls)} style=${`--d-color:${color}`}>
     <${DifficultyIcon} difficulty=${difficulty} class="dtag__icon" />
@@ -788,19 +966,60 @@ export function DifficultyTag({ difficulty, size = 'md', class: cls, code }) {
   </span>`;
 }
 
+let measureCanvas = null;
+
 /**
- * Bracketed text input.
- * @param {{ label?: any, micro?: string, value: string, onInput: (v: string) => void, onEnter?: Function,
- *   placeholder?: string, maxLength?: number, transform?: (v: string) => string, autoFocus?: boolean,
- *   disabled?: boolean, size?: 'md'|'lg'|'code', icon?: string, class?: string, inputRef?: any, name?: string }} props
+ * Whether `text` fits an input's inner width in the input's own ::placeholder font (TextField `placeholderShort`); the
+ * letter spacing is added per character, as a canvas measures without it. Where the pseudo-element's style cannot be
+ * read the input's own font stands in; where nothing can be measured, it fits (the whole placeholder stays).
+ * @param {HTMLInputElement} input
+ * @param {string} text
  */
-export function TextField({ label, micro, value, onInput, onEnter, placeholder, maxLength, transform, autoFocus, disabled, size = 'md', icon, class: cls, inputRef, name, hint, invalid }) {
+export function placeholderFits(input, text) {
+  try {
+    let st = null;
+    try { st = getComputedStyle(input, '::placeholder'); } catch { st = null; }
+    if (!st?.fontSize) st = getComputedStyle(input);
+    measureCanvas ||= document.createElement('canvas');
+    const ctx = measureCanvas.getContext('2d');
+    if (!ctx) return true;
+    ctx.font = `${st.fontStyle} ${st.fontWeight} ${st.fontSize} ${st.fontFamily}`;
+    const width = ctx.measureText(text).width + (parseFloat(st.letterSpacing) || 0) * [...text].length;
+    const cs = getComputedStyle(input);
+    return width <= input.clientWidth - parseFloat(cs.paddingLeft || '0') - parseFloat(cs.paddingRight || '0');
+  } catch { return true; }
+}
+
+/**
+ * Bracketed text input. `ariaLabel` names a field without a visible label; `modalFocus` marks the input as the one a
+ * surrounding `Modal` focuses when it opens (`data-autofocus`); `placeholderShort` stands in for `placeholder` while the
+ * whole one does not fit the field (placeholderFits — checked as the field resizes, e.g. a window or 文字大小 change
+ * that moves a neighbour, and as web fonts arrive).
+ * @param {{ label?: any, micro?: string, value: string, onInput: (v: string) => void, onEnter?: Function,
+ *   placeholder?: string, placeholderShort?: string, maxLength?: number, transform?: (v: string) => string, autoFocus?: boolean,
+ *   disabled?: boolean, size?: 'md'|'lg'|'code'|string, icon?: string, class?: string, inputRef?: any, name?: string,
+ *   ariaLabel?: string, modalFocus?: boolean }} props
+ */
+export function TextField({ label, micro, value, onInput, onEnter, placeholder, placeholderShort, maxLength, transform, autoFocus, disabled, size = 'md', icon, class: cls, inputRef, name, hint, invalid, ariaLabel, modalFocus = false }) {
   const localRef = useRef(null);
   const ref = inputRef || localRef;
   const composing = useRef(false);
   useEffect(() => {
     if (autoFocus) setTimeout(() => ref.current?.focus(), 60);
   }, []);
+  const [phShort, setPhShort] = useState(false);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!placeholderShort || !placeholder || !el) { setPhShort(false); return undefined; }
+    let live = true;
+    const check = () => { if (live) setPhShort(!placeholderFits(el, placeholder)); };
+    check();
+    const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(check) : null;
+    ro?.observe(el);
+    const fonts = globalThis.document?.fonts;
+    fonts?.addEventListener?.('loadingdone', check);
+    return () => { live = false; ro?.disconnect(); fonts?.removeEventListener?.('loadingdone', check); };
+  }, [placeholder, placeholderShort]);
   const handle = (e) => {
     let v = e.currentTarget.value;
     if (!composing.current && transform) {
@@ -814,8 +1033,9 @@ export function TextField({ label, micro, value, onInput, onEnter, placeholder, 
     ${label || micro ? html`<span class="field__label">${label}${micro ? html`<span class="micro">${micro}</span>` : null}</span>` : null}
     <span class="field__box brackets">
       ${icon ? html`<${Icon} name=${icon} class="field__icon" />` : null}
-      <input id=${id} ref=${ref} class="field__input" name=${name} value=${value} placeholder=${placeholder}
+      <input id=${id} ref=${ref} class="field__input" name=${name} value=${value} placeholder=${phShort && placeholderShort ? placeholderShort : placeholder}
         maxLength=${maxLength} disabled=${disabled} autocomplete="off" spellcheck=${false}
+        aria-label=${ariaLabel} data-autofocus=${modalFocus ? '' : undefined}
         onInput=${handle}
         oncompositionstart=${() => { composing.current = true; }}
         oncompositionend=${(e) => { composing.current = false; handle(e); }}

@@ -4,7 +4,8 @@
 // stage legend (data/stages.json `tiles[glyph]`: height + buildable) and the stage devices:
 //   'melee'  — LOW tile with buildable ALL/MELEE, or a 深水区 under an active 特制水上平台 (waterPlatform, "在水上建立可以
 //              部署任意单位的平台"): melee AND ranged chess may stand here ("所有行动内远程干员可部署在近战位").
-//   'ranged' — HIGH tile with buildable ALL/RANGED, or a tile under an active platform (射击台): ranged only.
+//   'ranged' — HIGH tile with buildable ALL/RANGED, or a tile under an active platform (射击台): ranged only (and the
+//              melee chess whose trait reads 「可以放置于远程位」, positionClass below).
 //   (absent) — not deployable (NONE, forbidden, road lanes, tiles under active crates/mounds, the 深水区 — the legend's
 //              `buildable` is the effective type: tile_deepsea refuses deployment, PRTS 深水区 地形信息
 //              "拒绝部署（待补充）", although its level buildableType is ALL; player report #3 after 0.1.0, 战场#08's
@@ -22,15 +23,22 @@
 // (10–12, 8), which are '#' on the normal field. The result equals stages[id].deployTiles.bossLeft / bossRight
 // mapped to board coordinates (test/match/playtest5-deploy.test.js).
 //
-// Tokens follow their own `position` (ALL ⇒ any deployable tile, MELEE ⇒ melee tiles, RANGED ⇒ any deployable).
+// Chess follow their `position` (MELEE ⇒ melee tiles, RANGED ⇒ any deployable), except a MELEE chess whose trait reads
+// 「可以放置于远程位」 — the 钩索师 / 推击手 branch trait: 歌蕾蒂娅, 崖心, 见行者, normal and elite, any module or none
+// (shared/highGround.js ⇒ any deployable tile; the owner's decision of 2026-10-05, following PRTS). The loadout does
+// not change the class.
+// Tokens follow their own `position` (ALL ⇒ any deployable tile, MELEE ⇒ melee tiles, RANGED ⇒ any deployable), except
+// a token marked `rangedTilesOnly` ("仅可以部署在…远程位": 凯尔希·思衡托's 战术锚点) — class 'high', the ranged tiles only.
 // A token whose text reads "只能部署在召唤者攻击范围内" (tokens.json `ownerRange`: the tacticians' 援军 — 伺夜's 狼群,
-// 缪尔赛思's 流形; PRTS 狼群 特性) also needs a tile of its owner's attack range: `ownerRangeKeys` = the owner's range
-// grid (loadout-resolved, shared/loadoutRecord.js attackRangeGrid) rotated by its facing around its board tile
-// (PlayerState._legal; player report #9 after 0.1.0).
+// 缪尔赛思's 流形; PRTS 狼群 特性; Mon3tr's 重构体 by her talent) also needs a tile of its owner's attack range:
+// `ownerRangeKeys` = the owner's range grid (loadout-resolved, shared/loadoutRecord.js attackRangeGrid) rotated by its
+// facing around its board tile (PlayerState._legal; player report #9 after 0.1.0); one marked `ownerRangeOutside`
+// ("…攻击范围外": the 战术锚点) a tile outside that range.
 // Facing: board pieces carry `dir` ∈ UP|RIGHT|DOWN|LEFT (server/sim/dir.js); `pieceDir` reads it (absent ⇒ RIGHT),
 // `parseDir` validates an intent's optional direction.
 
 import { GEO } from '../../shared/constants.js';
+import { meleeOnHighGround } from '../../shared/highGround.js';
 import { DEFAULT_DIR, isDir, rotateOffset } from '../sim/dir.js';
 import { BOSS_ROW_OFFSET, COLS } from '../sim/constants.js';
 
@@ -128,8 +136,45 @@ export function buildDeployMap(stage, { deviceOverrides = {}, tileOverrides = {}
   return map;
 }
 
-/** Placement class of a chess / token record: 'melee' | 'ranged' | 'all'. */
+/**
+ * Placement class of a chess / token record: 'melee' | 'ranged' | 'all' | 'high'. A MELEE chess whose trait reads
+ * 「可以放置于远程位」 (shared/highGround.js: 歌蕾蒂娅, 崖心, 见行者, normal and elite) is widened to 'all': it may also
+ * stand on the ranged (高台) tiles. Every other MELEE record stays 'melee'. A token marked `rangedTilesOnly` (tokens
+ * "仅可以部署在…远程位": 战术锚点) is 'high': the ranged tiles only. `chess.json` has no `placement` field.
+ * @param {object|null} rec
+ */
 export function positionClass(rec) {
+  if (rec && rec.rangedTilesOnly === true) return 'high';
+  return meleeOnHighGround(rec) ? 'all' : basePositionClass(rec);
+}
+
+/**
+ * Placement class of a record on a player's board — the server's single entry point for pieces (g.move, swaps, merges,
+ * the audit, the invariants, the bot). Since the owner's decision of 2026-10-05 the player's loadout no longer changes
+ * it (any module, or none). A chess the player fields as its stand-in (0.2.0 补位, `ps.fieldRecord`) is placed by the
+ * stand-in's position — the body that is deployed (圣约送葬人's 预备干员-先锋 stands on the ground, 塞雷娅's Touch
+ * anywhere) [ASSUMED: the official deploy check reads the fielded character]; tokens and records without a chess id
+ * are their own body.
+ * @param {{ fieldRecord?: (rec: object) => object }|null} ps
+ * @param {object|null} rec
+ */
+export function placeClass(ps, rec) {
+  if (!rec || !rec.chessId || !ps || typeof ps.fieldRecord !== 'function') return positionClass(rec);
+  let body;
+  try {
+    body = ps.fieldRecord(rec) || rec;
+  } catch {
+    body = rec;
+  }
+  return positionClass(body);
+}
+
+/**
+ * The record's own position class ('melee' | 'ranged' | 'all'), without the placement widening — the class the battle
+ * plays (a MELEE operator still blocks on a ground tile; on a 高台 it blocks nothing): the bots' blocker test and their
+ * 高台 preference for a widened melee chess (bot.js isBlocker / planLayoutSteps).
+ */
+export function basePositionClass(rec) {
   const p = rec && typeof rec.position === 'string' ? rec.position.toUpperCase() : 'ALL';
   if (p === 'MELEE') return 'melee';
   if (p === 'RANGED') return 'ranged';
@@ -142,6 +187,7 @@ export function canPlace(map, pos, r, c) {
   const cls = map.get(tileKey(r, c));
   if (!cls) return false;
   if (pos === 'melee') return cls === 'melee';
+  if (pos === 'high') return cls === 'ranged';
   return true; // ranged / all: melee tiles and ranged tiles
 }
 
@@ -171,7 +217,11 @@ export function legalTiles(map, pos) {
   return out;
 }
 
-/** Board pieces sorted in deployment order: top→bottom (row desc) then left→right (col asc). */
+/**
+ * Board pieces in reading order: top row first (row desc), left to right within a row (col asc) — the battle input's order
+ * (unit ids), the garrisons' dispatch order and the lists the views send. Not the deployment order: the battle deploys by
+ * column (Battle.start; mergeTile follows that one).
+ */
 export function boardOrder(board) {
   return [...board.entries()]
     .map(([k, p]) => { const [r, c] = parseKey(k); return { r, c, piece: p }; })
@@ -180,16 +230,17 @@ export function boardOrder(board) {
 
 /**
  * Where a merge's elite stands (PRTS 卫戍协议/帮助 "若消耗已部署至作战区的干员，则发送至作战区对应位置"): of the board tiles
- * the consumed copies stood on (`[{ key, dir }]`), the first in deployment order (top→bottom, left→right — the copy the
- * battle deploys first; the right-hand boss half is mirrored on screen but deploys in the same board order) that
- * `legal(r, c)` accepts for the elite, or null (⇒ the hand). [ASSUMED] the order: the official text names one position.
+ * the consumed copies stood on (`[{ key, dir }]`), the first in deployment order (the left board column first, top to
+ * bottom within a column — the copy the battle deploys first, Battle.start; the right-hand boss half is mirrored on
+ * screen but deploys in the same board order) that `legal(r, c)` accepts for the elite, or null (⇒ the hand). [ASSUMED]
+ * the order: the official text names one position. Until 0.1.3 the deployment order, and so this one, was top row first.
  * public/js/ui/gameLogic.js mergeTarget mirrors it for the client.
  * @param {Array<{ key: string, dir?: string }>} tiles
  * @param {(r: number, c: number) => boolean} [legal]
  * @returns {{ key: string, dir?: string, r: number, c: number } | null}
  */
 export function mergeTile(tiles, legal = () => true) {
-  const sorted = (tiles || []).map((t) => { const [r, c] = parseKey(t.key); return { ...t, r, c }; }).sort((a, b) => b.r - a.r || a.c - b.c);
+  const sorted = (tiles || []).map((t) => { const [r, c] = parseKey(t.key); return { ...t, r, c }; }).sort((a, b) => a.c - b.c || b.r - a.r);
   return sorted.find((t) => inField(t.r, t.c) && legal(t.r, t.c)) || null;
 }
 

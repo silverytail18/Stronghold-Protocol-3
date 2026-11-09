@@ -1,3 +1,4 @@
+import {hypot as productMath_hypot} from '../../detmath.js';
 import {personalGrowthPoints} from '../../../../shared/kazdel-personal.js';
 import {installTraits} from './traits.js';
 import {CORE,BLOOD,HODRER,FLAG,BANDAGE,NEW,ITEMS} from './data.js';
@@ -6,13 +7,13 @@ import {effectiveProfile} from '../../ai.js';
 import {bodyInKeys} from '../../body.js';
 import {itemRecord,isMember,unitBonds,inRange} from '../support/index.js';
 import {installMechanics,permanentHp} from './mechanics.js';
-import {lifeFireRate,bloodFlowPoints,PERFORMANCE_CAP,generationBudget,curseDamage,CURSE_INTERVAL,guardCooldown,layers,nativeDamageBonus,nativeDamagePacket,resourceDamageScale,deferRate,flowPoints} from './rules.js';
+import {lifeFireRate,bloodFlowPoints,PERFORMANCE_CAP,generationBudget,curseTargetDamage,CURSE_INTERVAL,guardCooldown,guardEnabled,GUARD_COST_SCALE,hpBonus,layers,nativeDamageBonus,nativeDamagePacket,resourceDamageScale,deferRate,flowPoints} from './rules.js';
 const live=u=>u?.alive&&u.deployed&&!u.removed;
 const base=u=>u.def?.baseId||u.defId;
-const dist=(a,c)=>Math.hypot(a.x-c.x,a.y-c.y);
+const dist=(a,c)=>productMath_hypot(a.x-c.x,a.y-c.y);
 const item=(b,u,key)=>u.items?.map(id=>ITEMS[id]||itemRecord(id)).filter(Boolean).filter(r=>r.baseId===key+'_a'||r.itemId?.startsWith(key+'_')).sort((a,c)=>Number(c.isGolden)-Number(a.isGolden))[0];
 export function install(b){
- const states=new Map();let suspended=0,growthSuspended=0,bloodGrowthSuspended=0,observing=false;
+ const states=new Map();let suspended=0,growthSuspended=0,bloodGrowthSuspended=0,observing=false,healingOpts=null;
  for(const p of b.players){const st=p.bonds?.[CORE];if(!st?.active)continue;
   const S=layers(st.layers),tier=Math.min(3,st.tier||1),bl=p.bonds?.[BLOOD],T=bl?.active?layers(bl.layers):0;
   const blood=bl?.active?(bl.tier>=2?.04+.0003*T:.02+.0002*T):0;
@@ -39,15 +40,16 @@ export function install(b){
  };
  const skillFlow=fn=>{bloodGrowthSuspended++;try{return fn();}finally{bloodGrowthSuspended--;}};
  const flow=(u,before,after,wasDeployed=false)=>{if(suspended||!observing||!b.started||b.finished||u.kind!=='op'||!u.deployed&&!wasDeployed||u.removed&&!wasDeployed||!Number.isFinite(before)||!Number.isFinite(after))return;const delta=Math.abs(after-before);if(!(delta>0))return;
-  const st=states.get(u.ownerId);if(st){if(!growthSuspended&&core(u)&&b.kind==='normal'){
+  const covenantRecovery=after>before&&healingOpts?.kazdel;
+  const st=states.get(u.ownerId);if(st){if(!growthSuspended&&!covenantRecovery&&core(u)&&b.kind==='normal'){
    const v=record(u);v.amount+=delta;if(!bloodGrowthSuspended)v.bloodAmount+=delta;record(u);
-  }charge(u,delta);bloodShield(u,before,after);}
+  }if(!covenantRecovery)charge(u,delta);bloodShield(u,before,after);}
  };
  const attach=u=>{if(u.kind!=='op'||u._kzObserved)return;let hp=u.hp;Object.defineProperty(u,'hp',{enumerable:true,configurable:true,get(){return hp;},set(v){const old=hp;hp=v;flow(u,old,v);}});const recalc=u._recalc.bind(u);u._recalc=()=>suspend(recalc);u._kzObserved=true;};
  const suspend=fn=>{suspended++;try{return fn();}finally{suspended--;}};
  const repay=(u,n)=>{let used=0;const a=debts.get(u.id)||[];for(const v of a){const take=Math.min(n-used,v.amount);v.amount-=take;used+=take;if(used>=n)break;}debts.set(u.id,a.filter(v=>v.amount>1e-8));if(states.has(u.ownerId))states.get(u.ownerId).metrics.repaid+=used;return used;};
  const nativeFloor=u=>u.mem?.ember===true||u.s.flags.invulnerable;
- const guard=(u,amount,dmg,source)=>{const st=states.get(u.ownerId);if(!core(u)||st.Q+1e-8<st.C||b.time+1e-8<st.guardReady||amount<u.hp||dmg?.tags?.includes('hpLoss')&&!dmg.tags.includes('kz:debt')||source===u)return false;const cooldown=guardCooldown(st.Q,st.C);st.Q-=.5*st.C;st.guardReady=b.time+cooldown;st.metrics.guards++;b.fx('shield',{id:u.id,x:u.x,y:u.y,src:'kz:fatalGuard'});return true;};
+ const guard=(u,amount,dmg,source)=>{const st=states.get(u.ownerId);if(!core(u)||!guardEnabled(st.tier)||st.Q+1e-8<st.C||b.time+1e-8<st.guardReady||amount<u.hp||dmg?.tags?.includes('hpLoss')&&!dmg.tags.includes('kz:debt')||source===u)return false;const cooldown=guardCooldown(st.Q,st.C);st.Q-=GUARD_COST_SCALE*st.C;st.guardReady=b.time+cooldown;st.metrics.guards++;b.fx('shield',{id:u.id,x:u.x,y:u.y,src:'kz:fatalGuard'});return true;};
  b.kazdel={states,debts,member,charge,debt,repay,suspend,flow,record,skillFlow,
   damage(source,u,amount,dmg,apply){
    if(!states.has(u.ownerId)||u.kind!=='op')return apply(amount);
@@ -77,17 +79,17 @@ export function install(b){
   for(const v of carry.donations||[])st.donations.set(v.id,v.remaining);for(const v of carry.bloodProcs||[])st.bloodProcs.set(v.id,{ready:v.remaining,n:v.n});
   for(const v of carry.debts||[]){const u=b.allyUnits.find(u=>u.ownerId===st.pid&&u.uid===v.uid);if(!u)continue;const a=debts.get(u.id)||[];a.push({amount:v.amount,due:v.remaining});debts.set(u.id,a);}
  }
- const snapshot=b.snapshot.bind(b);b.snapshot=()=>({...snapshot(),kazdel:[...states.values()].map(st=>({playerId:st.pid,tier:st.tier,generationRate:st.rate,releaseRemaining:Math.max(0,st.releaseReady-b.time),layers:st.S,hpBonus:[.1,.15,.2][st.tier-1]+.005*st.S,nativeDamageBonus:nativeDamageBonus(st.tier,st.S),pendingGrowth:Math.min(PERFORMANCE_CAP[st.tier-1],Object.values(st.flow).reduce((n,f)=>n+f.points,0)),soulFire:st.Q,generated:st.generated,budget:st.B,guardRemaining:Math.max(0,st.guardReady-b.time),debts:b.allyUnits.filter(u=>u.ownerId===st.pid&&debt(u)>0).map(u=>({uid:u.uid,amount:debt(u)})),...mechanics.snapshot(st)}))});
+ const snapshot=b.snapshot.bind(b);b.snapshot=()=>({...snapshot(),kazdel:[...states.values()].map(st=>({playerId:st.pid,tier:st.tier,generationRate:st.rate,releaseRemaining:Math.max(0,st.releaseReady-b.time),layers:st.S,hpBonus:hpBonus(st.tier,st.S),nativeDamageBonus:nativeDamageBonus(st.tier,st.S),pendingGrowth:Math.min(PERFORMANCE_CAP[st.tier-1],Object.values(st.flow).reduce((n,f)=>n+f.points,0)),soulFire:st.Q,generated:st.generated,budget:st.B,guardRemaining:guardEnabled(st.tier)?Math.max(0,st.guardReady-b.time):0,debts:b.allyUnits.filter(u=>u.ownerId===st.pid&&debt(u)>0).map(u=>({uid:u.uid,amount:debt(u)})),...mechanics.snapshot(st)}))});
  // All real combat HP writes count; creation and removal bookkeeping are excluded.
  for(const u of b.allyUnits)attach(u);
  for(const method of ['_deploy','retreat','kill']){const original=b[method];if(typeof original==='function')b[method]=function(...args){const u=args[0],before=u?.hp,hadDeploy=u?.deploySeq>0,outer=suspended;const result=suspend(()=>original.apply(this,args));if(!outer&&b.started&&hadDeploy&&u?.kind==='op'&&live(u)&&method!=='retreat'&&(method!=='_deploy'||!args[1]?.initial)){growthSuspended++;try{flow(u,before,u.hp);}finally{growthSuspended--;}}return result;};}
- b.on('battleStart',()=>{for(const u of b.allyUnits){attach(u);if(core(u))b.addBuff(u,{key:'kz:hp',mods:{hpPct:[.1,.15,.2][states.get(u.ownerId).tier-1]+.005*states.get(u.ownerId).S},persist:true,allowDead:true});const bandage=item(b,u,BANDAGE);if(bandage)b.addBuff(u,{key:'kz:bandageHp',mods:{hpFlat:bandage.params.hpFlat},persist:true,allowDead:true});suspend(()=>{void u.s;});M0.set(u.id,states.get(u.ownerId)?.carried?(b.getPlayer(u.ownerId)?.input?.contentInfo?.kazdelCarry?.openingHp?.find(v=>v.uid===u.uid)?.hp||permanentHp(u)):permanentHp(u));}},{priority:1000});
+ b.on('battleStart',()=>{for(const u of b.allyUnits){attach(u);if(core(u))b.addBuff(u,{key:'kz:hp',mods:{hpPct:hpBonus(states.get(u.ownerId).tier,states.get(u.ownerId).S)},persist:true,allowDead:true});const bandage=item(b,u,BANDAGE);if(bandage)b.addBuff(u,{key:'kz:bandageHp',mods:{hpFlat:bandage.params.hpFlat},persist:true,allowDead:true});suspend(()=>{void u.s;});M0.set(u.id,states.get(u.ownerId)?.carried?(b.getPlayer(u.ownerId)?.input?.contentInfo?.kazdelCarry?.openingHp?.find(v=>v.uid===u.uid)?.hp||permanentHp(u)):permanentHp(u));}},{priority:1000});
  b.on('deploy',({unit:u})=>{attach(u);if(!M0.has(u.id))M0.set(u.id,u.s.maxHp);});
  b.on('battleStart',()=>{observing=true;},{priority:2000});
 
  b.on('hit',ctx=>{if(ctx.source?.kind!=='op'||ctx.target.side!=='enemy'||!core(ctx.source)||!nativeDamagePacket(ctx.dmg))return;const st=states.get(ctx.source.ownerId);ctx.dmg.mul*=1+nativeDamageBonus(st.tier,st.S);});
  b.on('heal',ctx=>{if(ctx.target.kind!=='op'||ctx.opts?.kazdel||ctx.opts?.revive||ctx.opts?.redistribution)return;const p=b.getPlayer(ctx.target.ownerId),r=item(b,ctx.target,BANDAGE),bl=p.bonds?.[BLOOD];const bloodHealing=bl?.active?layers(bl.layers)*(bl.tier>=2?.0002:.0001):0;ctx.amount*=1+(p?.bandId===HODRER?.15:0)+(r?.params?.recoveryBonus||0)+bloodHealing;});
- const heal=b.heal.bind(b);b.heal=(source,u,n,opts={})=>{const excluded=opts.kazdel&&!opts.kzSkillRecovery||opts.revive||opts.redistribution; if(excluded)growthSuspended++;try{return heal(source,u,n,opts);}finally{if(excluded)growthSuspended--;}};
+ const heal=b.heal.bind(b);b.heal=(source,u,n,opts={})=>{const previous=healingOpts,excluded=opts.revive||opts.redistribution;healingOpts=opts;if(excluded)growthSuspended++;try{return heal(source,u,n,opts);}finally{healingOpts=previous;if(excluded)growthSuspended--;}};
  // A full-HP member with pending debt remains a legal native healing target. No-heal/isolated rules still apply.
  const injured=b.injuredAlliesInKeys.bind(b);b.injuredAlliesInKeys=(keys,healer,includeElement=false)=>{
   const out=injured(keys,healer,includeElement),set=new Set(keys||[]);
@@ -102,13 +104,14 @@ export function install(b){
  const curse=()=>{
   const groups=new Map();for(const e of enemies()){const k=e.bossPool||e;if(!groups.has(k))groups.set(k,[]);groups.get(k).push(e);}
   for(const [key,targets] of groups){let clock=curseAge.get(key);if(clock==null){clock={ageReady:b.time+1,next:0};curseAge.set(key,clock);}if(b.time+1e-8<clock.ageReady||b.time+1e-8<clock.next)continue;
-   const eligible=[...states.values()].filter(st=>b.allyUnits.some(u=>u.ownerId===st.pid&&live(u)&&unitBonds(u).includes(CORE)));
-   const best=eligible.sort((a,c)=>curseDamage(c.tier,c.S,c.Q,c.K)-curseDamage(a.tier,a.S,a.Q,a.K)||String(a.pid).localeCompare(String(c.pid)))[0];if(!best)continue;
-   clock.next=b.time+CURSE_INTERVAL;const e=targets[0],n=curseDamage(best.tier,best.S,best.Q,best.K)*(e.isFlying?2:1);const dealt=hit(best,e,n,'true','kz:curse');best.metrics.curse+=dealt;if(dealt>0)b.fx('kz-curse-mark',{id:e.id,x:e.x,y:e.y,t:.5});
+   const e=targets[0],eligible=[...states.values()].filter(st=>b.allyUnits.some(u=>u.ownerId===st.pid&&live(u)&&unitBonds(u).includes(CORE)));
+   const damage=st=>curseTargetDamage(st.tier,st.S,st.Q,st.K,e.isFlying);
+   const best=eligible.sort((a,c)=>damage(c)-damage(a)||String(a.pid).localeCompare(String(c.pid)))[0];if(!best)continue;
+   clock.next=b.time+CURSE_INTERVAL;const dealt=hit(best,e,damage(best),'true','kz:curse');best.metrics.curse+=dealt;if(dealt>0)b.fx('kz-curse-mark',{id:e.id,x:e.x,y:e.y,t:.5});
   }
  };
- const rescue=(st,us)=>{let left=Math.min(st.Q,1.25*st.C),spent=0,restored=0;const selected=us.filter(u=>u.hp<u.s.maxHp*.35).sort((a,c)=>a.hp/a.s.maxHp-c.hp/c.s.maxHp||a.id-c.id).slice(0,st.tier===1?1:2);
-  for(const u of selected){const n=Math.min(left,u.s.maxHp*.5-u.hp);if(n<=0)continue;st.Q-=n;left-=n;spent+=n;restored+=b.heal(null,u,n,{self:true,kazdel:true});}
+ const rescue=(st,us)=>{let left=Math.min(st.Q,1.25*st.C),spent=0,restored=0;const selected=us.filter(u=>u.hp<u.s.maxHp*.35&&!u.s.flags.noHeal&&!u.profile?.noHeal&&!u.mem?.ibStasis).sort((a,c)=>a.hp/a.s.maxHp-c.hp/c.s.maxHp||a.id-c.id).slice(0,st.tier===1?1:2);
+  for(const u of selected){const n=Math.min(left,u.s.maxHp*.5-u.hp);if(n<=0)continue;const actual=b.heal(null,u,n,{kazdel:true});st.Q-=actual;left-=actual;spent+=actual;restored+=actual;}
   for(const u of selected){const n=repay(u,left);left-=n;spent+=n;st.Q-=n;}
   if(st.tier===3&&restored>0){const pool=enemies().filter(e=>us.some(u=>legal(u,e)));const nearest=e=>Math.min(...selected.map(u=>dist(u,e)));const e=pool.sort((a,c)=>Number(selected.some(u=>u.blocking.includes(c)))-Number(selected.some(u=>u.blocking.includes(a)))||nearest(a)-nearest(c)||a.id-c.id)[0];if(e)hit(st,e,.5*restored*resourceDamageScale(st.tier,st.S),'true','kz:rescueEcho',++b._attackSeq);}
   st.metrics.rescue+=restored;return spent;
@@ -118,15 +121,9 @@ export function install(b){
   const us=b.allyUnits.filter(u=>u.ownerId===st.pid&&core(u)&&live(u));const spent=rescue(st,us);
   if(spent){st.releaseReady=b.time+[8,6,4][st.tier-1];st.metrics.release+=spent;}
  };
- const donate=st=>{const chosen=b.getPlayer(st.pid)?.input?.contentInfo?.kazdelDonationIds||[];if(!chosen.length||b.time<4)return;
-  const seen=new Set();for(const u of b.allyUnits){if(u.ownerId!==st.pid||!core(u)||!live(u)||!chosen.includes(base(u))||seen.has(base(u))||seen.size>=2)continue;seen.add(base(u));if(b.time<(st.donations.get(base(u))||4))continue;
-   const n=.1*(M0.get(u.id)||u.s.maxHp),gain=n*st.rate;if(u.hp<u.s.maxHp*.65||u.hp-n<u.s.maxHp*.4||!enemies().some(e=>legal(u,e))||budget(st)+1e-8<gain||st.K-st.Q+1e-8<gain)continue;
-   st.donations.set(base(u),b.time+8);b.loseHp(u,n,{source:u,tags:['kz:donation']});
-  }
- };
  const mechanics=installMechanics(b,{states,core,M0,budget,debt,repay,hit,record,skillFlow});b.kazdel.mechanics=mechanics;b.kazdel.traits=traits;
  b.on('tick',({dt})=>{if(b.finished)return;for(const [id,a]of debts){const u=b.units.find(u=>u.id===id);if(!u||!live(u)){debts.delete(id);continue;}const due=a.filter(v=>v.due<=b.time+1e-8),pending=a.filter(v=>v.due>b.time+1e-8);debts.set(id,pending);for(const v of due){if(!live(u))break;b.loseHp(u,v.amount,{source:null,tags:['kz:debt']});}}
-  for(const st of states.values())mechanics.refresh(st);curse();for(const st of states.values()){donate(st);release(st);}mechanics.tick(dt);mechanics.decay(dt);
+  for(const st of states.values())mechanics.refresh(st);curse();for(const st of states.values()){release(st);}mechanics.tick(dt);mechanics.decay(dt);
  },{priority:1000});
- b.on('battleEnd',({result})=>{if(b.reason==='cleared'&&b.time<8){for(const u of b.allyUnits)if(live(u)&&core(u)){const v=record(u);if(v&&v.seconds>=1){v.shortClear=true;record(u);}}}for(const st of states.values()){const pp=result.perPlayer[st.pid];if(pp){pp.kazdelFlow=b.kind==='normal'?structuredClone(st.flow):{};pp.kazdelMetrics=structuredClone(st.metrics);pp.kazdelCarry={round:b.getPlayer(st.pid).input.contentInfo?.round??b.round,time:(st.offset||0)+b.time,Q:st.Q,generated:st.generated,second:st.second,secondGenerated:st.secondGenerated,guardRemaining:Math.max(0,st.guardReady-b.time),releaseRemaining:Math.max(0,st.releaseReady-b.time),flow:structuredClone(st.flow),...mechanics.carry(st),traits:traits?.carry(st),donations:[...st.donations].map(([id,t])=>({id,remaining:Math.max(0,t-b.time)})),bloodProcs:[...st.bloodProcs].map(([id,v])=>({id,n:v.n,remaining:Math.max(0,v.ready-b.time)})),debts:b.allyUnits.filter(u=>u.ownerId===st.pid).flatMap(u=>(debts.get(u.id)||[]).map(v=>({uid:u.uid,amount:v.amount,remaining:Math.max(0,v.due-b.time)})))};}}});
+ b.on('battleEnd',({result})=>{if(b.reason==='cleared'&&b.time<8){for(const u of b.allyUnits)if(live(u)&&core(u)){const v=record(u);if(v&&v.seconds>=1){v.shortClear=true;record(u);}}}for(const st of states.values()){const pp=result.perPlayer[st.pid];if(pp){pp.kazdelFlow=b.kind==='normal'?structuredClone(st.flow):{};pp.kazdelMetrics=structuredClone(st.metrics);pp.kazdelCarry={round:b.getPlayer(st.pid).input.contentInfo?.round??b.round,time:(st.offset||0)+b.time,Q:st.Q,generated:st.generated,second:st.second,secondGenerated:st.secondGenerated,guardRemaining:guardEnabled(st.tier)?Math.max(0,st.guardReady-b.time):0,releaseRemaining:Math.max(0,st.releaseReady-b.time),flow:structuredClone(st.flow),...mechanics.carry(st),traits:traits?.carry(st),donations:[...st.donations].map(([id,t])=>({id,remaining:Math.max(0,t-b.time)})),bloodProcs:[...st.bloodProcs].map(([id,v])=>({id,n:v.n,remaining:Math.max(0,v.ready-b.time)})),debts:b.allyUnits.filter(u=>u.ownerId===st.pid).flatMap(u=>(debts.get(u.id)||[]).map(v=>({uid:u.uid,amount:v.amount,remaining:Math.max(0,v.due-b.time)})))};}}});
 }

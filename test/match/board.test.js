@@ -1,7 +1,7 @@
 // Board placement legality (stage legend), deploy cap, move semantics, placeable summons (DESIGN §3, research 03 C2).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildDeployMap, canPlace, legalTiles, tileKey } from '../../server/match/board.js';
+import { buildDeployMap, canPlace, legalTiles, tileKey, positionClass, basePositionClass } from '../../server/match/board.js';
 import { applyCard } from '../../server/match/choices.js';
 import { ERR } from '../../shared/constants.js';
 import { DATA, makeMatch, give, giveItem, checkInvariants, chessOfTier } from './harness.js';
@@ -53,6 +53,31 @@ test('glyph rules: melee only on LOW buildable ALL/MELEE; ranged also on HIGH/RA
   assert.deepEqual(legalTiles(map, 'melee').length, st.deployTiles.normal.melee.length);
   // missing stage data: an open board (degraded mode)
   assert.ok(canPlace(buildDeployMap(null), 'melee', 10, 5));
+});
+
+test('positionClass: a MELEE chess whose trait reads 「可以放置于远程位」 is widened, normal or elite, whatever the module (owner 2026-10-05)', () => {
+  assert.equal(positionClass({ position: 'MELEE' }), 'melee');
+  assert.equal(positionClass({ position: 'MELEE', placement: 'all' }), 'melee', 'the old placement field is ignored');
+  assert.equal(positionClass({ position: 'MELEE', trait: { desc: '技能可以使敌人产生位移\n可以放置于远程位' } }), 'all', 'the trait line');
+  assert.equal(positionClass({ position: 'MELEE', placeOnRanged: true, trait: { desc: 'Can be deployed on Ranged Tiles' } }), 'all', 'the build flag, translated text');
+  assert.equal(positionClass({ position: 'MELEE', trait: { desc: 'Can be deployed on Ranged Tiles' } }), 'melee', 'a translation alone is not the line');
+  assert.equal(positionClass({ position: 'MELEE', trait: { desc: '可以额外部署在远程位' } }), 'melee', 'another wording is not the line');
+  assert.equal(positionClass({ position: 'RANGED', placeOnRanged: true }), 'ranged', 'the flag does not widen a ranged record');
+  assert.equal(positionClass({ position: 'RANGED', trait: { desc: '可以放置于远程位' } }), 'ranged', 'a ranged record keeps its class');
+  assert.equal(basePositionClass({ position: 'MELEE', trait: { desc: '可以放置于远程位' } }), 'melee', 'the battle class stays melee');
+  assert.equal(positionClass({ position: 'RANGED' }), 'ranged');
+  assert.equal(positionClass({ position: 'ALL' }), 'all');
+  assert.equal(positionClass(null), 'all');
+  const map = buildDeployMap(DATA.stages.act2autochess_m01);
+  // the six trait holders: 歌蕾蒂娅 / 崖心 (钩索师) and 见行者 (推击手), normal and elite
+  for (const id of ['chess_char_4_12_a', 'chess_char_4_12_b', 'chess_char_2_03_a', 'chess_char_2_03_b', 'chess_char_3_07_a', 'chess_char_3_07_b']) {
+    assert.equal(positionClass(DATA.chess[id]), 'all', id);
+    assert.ok(canPlace(map, positionClass(DATA.chess[id]), 10, 4), `${id} on the 高台`);
+    assert.ok(canPlace(map, positionClass(DATA.chess[id]), 9, 3), `${id} still on the ground`);
+    assert.equal(basePositionClass(DATA.chess[id]), 'melee', `${id} blocks like a melee unit`);
+    assert.equal(DATA.chess[id].placement, undefined);
+  }
+  assert.ok(!canPlace(map, positionClass(DATA.chess.chess_char_1_02_a), 10, 4), '角峰 (重装) not');
 });
 
 test('g.move: legality per chess position, BAD_TILE outside, deploy cap 8, swaps allowed at cap', () => {
@@ -232,8 +257,10 @@ test('withdrawing a deployed summon into a full hand: HAND_FULL like any other c
   assert.ok(drone && drone.count === 1, 'one 狼群');
   // (9,6): inside 伺夜's range ("只能部署在召唤者攻击范围内", player report #9 after 0.1.0)
   assert.deepEqual(m.handle('p_0', { t: 'g.move', uid: drone.uid, to: { area: 'board', row: 9, col: 6 } }), { ok: true });
-  // golden items never merge with each other: a plain full hand
-  for (let i = 0; i < ps.hand.length; i++) if (!ps.hand[i]) giveItem(m, ps, 'chess_item_1_02_e_b', 'hand', i);
+  // One distinct golden per empty slot: goldens do not merge, and each base stays within its shared cap.
+  const fillers = Object.values(DATA.items).filter((r) => r.isGolden && r.itemType === 'EQUIP' && (m.gd.itemPoolCopies(r.id) ?? 0) >= 2).map((r) => r.id);
+  let n = 0;
+  for (let i = 0; i < ps.hand.length; i++) if (!ps.hand[i]) giveItem(m, ps, fillers[n++], 'hand', i);
   assert.ok(ps.hand.every(Boolean) && ps.tempEmpty);
   assert.equal(m.handle('p_0', { t: 'g.move', uid: drone.uid, to: { area: 'hand', idx: 0 } }).error, ERR.HAND_FULL, 'a new card for a full hand');
   assert.equal(ps.board.get('9,6'), drone, 'the 狼群 stays on the board');

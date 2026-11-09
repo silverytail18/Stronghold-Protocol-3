@@ -200,6 +200,24 @@ export class Camera {
   scaleAt(x, y, z = 0) { return this._k / this.depthOf(x, y, z); }
 
   /**
+   * World height above (x, y, z) whose projection lies `px` CSS px above the projection of (x, y, z) — exact for this
+   * camera. A unit's model is an upright screen billboard, so a point at a given drawn height on it (render/fx.js
+   * SHOT_HEIGHT, GitHub #61) is this lift, not that many tiles: under the 30° pitch a vertical world height shows at
+   * about half its length.
+   */
+  liftFor(x, y, z, px) {
+    const vy = y - this._py, vz = z - this._pz;
+    let depth = vy * this._s - vz * this._c;
+    if (!(depth > MIN_DEPTH)) depth = MIN_DEPTH;
+    const up = vy * this._c + vz * this._s;
+    // screen y = cy − k·up/depth; raising z by h: up += h·sin, depth −= h·cos — solve for the wanted up/depth ratio
+    const ratio = up / depth + px / this._k;
+    const den = this._s + ratio * this._c;
+    if (!(den > 1e-6)) return px / Math.max(1e-6, (this._k / depth) * Math.max(this._s, 0.1));
+    return (ratio * depth - up) / den;
+  }
+
+  /**
    * Inverse projection onto the horizontal plane at height `z`. Returns `{ x, y }` (written into `out`) or
    * null when the view ray does not hit the plane in front of the camera.
    */
@@ -298,7 +316,7 @@ export function normRect(rect, rows = 19, cols = 21) {
  */
 export function fitCamera(rect, viewport, options) {
   const opts = options && typeof options === 'object' ? options : {};
-  const R = normRect(rect);
+  const R = normRect(rect, opts.rows, opts.cols);
   const W = Math.max(1, finite(viewport?.width, 1));
   const H = Math.max(1, finite(viewport?.height, 1));
   const pad = viewport?.padding || {};
@@ -436,7 +454,13 @@ export function presetCamera(kind, viewport, options) {
     const table = opts.half && preset.half ? preset.half : opts.shop === false && preset.officialNoShop ? preset.officialNoShop : preset.official;
     const key = table[side];
     const cfg = opts.config && typeof opts.config === 'object' ? opts.config : null;
-    const param = (cfg && parseCameraParam(cfg[key])) || parseCameraParam(OFFICIAL_PARAMS[key]);
+    let param = (cfg && parseCameraParam(cfg[key])) || parseCameraParam(OFFICIAL_PARAMS[key]);
+    if (opts.shop === 'partial' && preset.officialNoShop) {
+      const closedKey = preset.officialNoShop[side];
+      const closed = (cfg && parseCameraParam(cfg[closedKey])) || parseCameraParam(OFFICIAL_PARAMS[closedKey]);
+      // [ASSUMED] #692: halfway between official open/folded offsets; the official client has no middle level.
+      param = param.map((n, i) => (n + closed[i]) / 2);
+    }
     const cam = officialCamera(param, { width: W, height: H }, opts);
     return preset.keep && opts.hud ? clearHud(cam, opts.hud, preset.keep, { width: W, height: H }) : cam;
   }

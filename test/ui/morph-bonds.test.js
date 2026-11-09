@@ -126,7 +126,7 @@ globalThis.fetch = async (url) => {
 };
 const { data } = await import('../../public/js/data.js');
 await data.loadAll('bonds', 'chess', 'items', 'assets', 'garrisons');
-const { BondPopupBody: BondPopup } = await import('../../public/js/ui/bondStrip.js');
+const { BondPopup } = await import('../../public/js/ui/bondStrip.js');
 const { BondChips, ChessDetail, resolveDetail } = await import('../../public/js/ui/detailPanel.js');
 
 function* walk(v) {
